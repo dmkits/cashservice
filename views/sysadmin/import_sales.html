@@ -38,17 +38,19 @@
             </td></tr>
         </table>
     </div>
-    <div id="sql_queries_DetailContent" style="width:100%;height:100%; margin:0;padding:0; ">
+    <div id="sql_queries_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden ">
+        <div id="sql_display_content_header" style=" color: dimgray; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
+        <div id="sql_display_content" style="border:none;/*width:100%*/;height:90%; overflow-y: scroll"></div>
         <!--<table width='100%' height='100%'>-->
-        <table align="center" width="100%">
-            <tr style="position:absolute"><th style="color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; ">Результат обработки</th></tr>
-            <tr>
-                <td style="padding-top:3px;padding-left:2px;padding-right:6px;">
-                    <!--<textarea id="sql_display_content" style="border:none;width:100%;height:100%;"></textarea>-->
-                    <div id="sql_display_content" style="border:none;width:100%;height:100%;"></div>
-                </td>
-            </tr>
-        </table>
+        <!--<table align="center" width="100%">-->
+            <!--<tr><th style="color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; ">Результат обработки</th></tr>-->
+            <!--<tr>-->
+                <!--<td style="padding-top:3px;padding-left:2px;padding-right:6px;">-->
+                    <!--&lt;!&ndash;<textarea id="sql_display_content" style="border:none;width:100%;height:100%;"></textarea>&ndash;&gt;-->
+                    <!--<div id="sql_display_content" style="border:none;width:100%;height:100%; overflow-y: scroll"></div>-->
+                <!--</td>-->
+            <!--</tr>-->
+        <!--</table>-->
     </div>
     <div id="sql_queries_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
         <div id="display_result">
@@ -113,6 +115,11 @@
                 var leftContentImportSales = APP.initElem("sql_queries_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
                 var detailContentImportSales = APP.initElem("sql_queries_DetailContent", ContentPane, {region: "center"});
                 var rightContentImportSales = APP.initElem("sql_queries_RightContent", ContentPane, {region: "right",splitter: true});
+                var sql_display_content= APP.initElem("sql_display_content", ContentPane, {region: "right",splitter: true});
+                var sql_display_content_header=APP.initElem("sql_display_content", ContentPane, {region: "right",splitter: true});
+                sql_display_content.startup();
+                sql_display_content_header.startup();
+
 
                 var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
                // console.log("bDateTextBox.value=",bDateTextBox.get("value"));
