@@ -71,15 +71,14 @@ module.exports.getAllCashBoxes= function(callback) {
     );
 };
 
-module.exports.createSalesXML = function (bdate, edate, cashBoxesID, errAction, successAction) {
+module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errAction, successAction) {
     var reqSql = new sql.Request(conn);
- var query_str = fs.readFileSync('./scripts/TEST_sales_report.sql', 'utf8');
+    var query_str = fs.readFileSync('./scripts/sales_report.sql', 'utf8');
     reqSql.input('BDATE', sql.NVarChar, bdate);
     reqSql.input('EDATE', sql.NVarChar, edate);
-   // reqSql.input('CRIDLIST', sql.NVarChar, cashBoxesID);
     reqSql.input('CRIDLIST', sql.NVarChar, cashBoxesID);
     reqSql.query(query_str,
-        function (err, recordset) {                                          //  console.log(" jsonrecordset=",recordset);
+        function (err, recordset) {                                            console.log(" recordset=",recordset);
             if (err) {                                                          //console.log("err=",err);
                 errAction(err);
             } else {

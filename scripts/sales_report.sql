@@ -6,8 +6,7 @@
 		XMLText varchar(8000) )
 
 	insert into @UT(XMLText)
-		select '<?xml version="1.0" encoding="windows-1251"?>'
-		union all select '<srv_req>'
+		select '<srv_req>'
 		union all select +@Tab1+'<select from="'+ @BDATE+'" to="'+ @EDATE+'">'
 	
 	declare @FacID varchar(250)	 

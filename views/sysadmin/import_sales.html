@@ -4,7 +4,6 @@
     <!--<script src="/socket.io/socket.io.js"></script>-->
     <!--<meta http-equiv="Access-Control-Allow-Origin" content="*">-->
     <!--<header name = "Access-Control-Allow-Origin" value = "*" />-->
-
     <!--<meta http-equiv="Access-Control-Allow-Origin" content="*">-->
     <meta charset="UTF-8">
     <title></title>
@@ -26,24 +25,27 @@
                     <button id="import_sales_btn">Import sales</button>
                 </td>
                 <td width="40px;">
-                    <button id="import_sales_sendBtn">Clean up</button>
+                    <button id="import_sales_cleanBtn">Clean up</button>
                 </td>
                 <td width="440px;"></td>
             </tr>
         </table>
     </div>
-    <div id="sql_queries_LeftContent" style="width:150px;height:100%; margin:0;padding:0; ">
+    <div id="sql_queries_LeftContent" style="width:200px;height:100%; margin:0;padding:0; ">
         <table align="center" width="100%">
             <tr><th style="color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9;">Кассовые аппараты</th></tr>
             <tr><td id="cash_boxes_buttons">
             </td></tr>
         </table>
     </div>
-    <div id="sql_queries_DetailContent" style="width:100%;height:100%; margin:0;padding:0;">
-        <table width='100%' height='100%'>
+    <div id="sql_queries_DetailContent" style="width:100%;height:100%; margin:0;padding:0; ">
+        <!--<table width='100%' height='100%'>-->
+        <table align="center" width="100%">
+            <tr style="position:absolute"><th style="color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; ">Результат обработки</th></tr>
             <tr>
                 <td style="padding-top:3px;padding-left:2px;padding-right:6px;">
-                    <textarea id="sql_display_content" style="border:none;width:100%;height:100%;"></textarea>
+                    <!--<textarea id="sql_display_content" style="border:none;width:100%;height:100%;"></textarea>-->
+                    <div id="sql_display_content" style="border:none;width:100%;height:100%;"></div>
                 </td>
             </tr>
         </table>
@@ -61,9 +63,9 @@
             function (APP, BorderContainer, LayoutContainer, ContentPane, ItemFileReadStore, TextBox, DateTextBox, Button, ConfirmDialog,
                       ToggleButton,DateTextBox,Request) {
                 moment.locale("uk");
-                document.getElementById("display_result").innerText="";
-                var socketDisplay=document.getElementById("display_result");
-                socketDisplay.innerText="";
+               // document.getElementById("sql_display_content").innerText="";
+               // var socketDisplay=document.getElementById("sql_display_content");
+               //socketDisplay.innerText="";
                // var socketText=socketDisplay.innerText;
 
                 var socket = io.connect(/*'http://localhost:8080'*/);
@@ -73,37 +75,42 @@
 //                });
 
                 socket.on('ask_for_data', function () {
-                    document.getElementById("sql_display_content").innerText= "* Отправка запроса кассовому аппарату\n";
-                    socket.emit('my other event', { my: 'data' });
+                    document.getElementById("sql_display_content").innerText=
+                           /* document.getElementById("sql_display_content").innerText+*/"* Отправка запроса кассовому аппарату\n";
+                    //socket.emit('my other event', { my: 'data' });
                 });
 
                 socket.on('xml_received', function () {
                     document.getElementById("sql_display_content").innerText=
-                            document.getElementById("display_result").innerText+"* Получены данные от кассового аппарата\n";
-                   socket.emit('my other event', { my: 'data' });
+                            document.getElementById("sql_display_content").innerText+"* Получены данные от кассового аппарата\n";
+                //   socket.emit('my other event', { my: 'data' });
                 });
 
                 socket.on('xml_to_json', function(){
                     document.getElementById("sql_display_content").innerText=
-                            document.getElementById("display_result").innerText+"* Данные форматирутся\n";
+                            document.getElementById("sql_display_content").innerText+"* Данные форматирутся\n";
                 });
                 //io.emit('cash_box_id', cashBoxID);
                 socket.on('cash_box_id', function(data){
-                    document.getElementById("sql_display_content").innerText=document.getElementById("display_result").innerText+
-                            "* Касcовый аппарат №"+data+"\n";
+                    document.getElementById("sql_display_content").innerText=
+                            document.getElementById("sql_display_content").innerText+ "* Касcовый аппарат №"+data+"\n";
                 });
                 socket.on('json_ready', function(data){
-                    document.getElementById("sql_display_content").innerText=document.getElementById("display_result").innerText+
-                             "* Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
+                    document.getElementById("sql_display_content").innerText=
+                            document.getElementById("sql_display_content").innerText+ "* Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
                 });
                 socket.on('data_processed_suc', function(){
                     document.getElementById("sql_display_content").innerText=
-                            document.getElementById("display_result").innerText+"* Данные успешно обработаны\n";
+                            document.getElementById("sql_display_content").innerText+"* Данные успешно обработаны\n";
+                });
+                socket.on('response_error', function(data){
+                    document.getElementById("sql_display_content").innerText=
+                            document.getElementById("sql_display_content").innerText+ "* Шлюз вернул ошибку"+data.error+"\n";
                 });
 
                 var borderContainer = APP.initElem("sql_queries_PageContent", BorderContainer, {});
                 var topContentSQL = APP.initElem("sql_queries_TopContent", ContentPane, {region: "top"});
-                var leftContentImportSales = APP.initElem("sql_queries_LeftContent", ContentPane, {region: "left"});
+                var leftContentImportSales = APP.initElem("sql_queries_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
                 var detailContentImportSales = APP.initElem("sql_queries_DetailContent", ContentPane, {region: "center"});
                 var rightContentImportSales = APP.initElem("sql_queries_RightContent", ContentPane, {region: "right",splitter: true});
 
@@ -113,11 +120,14 @@
                 var cash_boxes_buttons=document.getElementById('cash_boxes_buttons');
                 var btnImportSales = APP.initElem("import_sales_btn", Button, {});
                 var btnSendImportSales = APP.initElem("import_sales_sendBtn", Button, {});
+                //import_sales_cleanBtn
+                var btnCleanUp=APP.initElem("import_sales_cleanBtn", Button, {});
                 var displayXMLResult = document.getElementById("display_result");
+
                 detailContentImportSales.getAllCashBoxes=function() {
 
                     Request.getJSONData({url: "/sysadmin/import_sales/get_all_cashboxes", consoleLog: true},
-                            function (success, result) {   console.log("result", result);
+                            function (success, result) {                            console.log("result get all cachboxes", result);
                                 if (!success) {
                                     alert("No connection to the server!");
                                       return;
@@ -133,139 +143,80 @@
 
                 detailContentImportSales.setToggleCashBoxID=function(data){
                     for(var i in data){
-                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:true,label:"Касса ID "+data[i].FacID, crid:data[i].FacID});//
+                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:true,label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
+                        toggleBtn.domNode.firstChild.setAttribute("style", "width:150px;");
                         toggleBtn.startup();
                         cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentImportSales.startup();
                     }
                 };
+
                 btnImportSales.onClick=function(){
-                   // console.log(leftContentImportSales.getChildren());
-                   // console.log("value=", document.getElementById("bdate").value.trim());
                     var bdate; var edate;
                     var bdateValue=bDateTextBox.get("value");
-                    bdate= moment(bdateValue).format('YYYYMMDD')+"0000";
-                    console.log("bdate=" , bdate);
+                    bdate= moment(bdateValue).format('YYYYMMDD')+"0000";                                //console.log("bdate=" , bdate);
                     var edateValue=eDateTextBox.get("value");
-                    edate= moment(edateValue).format('YYYYMMDD')+"2359";
-                    console.log("edate=" , edate);
-                 //   var bdateValue=document.getElementById("bdate").value;               //console.log("bdateValue=" , bdateValue);
-                 //   if(bdateValue=="") {
-                        bdate="";
-                 //   }else bdate = bdateValue.replace(/-/g, "") + "0000";
-                   // var edateValue=document.getElementById("edate").value.trim();
-                  //  if(edateValue=="") {
-                      //  edate="";
-                  //  }else  edate = edateValue.replace(/-/g, "") + "2359";
+                    edate= moment(edateValue).format('YYYYMMDD')+"2359";                                //console.log("edate=" , edate);
 
                     var cashBoxesList=leftContentImportSales.getChildren();
                     var cashbox_params;
                     for (var i in cashBoxesList) {
                         if(cashBoxesList[i].checked==true){
                             var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
-                            cashbox_params = (cashbox_params === null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;
+                            cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;
                         }
                     }
-                                                console.log("bdate=" , bdate, "&edate=" ,bdate );
+                                                                                                         // console.log("bdate 164=" , bdate, "&edate=" ,bdate, "cashbox_params=",cashbox_params );
+
                     Request.getJSONData({url: "/sysadmin/import_sales/get_sales",
                                 condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params ,     ///// date !!!!!
                                 consoleLog: true},
-                            function (success, result) {   console.log("result103", result);
+                            function (success, result) {                                                         console.log("result166", result);
                                 if (!success) {
                                     alert("No connection to the server!");
                                     return;
                                 }
                                 if (result.error) {
-                                    alert("Cannot get configuration parameters! Reason:"+result.error);
+                                   // alert("Cannot get configuration parameters! Reason:"+result.error);
+                                    console.log("Error:" + JSON.stringify(result.error));
                                     return;
                                 }
 
-                                var xmlText="";
-                                for(var i in result.items ) {
-                                    var xmlLine=result.items[i].XMLText;
-                                    displayXMLResult.innerHTML=rightContentImportSales.innerHTML+xmlLine;
-                                   xmlText=xmlText+xmlLine;
-                                }                                                                    console.log("xmlText=",xmlText);
-                                displayXMLResult.innerText=xmlText;
+//                                var xmlText="";
+//                                for(var i in result.items ) {
+//                                    var xmlLine=result.items[i].XMLText;
+//                                    displayXMLResult.innerHTML=rightContentImportSales.innerHTML+xmlLine;
+//                                   xmlText=xmlText+xmlLine;
+//                                }                                                                  //  console.log("xmlText=",xmlText);
+//                                displayXMLResult.innerText=xmlText;
                             });
                     };
 
-                btnSendImportSales.onClick = function () {
-                    var  XMLText=document.getElementById("display_result").innerText;     console.log("XMLText=",XMLText);
-                    Request.postJSONData({
-                                url: "/sysadmin/get_xml_sales",
-                              //  condition: condition,
-                                data: {XMLText: XMLText}, consoleLog: true
-                            },
-                            function (success, data) {
-                                if (!success) {
-                                 //   displayQueryResultSQl.innerHTML = "<div><b style='color:red'>Error in request</b></div>";
-                                    return;
-                                }
-                                if (data.error){
-
-                                }
-                                  //  displayQueryResultSQl.innerHTML = "<div><b style='color:red'>" + data.error + "</b></div>";
-                                else
-                                   // displayQueryResultSQl.innerHTML = JSON.stringify(data.result);
-                                console.log(data);
-                            });
-                    };
-
-               // };
-                /*
-                btnSendImportSales.onClick = function () {
-                    var XHR = ("onload" in new XMLHttpRequest()) ? XMLHttpRequest : XDomainRequest;
-                    var xhr = new XHR();
-                    xhr.open('POST', 'http://5.53.113.251:12702/lsoft', true);
-                    var body = '<srv_req><select from="201704130000" to="201704272359"><dev sn="4101213753"/></select></srv_req>';
-                    xhr.send(body);
-                    xhr.onreadystatechange = function () {
-                        if (this.readyState != 4) return;
-                        if (this.status != 200) {
-                            // обработать ошибку
-                            console.log('ошибка: ' + (this.status ? this.statusText : 'запрос не удался. Status: '+this.status));
-                            return;
-                        }
-                        console.log("XML=",this.responseXML); //
-                        console.log("Text=",this.responseText); //
-                    };
-                };
-                */
-
-
-
-                                                 // console.log("displayXMLResult.innerHTML=",displayXMLResult.innerText);
-//                   var xmlRequest=displayXMLResult.innerText;                                       console.log('xmlRequest=',xmlRequest.toString());
-//                    Request.getXMLData({url: "http://5.53.113.251:12702/lsoft",body:xmlRequest, consoleLog: true},
-//                            function (success, result) {
+//                btnSendImportSales.onClick = function () {
+//                    var  XMLText=document.getElementById("display_result").innerText;     console.log("XMLText=",XMLText);
+//                    Request.postJSONData({
+//                                url: "/sysadmin/get_xml_sales",
+//                              //  condition: condition,
+//                                data: {XMLText: XMLText}, consoleLog: true
+//                            },
+//                            function (success, data) {
 //                                if (!success) {
-//                                    console.log("err",!success);
+//                                 //   displayQueryResultSQl.innerHTML = "<div><b style='color:red'>Error in request</b></div>";
 //                                    return;
 //                                }
-//                                if (result) {
-//                                   console.log("result=",result);
-//                                 //   return;
+//                                if (data.error){
+//
 //                                }
+//                                  //  displayQueryResultSQl.innerHTML = "<div><b style='color:red'>" + data.error + "</b></div>";
+//                                else
+//                                   // displayQueryResultSQl.innerHTML = JSON.stringify(data.result);
+//                                console.log(data);
 //                            });
-
-//                    var XHR = ("onload" in new XMLHttpRequest()) ? XMLHttpRequest : XDomainRequest;
-//
-//                    var xhr = new XHR();
-//
-//                    // (2) запрос на другой домен :)
-//                    xhr.open('POST', 'https://5.53.113.251:12702', true);
-//
-//                    xhr.onload = function() {
-//                        alert( this.responseText );
 //                    };
-//
-//                    xhr.onerror = function() {
-//                        alert( 'Ошибка ' + this.status );
-//                    };
-//
-//                    xhr.send(body);
 
+                btnCleanUp.onClick = function () {
+                    document.getElementById("sql_display_content").innerText="";
+                };
             });
 </script>
 </html>
