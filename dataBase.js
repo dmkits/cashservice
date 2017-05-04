@@ -54,18 +54,13 @@ module.exports.setConfirmedOrderInfo = function (ChID, name, tel, email, callbac
 
 module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
-    var query_str='SELECT * FROM r_Crs';
-
-    // var result={XMLText:
-//     '<srv_req><select from="201704130000" to="201704272359"><dev sn="4101213753"/></select></srv_req>'};
-
+    var query_str='SELECT * FROM r_Crs WHERE CRID>0 AND CashType=8 ';
     reqSql.query(query_str,
         function (err, recordset) {
             if (err) {
                 callback(err);
             } else {
                callback(null,recordset);
-               //callback(null,{FacID:'4101213753'});
         }
         }
     );
@@ -78,11 +73,48 @@ module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errA
     reqSql.input('EDATE', sql.NVarChar, edate);
     reqSql.input('CRIDLIST', sql.NVarChar, cashBoxesID);
     reqSql.query(query_str,
-        function (err, recordset) {                                            console.log(" recordset=",recordset);
-            if (err) {                                                          //console.log("err=",err);
+        function (err, recordset) {
+            if (err) {
                 errAction(err);
             } else {
                successAction(recordset);
             }
         })
 };
+
+module.exports.isSaleExists= function (DocID,FacID,callback) {
+    var reqSql = new sql.Request(conn);
+    reqSql.input('DocID',sql.Int, DocID);
+    reqSql.input('FacID',sql.NVarChar, FacID);
+
+    var queryString =  fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
+
+    reqSql.query(queryString,
+        function (err,recordset) {
+            if (err) {
+                callback(err, null);
+            }
+            else {
+                var outData={};
+                if(recordset.length==0){
+                    outData.empty=true;
+                } else outData.recordset=recordset;
+                callback(null, outData);
+            }
+        });
+};
+
+
+
+module.exports.addToT_Sale= function(data, callback){
+    var reqSql = new sql.Request(conn);
+    var queryString =  fs.readFileSync('./scripts/create_t_sale.sql', 'utf8');
+    reqSql.query(queryString,
+        function (err,result) {
+            if (err) {
+                callback(err, null);
+            }
+                callback(null, "ok");
+        });
+};
+

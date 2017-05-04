@@ -98,9 +98,15 @@
                     document.getElementById("sql_display_content").innerText=
                             document.getElementById("sql_display_content").innerText+ "* Касcовый аппарат №"+data+"\n";
                 });
-                socket.on('json_ready', function(data){
+                socket.on('json_ready', function(data){             console.log(data);
                     document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
+                            document.getElementById("sql_display_content").innerText+ "* Касса "+data.checkCashBox+" Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
+                    for(var i in data.productsInCheck ){
+                        var product = data.productsInCheck[i];
+                        var text = product.posNumber+". "+product.name+" "+product.qty+" "+product.price+'\n';
+                        document.getElementById("sql_display_content").innerText=
+                                document.getElementById("sql_display_content").innerText+text;
+                    }
                 });
                 socket.on('data_processed_suc', function(){
                     document.getElementById("sql_display_content").innerText=
@@ -108,7 +114,7 @@
                 });
                 socket.on('response_error', function(data){
                     document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Шлюз вернул ошибку"+data.error+"\n";
+                            document.getElementById("sql_display_content").innerText+ "* Шлюз вернул ошибку: "+data.error+"\n";
                 });
 
                 var borderContainer = APP.initElem("sql_queries_PageContent", BorderContainer, {});
@@ -123,7 +129,6 @@
 
 
                 var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
-               // console.log("bDateTextBox.value=",bDateTextBox.get("value"));
                 var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
                 var cash_boxes_buttons=document.getElementById('cash_boxes_buttons');
                 var btnImportSales = APP.initElem("import_sales_btn", Button, {});
@@ -135,7 +140,7 @@
                 detailContentImportSales.getAllCashBoxes=function() {
 
                     Request.getJSONData({url: "/sysadmin/import_sales/get_all_cashboxes", consoleLog: true},
-                            function (success, result) {                            console.log("result get all cachboxes", result);
+                            function (success, result) {
                                 if (!success) {
                                     alert("No connection to the server!");
                                       return;
@@ -162,9 +167,9 @@
                 btnImportSales.onClick=function(){
                     var bdate; var edate;
                     var bdateValue=bDateTextBox.get("value");
-                    bdate= moment(bdateValue).format('YYYYMMDD')+"0000";                                //console.log("bdate=" , bdate);
+                    bdate= moment(bdateValue).format('YYYYMMDD')+"0000";
                     var edateValue=eDateTextBox.get("value");
-                    edate= moment(edateValue).format('YYYYMMDD')+"2359";                                //console.log("edate=" , edate);
+                    edate= moment(edateValue).format('YYYYMMDD')+"2359";
 
                     var cashBoxesList=leftContentImportSales.getChildren();
                     var cashbox_params;
@@ -174,53 +179,20 @@
                             cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;
                         }
                     }
-                                                                                                         // console.log("bdate 164=" , bdate, "&edate=" ,bdate, "cashbox_params=",cashbox_params );
-
                     Request.getJSONData({url: "/sysadmin/import_sales/get_sales",
-                                condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params ,     ///// date !!!!!
+                                condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params ,
                                 consoleLog: true},
-                            function (success, result) {                                                         console.log("result166", result);
+                            function (success, result) {
                                 if (!success) {
                                     alert("No connection to the server!");
                                     return;
                                 }
                                 if (result.error) {
-                                   // alert("Cannot get configuration parameters! Reason:"+result.error);
                                     console.log("Error:" + JSON.stringify(result.error));
                                     return;
                                 }
-
-//                                var xmlText="";
-//                                for(var i in result.items ) {
-//                                    var xmlLine=result.items[i].XMLText;
-//                                    displayXMLResult.innerHTML=rightContentImportSales.innerHTML+xmlLine;
-//                                   xmlText=xmlText+xmlLine;
-//                                }                                                                  //  console.log("xmlText=",xmlText);
-//                                displayXMLResult.innerText=xmlText;
                             });
                     };
-
-//                btnSendImportSales.onClick = function () {
-//                    var  XMLText=document.getElementById("display_result").innerText;     console.log("XMLText=",XMLText);
-//                    Request.postJSONData({
-//                                url: "/sysadmin/get_xml_sales",
-//                              //  condition: condition,
-//                                data: {XMLText: XMLText}, consoleLog: true
-//                            },
-//                            function (success, data) {
-//                                if (!success) {
-//                                 //   displayQueryResultSQl.innerHTML = "<div><b style='color:red'>Error in request</b></div>";
-//                                    return;
-//                                }
-//                                if (data.error){
-//
-//                                }
-//                                  //  displayQueryResultSQl.innerHTML = "<div><b style='color:red'>" + data.error + "</b></div>";
-//                                else
-//                                   // displayQueryResultSQl.innerHTML = JSON.stringify(data.result);
-//                                console.log(data);
-//                            });
-//                    };
 
                 btnCleanUp.onClick = function () {
                     document.getElementById("sql_display_content").innerText="";
