@@ -10,6 +10,7 @@
     "buffer": "^5.0.6",
     "cookie-parser": "~1.4.3",
     "download": "^5.0.3",
+    "exceljs": "^0.4.6",
     "express": "~4.14.0",
     "fs": "~0.0.1",
     "http": "0.0.0",

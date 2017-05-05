@@ -1,8 +1,8 @@
 declare @NewChID INT
-        select @NewChID =ISNULL(MAX(ChID),0)+1
+select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale
 
         INSERT into t_sale
-        (ChID,  DocID, DocDate, KursMC,  OurID,
+        (CHID,  DocID, DocDate, KursMC,  OurID,
         StockID,    CompID,    CodeID1,    CodeID2,    CodeID3,
         CodeID4, CodeID5,    Discount,    Notes,    CRID,
         OperID,    CreditID,    DocTime,    DCardID,    EmpID,
@@ -14,11 +14,8 @@ declare @NewChID INT
         (@NewChID,  @DocID, @DocDate, 1.0,  1,
         1,    1,    0,    0,    0,
         0, 0,    1.0,    null,    1,
-        @OperID ,null,    @DocTime,    'нет дисконтной карты',    1,
+        @OperID ,null,    @DocTime, '<Нет дисконтной карты>',    1,
         null, @CashSumCC,    @ChangeSumCC,    980,    0,
-        @TTaxSum,    @TSumCC_wt,    4,    1,    0,
-        0, 0,    0,    @DocCreateTime,    0,
+        @TTaxSum,    @TSumCC_wt,    22,    0,    0,
+        0, 0, 0   ,    @DocCreateTime,    0,
         0)
-
-
-

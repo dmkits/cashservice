@@ -82,10 +82,11 @@ module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errA
         })
 };
 
-module.exports.isSaleExists= function (DocID,FacID,callback) {
+module.exports.isSaleExists= function (data,callback) {
+
     var reqSql = new sql.Request(conn);
-    reqSql.input('DocID',sql.Int, DocID);
-    reqSql.input('FacID',sql.NVarChar, FacID);
+    reqSql.input('DocID',sql.Int, data.checkNumber);
+   // reqSql.input('FacID',sql.NVarChar, data.cashBoxFabricNum);
 
     var queryString =  fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
 
@@ -103,12 +104,34 @@ module.exports.isSaleExists= function (DocID,FacID,callback) {
             }
         });
 };
+/*(ChID,  DocID, DocDate, KursMC,  OurID,
+    StockID,    CompID,	CodeID1,	CodeID2,	CodeID3,
+    CodeID4, CodeID5,	Discount,	Notes,	CRID,
+    OperID,	CreditID,	DocTime,	DCardID,	EmpID,
+    IntDocID, CashSumCC,	ChangeSumCC,	CurrID,	TSumCC_nt,
+    TTaxSum,	TSumCC_wt,	StateCode,	DeskCode,	Visitors,
+    TPurSumCC_nt, TPurTaxSum,	TPurSumCC_wt,	DocCreateTime,	TRealSum,
+    TLevySum)*/
 
 
+module.exports.addToT_Sale= function(data, callback){                           //  console.log("data 116=",data);
 
-module.exports.addToT_Sale= function(data, callback){
+    var dch= data.checkDate.split("");
+    var date = dch[0]+ dch[1]+dch[2]+dch[3]+"-"+dch[4]+dch[5]+"-"+dch[6]+dch[7]+" "+dch[8]+dch[9]+":"+dch[10]+dch[11]+":"+dch[12]+dch[13];
+                                                                                                                        //console.log("date=",date);
     var reqSql = new sql.Request(conn);
-    var queryString =  fs.readFileSync('./scripts/create_t_sale.sql', 'utf8');
+    var queryString =  fs.readFileSync('./scripts/create_t_sale2.sql', 'utf8');
+    reqSql.input('DocID',sql.NVarChar,"1111"+ data.checkNumber);
+    reqSql.input('DocDate',sql.NVarChar, date);
+    reqSql.input('OperID',sql.NVarChar, data.operatorID);
+    reqSql.input('DocTime',sql.NVarChar, date);
+    reqSql.input('CashSumCC',sql.NVarChar, data.buyerPaymentSum);
+    reqSql.input('DocCreateTime',sql.NVarChar, date);
+    if(data.change) reqSql.input('ChangeSumCC',sql.NVarChar, data.change);
+    else reqSql.input('ChangeSumCC',sql.NVarChar, 0);
+    reqSql.input('TTaxSum',sql.NVarChar, data.AddTaxSum + data.taxSum);
+    reqSql.input('TSumCC_wt',sql.NVarChar, data.totalCheckSum);
+
     reqSql.query(queryString,
         function (err,result) {
             if (err) {
@@ -117,4 +140,18 @@ module.exports.addToT_Sale= function(data, callback){
                 callback(null, "ok");
         });
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

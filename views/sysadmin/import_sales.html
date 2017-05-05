@@ -100,7 +100,7 @@
                 });
                 socket.on('json_ready', function(data){             console.log(data);
                     document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Касса "+data.checkCashBox+" Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
+                            document.getElementById("sql_display_content").innerText+ "* Касса "+data.cashBoxFabricNum+" Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
                     for(var i in data.productsInCheck ){
                         var product = data.productsInCheck[i];
                         var text = product.posNumber+". "+product.name+" "+product.qty+" "+product.price+'\n';
