@@ -98,7 +98,7 @@
                     document.getElementById("sql_display_content").innerText=
                             document.getElementById("sql_display_content").innerText+ "* Касcовый аппарат №"+data+"\n";
                 });
-                socket.on('json_ready', function(data){             console.log(data);
+                socket.on('json_ready', function(data){                              //  console.log(data);
                     document.getElementById("sql_display_content").innerText=
                             document.getElementById("sql_display_content").innerText+ "* Касса "+data.cashBoxFabricNum+" Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
                     for(var i in data.productsInCheck ){

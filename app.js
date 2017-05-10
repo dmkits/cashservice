@@ -145,7 +145,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                     xmlText=xmlText+xmlLine;
                 }
 
-                var textLengthStr=xmlText.length+"";             console.log("xmlText=",xmlText);
+                var textLengthStr=xmlText.length+"";            // console.log("xmlText=",xmlText);
                 var request = require('request');
                 io.emit('ask_for_data');
                 var cashserver_url=database.getDBConfig()['cashserver.url'];
@@ -156,7 +156,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                     uri:'http://'+cashserver_url+':'+cashserver_port+'/lsoft',
                     body: xmlText,
                     encoding: 'binary'
-                }, function(error, response, body){         console.log("body=", body);
+                }, function(error, response, body){         //console.log("body=", body);
                     io.emit('xml_received');
 
                     var buf = new Buffer(body, 'binary');
@@ -197,63 +197,72 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                     else if(check.C[0].$.T=='2')check.isInner=true;
 
                                     if(check.isSale) {
-                                        var goodsList=check.C[0].P;
-                                        outData.productsInCheck=[];
+                                        var goodsList = check.C[0].P;
+                                        outData.productsInCheck = [];
 
-                                        outData.checkNumber = check.C[0].E[0].$.NO;
-                                        outData.totalCheckSum= check.C[0].E[0].$.SM;
+                                        outData.checkNumber = "1111" + check.C[0].E[0].$.NO;
+                                        outData.totalCheckSum = check.C[0].E[0].$.SM;
                                         outData.operatorID = check.C[0].E[0].$.CS;
 
                                         outData.fixalNumPPO = check.C[0].E[0].$.FN;
                                         outData.checkDate = check.C[0].E[0].$.TS;
 
-                                        if(check.C[0].E[0].TX){                                       //если налогов несколько может не использоваться
-                                            var taxInfo=check.C[0].E[0].TX[0].$;
-                                            if(taxInfo.DTNM) outData.AddTaxName=taxInfo.DTNM;
-                                            if(taxInfo.DTPR) outData.AddTaxRate=taxInfo.DTPR;
-                                            if(taxInfo.DTSM) outData.AddTaxSum=taxInfo.DTSM;
-                                            if(taxInfo.TX) outData.taxMark=taxInfo.TX;
-                                            if(taxInfo.TXPR) outData.taxRate=taxInfo.TXPR;
-                                            if(taxInfo.TXSM) outData.taxSum=taxInfo.TXSM;
-                                            if(taxInfo.TXTY) outData.isTaxIncluded=taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
+                                        if (check.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
+                                            var taxInfo = check.C[0].E[0].TX[0].$;
+                                            if (taxInfo.DTNM) outData.AddTaxName = taxInfo.DTNM;
+                                            if (taxInfo.DTPR) outData.AddTaxRate = taxInfo.DTPR;
+                                            if (taxInfo.DTSM) outData.AddTaxSum = taxInfo.DTSM;
+                                            if (taxInfo.TX) outData.taxMark = taxInfo.TX;
+                                            if (taxInfo.TXPR) outData.taxRate = taxInfo.TXPR;
+                                            if (taxInfo.TXSM) outData.taxSum = taxInfo.TXSM;
+                                            if (taxInfo.TXTY) outData.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
                                         }
 
                                         var payment = check.C[0].M[0].$;
-                                        outData.buyerPaymentSum=payment.SM;
-                                        outData.paymentName=payment.NM;
-                                        outData.paymentType=payment.T;                               //"0" - нал. не "0" - безнал
-                                        if(payment.RM) outData.change= payment.RM;
+                                        outData.buyerPaymentSum = payment.SM;
+                                        outData.paymentName = payment.NM;
+                                        outData.paymentType = payment.T;                               //"0" - нал. не "0" - безнал
+                                        if (payment.RM) outData.change = payment.RM;
 
-                                        for(var pos in goodsList){
-                                            var product={};
-                                            product.posNumber=goodsList[pos].$.N;
-                                            product.name=goodsList[pos].$.NM;
-                                            product.qty=goodsList[pos].$.Q;
-                                            product.price=goodsList[pos].$.PRC;
-                                            product.code=goodsList[pos].$.C;
-                                            product.taxMark=goodsList[pos].$.TX;
+                                        for (var pos in goodsList) {
+                                            var product = {};
+                                            product.posNumber = goodsList[pos].$.N;
+                                            product.name = goodsList[pos].$.NM;
+                                            product.qty = goodsList[pos].$.Q;
+                                            product.price = goodsList[pos].$.PRC;
+                                            product.code = goodsList[pos].$.C;
+                                            product.taxMark = goodsList[pos].$.TX;
                                             outData.productsInCheck.push(product);
-                                            sheet.addRow({product: product.name}).commit();
+                                            //sheet.addRow({product: product.name}).commit();
                                         }                                                                    //   console.log("outData=",outData);
-                                        io.emit('json_ready', outData);                                         console.log("json_ready outData.checkNumber=",outData.checkNumber);
-                                        database.isSaleExists(outData, function(err,res){                    //  console.log("database.isSaleExists res=", res);
-                                            var dataToInsert = outData;
-                                            if(err)                                           console.log("APP database.isSaleExists ERROR=",err);
-                                            if(!res.empty)     console.log("Чек существует в базе "+ outData.checkNumber);
-                                            if(res.empty){
-                                                database.addToT_Sale(dataToInsert, function(err,result){
-                                                    if(err)                                  console.log("APP database.addToT_Sale ERROR=",err);
+                                        io.emit('json_ready', outData);
+                                     //   console.log("json_ready outData.checkNumber=", outData.checkNumber);
 
-                                                });
-                                            }
-                                        });
+                                        var f = function (outData) {                                  console.log("outData.checkNumber 241", outData.checkNumber);
+                                            database.isSaleExists(outData, function (err, res) {      console.log("outData.checkNumber 242", outData.checkNumber);
+                                                                                                        console.log("res.data.checkNumber 243=" + res.data.checkNumber);
+
+                                                if (err)                                           console.log("APP database.isSaleExists ERROR=", err);
+                                                if (!res.empty)                      console.log("Чек существует в базе " + res.data.checkNumber);
+                                                if (res.empty) {
+                                                                                    console.log("Номер чека до database.addToT_Sale=" + res.data.checkNumber);
+                                                    database.addToT_Sale(res.data, function (err, result) {
+                                                        if (err)                                  console.log("APP database.addToT_Sale ERROR=", err);
+
+                                                    });
+                                                }
+                                            });
+                                        };
+                                        f(outData);
+                                    };
                                     }
                                 }
-                            }
-                            sheet.commit();
-                            workbook.commit();
-                            io.emit('data_processed_suc');
-                            res.send(outData);
+                         //   }
+                         //sheet.commit();
+                         //workbook.commit();
+                               io.emit('data_processed_suc');
+                           //  res.send(outData);
+                        res.end();
                     });
                 });
 
