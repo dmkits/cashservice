@@ -1,4 +1,12 @@
-function startupMode(){
+//var startTime=new Date().prototype.getMilliseconds();           console.log('startTime...'+startTime);//test
+//var t=0;
+//var time=timer();
+//function timer(){
+//    setTimeout(function(){t=t+1},500);
+//    return t;
+//};
+
+function startupMode(){                                          console.log('startupMode()...');//test
     var app_params = process.argv.slice(2);
     if(app_params.length===0) return 'production';
     return app_params[0];
@@ -6,49 +14,49 @@ function startupMode(){
 
 module.exports.startupMode = startupMode;
 
-var fs = require('fs');
-var express = require('express');
+var fs = require('fs');                                                console.log('fs...');//test
+var express = require('express');                                      console.log('express...');//test
 
 //var app = require('express').createServer();
 var port=8080;
-var path=require ('path');
-var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
-const uuidV1 = require('uuid/v1');
-var request = require('request');
-var Buffer = require('buffer').Buffer;
-var iconv_lite = require('iconv-lite');
-var parseString = require('xml2js').parseString;
-var parser = require('xml2json');
+var path=require ('path');                                              console.log('path...');//test
+var bodyParser = require('body-parser');                                console.log('body-parser...');//test
+var cookieParser = require('cookie-parser');                            console.log('cookie-parser...');//test
+//const uuidV1 = require('uuid/v1');                                      console.log('uuid/v1...');//test
+var request = require('request');                                       console.log('request...');//test
+var Buffer = require('buffer').Buffer;                                  console.log('buffer...');//test
+var iconv_lite = require('iconv-lite');                                 console.log('iconv-lite...');//test
+var parseString = require('xml2js').parseString;                        console.log('xml2js...');//test
+//var parser = require('xml2json');                                       console.log('xml2json...');//test
 
 var app = express();
-var server = require('http').Server(app);
-var io = require('socket.io')(server);
+var server = require('http').Server(app);                               console.log('http...');//test
+var io = require('socket.io')(server);                                  console.log('socket.io...');//test
 
-var Excel = require('exceljs');
-var options = {
-    filename: './products_name.xlsx',
-    useStyles: true,
-    useSharedStrings: true
-};
-var workbook = new Excel.stream.xlsx.WorkbookWriter(options);
-var sheet = workbook.addWorksheet('My Sheet', {properties:{tabColor:{argb:'FFC0000'}}});
+//var Excel = require('exceljs');
+//var options = {
+//    filename: './products_name.xlsx',
+//    useStyles: true,
+//    useSharedStrings: true
+//};
+//var workbook = new Excel.stream.xlsx.WorkbookWriter(options);
+//var sheet = workbook.addWorksheet('My Sheet', {properties:{tabColor:{argb:'FFC0000'}}});
 
-sheet.columns = [
-    { header: 'product', key: 'product', width: 150 },
-];
+//sheet.columns = [
+//    { header: 'product', key: 'product', width: 150 },
+//];
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.text());
 app.use('/',express.static('public'));
-var database = require('./dataBase');
+var database = require('./dataBase');                                                console.log('./dataBase...');//test
 var ConfigurationError, DBConnectError;
 
 
 tryLoadConfiguration();
-function tryLoadConfiguration(){
+function tryLoadConfiguration(){                                                    console.log('tryLoadConfiguration...');//test
     try {
         database.loadConfig();
         ConfigurationError=null;
@@ -57,13 +65,13 @@ function tryLoadConfiguration(){
     }
 }
  if (!ConfigurationError) tryDBConnect();
-function tryDBConnect(postaction) {
+function tryDBConnect(postaction) {                                                   console.log('tryDBConnect...');//test
     database.databaseConnection(function (err) {
         DBConnectError = null;
         if (err) {
             DBConnectError = "Failed to connect to database! Reason:" + err;
         }
-        if (postaction)postaction(err);
+        if (postaction)postaction(err);                                                console.log('tryDBConnect DBConnectError=',DBConnectError);//test
     });
 }
 
@@ -238,6 +246,9 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                         io.emit('json_ready', outData);
                                      //   console.log("json_ready outData.checkNumber=", outData.checkNumber);
 
+                                        var saleData={};
+                                        saleData.checkNumber= outData.checkNumber;
+
                                         var f = function (outData) {                                  console.log("outData.checkNumber 241", outData.checkNumber);
                                             database.isSaleExists(outData, function (err, res) {      console.log("outData.checkNumber 242", outData.checkNumber);
                                                                                                         console.log("res.data.checkNumber 243=" + res.data.checkNumber);
@@ -291,6 +302,6 @@ server.listen(port, function (err) {
     console.log("server runs on port "+ port);
 });
 
-
+console.log("end app");
 
 

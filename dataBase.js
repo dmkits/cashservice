@@ -83,28 +83,28 @@ module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errA
 };
 
 module.exports.isSaleExists = function (data, callback) {
-    (function(data) {
+    (function(data, data_checkNumber) {
     var reqSql = new sql.Request(conn);
-    reqSql.input('DocID', sql.Int, data.checkNumber);                                              console.log("data.checkNumber 88=", data.checkNumber);
+    reqSql.input('DocID', sql.Int, data.checkNumber);                                              console.log("data.checkNumber 88=", data.checkNumber, data_checkNumber);
     // reqSql.input('FacID',sql.NVarChar, data.cashBoxFabricNum);
 
     var queryString = fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
 
    // var fun = function (data) {                                                                           console.log("data.checkNumber 92=", data.checkNumber);
         reqSql.query(queryString,
-            function (err, recordset) {                                                           console.log("data.checkNumber 95=", data.checkNumber);
+            function (err, recordset) {                                                            console.log("data.checkNumber 95=", data.checkNumber, data_checkNumber);
                     if (err) {
                         callback(err, null);
                         return;
                     }
                 var outData = {};
-                outData.data = data;                                                        console.log("outData.checkNumber 101=", outData.data.checkNumber);
+                outData.data = data;                                                        console.log("outData.checkNumber 101=", outData.data.checkNumber, data_checkNumber);
                 if (recordset.length == 0) {
                     outData.empty = true;
                 } else outData.recordset = recordset;
                 callback(null, outData);
             });
-    })(data);
+    })(data, data.checkNumber);
   //  fun(data);
 };
 /*(ChID,  DocID, DocDate, KursMC,  OurID,
