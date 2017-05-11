@@ -83,28 +83,24 @@ module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errA
 };
 
 module.exports.isSaleExists = function (data, callback) {
-    (function(data, data_checkNumber) {
     var reqSql = new sql.Request(conn);
-    reqSql.input('DocID', sql.Int, data.checkNumber);                                             // console.log("data.checkNumber 88=", data.checkNumber, data_checkNumber);
+    reqSql.input('DocID', sql.Int, data.checkNumber);
     // reqSql.input('FacID',sql.NVarChar, data.cashBoxFabricNum);
-
     var queryString = fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
 
         reqSql.query(queryString,
-            function (err, recordset) {                                                           // console.log("data.checkNumber 95=", data.checkNumber, data_checkNumber);
+            function (err, recordset) {
                     if (err) {
                         callback(err, null);
                         return;
                     }
                 var outData = {};
-                outData.data = data;                                                       // console.log("outData.checkNumber 101=", outData.data.checkNumber, data_checkNumber);
+                outData.data = data;
                 if (recordset.length == 0) {
                     outData.empty = true;
                 } else outData.recordset = recordset;
                 callback(null, outData);
             });
-    })(data, data.checkNumber);
-  //  fun(data);
 };
 /*(ChID,  DocID, DocDate, KursMC,  OurID,
     StockID,    CompID,	CodeID1,	CodeID2,	CodeID3,
@@ -135,9 +131,8 @@ module.exports.addToT_Sale = function (data, callback) {
     reqSql.input('TTaxSum', sql.NVarChar, data.AddTaxSum + data.taxSum);
     reqSql.input('TSumCC_wt', sql.NVarChar, data.totalCheckSum);
 
-    reqSql.batch(queryString,
-        function (err, result) {
-            console.log("addToT_Sale query result ", result);
+    reqSql.query(queryString,
+        function (err) {
             if (err) {
                 callback(err, null);
             }

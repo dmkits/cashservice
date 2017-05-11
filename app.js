@@ -177,26 +177,37 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                             res.send(outData);
                             return;
                         }
-                            var cashBoxList = result.gw_srv_rsp.select[0].FISC[0].EJ;
-                            for (var fn in cashBoxList) {
+                        var cashBoxList = result.gw_srv_rsp.select[0].FISC[0].EJ;
+                        for (var fn in cashBoxList) {
+
                                 var cashBox=cashBoxList[fn];
                                 var cashBoxID=cashBox.$.ID;
                                 io.emit('cash_box_id', cashBoxID);
+                                var docList = cashBoxList[fn].DAT;                  //list of DAT
 
-                                var docList = cashBoxList[fn].DAT;                  //list of
-
-                                for (var i in docList) {
+                            var fillDB = function(docList, i){                                        console.log("fillDB ",i);
+                                   if(!docList || i>= docList.length) return;
+                              //  for (var i in docList) {
                                     var listItem = docList[i];
-                                    if(listItem.Z)listItem.isZReport=true;                //check.Z - Z-отчет
+                                    if(listItem.Z){
+                                        listItem.isZReport=true;
+                                        fillDB(docList, i+1);
+                                    } //check.Z - Z-отчет
                                     else if(listItem.C[0].$.T=='0')listItem.isSale=true;
-                                    else if(listItem.C[0].$.T=='1')listItem.isReturn=true;
-                                    else if(listItem.C[0].$.T=='2')listItem.isInner=true;
+                                    else if(listItem.C[0].$.T=='1'){
+                                        listItem.isReturn=true;
+                                        fillDB(docList, i+1);
+                                    }
+                                    else if(listItem.C[0].$.T=='2'){
+                                        listItem.isInner=true;
+                                        fillDB(docList, i+1);
+                                    }
 
-                                    if(listItem.isSale) {
+                                    if(listItem.isSale) {                                  console.log("listItem.isSale");
                                         var check={};
                                         check.checkDataID = listItem.$.DI;                   //DAT ID
-                                        check.ITN= listItem.$.TN;                   //ИНН
-                                        check.dataVersion= listItem.$.V;           // Версия формата пакета данных
+                                        check.ITN= listItem.$.TN;                            //ИНН
+                                        check.dataVersion= listItem.$.V;                     // Версия формата пакета данных
                                         check.cashBoxFabricNum = listItem.$.ZN;
                                         check.dataFormDate = listItem.TS[0];
 
@@ -224,7 +235,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                         var payment = listItem.C[0].M[0].$;
                                         check.buyerPaymentSum = payment.SM;
                                         check.paymentName = payment.NM;
-                                        check.paymentType = payment.T;                               //"0" - нал. не "0" - безнал
+                                        check.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
                                         if (payment.RM) check.change = payment.RM;
 
                                         for (var pos in goodsList) {
@@ -236,28 +247,36 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                             product.code = goodsList[pos].$.C;
                                             product.taxMark = goodsList[pos].$.TX;
                                             check.productsInCheck.push(product);
-                                            //sheet.addRow({product: product.name}).commit();
                                         }
                                         io.emit('json_ready', check);
 
-                                        var f = function (check) {                                  //console.log("check.checkNumber 241", check.checkNumber);
-                                            database.isSaleExists(check, function (err, res) {      //console.log("check.checkNumber 242", check.checkNumber);
-                                                                                                   // console.log("res.data.checkNumber 243=" + res.data.checkNumber);
-                                                if (err)                                           console.log("APP database.isSaleExists ERROR=", err);
-                                                if (!res.empty)                      console.log("Чек существует в базе " + res.data.checkNumber);
-                                                if (res.empty) {
-                                                                                    console.log("Номер чека до database.addToT_Sale=" + res.data.checkNumber);
-                                                    database.addToT_Sale(res.data, function (err, result) {
-                                                        if (err)                                  console.log("APP database.addToT_Sale ERROR=", err);
+                                            database.isSaleExists(check, function (err, res) {
 
+                                                if (err)    {
+                                                    io.emit('add_to_db_err', check.checkNumber);
+                                                    console.log("APP database.isSaleExists ERROR=", err);
+                                                    return;
+                                                }
+                                                if (!res.empty) {
+                                                    console.log("Чек существует в базе " + res.data.checkNumber);
+                                                    fillDB(docList, i+1);
+                                                }
+                                                if (res.empty) {
+                                                    console.log("Номер чека до database.addToT_Sale=" + res.data.checkNumber);
+                                                    database.addToT_Sale(res.data, function (err, result) {
+                                                        if (err)  {
+                                                            io.emit('add_to_db_err', check.checkNumber);
+                                                            console.log("APP database.addToT_Sale ERROR=", err);
+                                                            return;
+                                                        }
+                                                        fillDB(docList, i+1);
                                                     });
                                                 }
                                             });
-                                        };
-                                        f(check);
                                     };
-                                }
-                                }
+                                };
+                            fillDB(docList,0);
+                         }
                         //   }
                         //sheet.commit();
                         //workbook.commit();

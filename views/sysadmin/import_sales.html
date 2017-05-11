@@ -116,6 +116,10 @@
                     document.getElementById("sql_display_content").innerText=
                             document.getElementById("sql_display_content").innerText+ "* Шлюз вернул ошибку: "+data.error+"\n";
                 });
+                socket.on('add_to_db_err', function(data){
+                    document.getElementById("sql_display_content").innerText=
+                            document.getElementById("sql_display_content").innerText+ "* Возникла ошибка при записи чека №"+data+" в базу данных\n";
+                });
 
                 var borderContainer = APP.initElem("sql_queries_PageContent", BorderContainer, {});
                 var topContentSQL = APP.initElem("sql_queries_TopContent", ContentPane, {region: "top"});
