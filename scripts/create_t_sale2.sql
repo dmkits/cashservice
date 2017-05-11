@@ -1,7 +1,7 @@
-declare @NewChID INT
-select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale
+/*declare @NewChID INT
+select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale*/
 
-        INSERT into t_sale
+INSERT into t_sale
         (CHID,  DocID, DocDate, KursMC,  OurID,
         StockID,    CompID,    CodeID1,    CodeID2,    CodeID3,
         CodeID4, CodeID5,    Discount,    Notes,    CRID,
@@ -10,8 +10,8 @@ select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale
         TTaxSum,    TSumCC_wt,    StateCode,    DeskCode,    Visitors,
         TPurSumCC_nt, TPurTaxSum,    TPurSumCC_wt,    DocCreateTime,    TRealSum,
         TLevySum)
-        VALUES
-        (@NewChID,  @DocID, @DocDate, 1.0,  1,
+VALUES
+        (/*@NewChID*/ (SELECT MAX(ChID) FROM t_sale) + 1,  @DocID, @DocDate, 1.0,  1,
         1,    1,    0,    0,    0,
         0, 0,    1.0,    null,    1,
         @OperID ,null,    @DocTime, '<Нет дисконтной карты>',    1,

@@ -42,3 +42,12 @@ for (var i=0; i<count; i++){                   console.log("for ",i);
 
     })(i);
 }console.log("for finished");
+
+function test1(){
+    var t1 = 1;                  console.log("t2 47=",t2,"j=",j);
+    for(var j =0; j<5; j++) {
+        var t2 = j;             console.log("t2 49=",t2);
+    }
+       console.log("t2 52=",t2,"j=",j);
+}
+test1();

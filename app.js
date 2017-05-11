@@ -1,12 +1,7 @@
-//var startTime=new Date().prototype.getMilliseconds();           console.log('startTime...'+startTime);//test
-//var t=0;
-//var time=timer();
-//function timer(){
-//    setTimeout(function(){t=t+1},500);
-//    return t;
-//};
+console.log('Starting ...');
+var startTime=new Date().getTime();
 
-function startupMode(){                                          console.log('startupMode()...');//test
+function startupMode(){                                                   console.log('startupMode()...',new Date().getTime()-startTime);//test
     var app_params = process.argv.slice(2);
     if(app_params.length===0) return 'production';
     return app_params[0];
@@ -14,24 +9,24 @@ function startupMode(){                                          console.log('st
 
 module.exports.startupMode = startupMode;
 
-var fs = require('fs');                                                console.log('fs...');//test
-var express = require('express');                                      console.log('express...');//test
+var fs = require('fs');                                                console.log('fs...',new Date().getTime()-startTime);//test
+var express = require('express');                                      console.log('express...',new Date().getTime()-startTime);//test
 
 //var app = require('express').createServer();
 var port=8080;
-var path=require ('path');                                              console.log('path...');//test
-var bodyParser = require('body-parser');                                console.log('body-parser...');//test
-var cookieParser = require('cookie-parser');                            console.log('cookie-parser...');//test
+var path=require ('path');                                              console.log('path...',new Date().getTime()-startTime);//test
+var bodyParser = require('body-parser');                                console.log('body-parser...',new Date().getTime()-startTime);//test
+var cookieParser = require('cookie-parser');                            console.log('cookie-parser...',new Date().getTime()-startTime);//test
 //const uuidV1 = require('uuid/v1');                                      console.log('uuid/v1...');//test
-var request = require('request');                                       console.log('request...');//test
-var Buffer = require('buffer').Buffer;                                  console.log('buffer...');//test
-var iconv_lite = require('iconv-lite');                                 console.log('iconv-lite...');//test
-var parseString = require('xml2js').parseString;                        console.log('xml2js...');//test
+var request = require('request');                                       console.log('request...',new Date().getTime()-startTime);//test
+var Buffer = require('buffer').Buffer;                                  console.log('buffer...',new Date().getTime()-startTime);//test
+var iconv_lite = require('iconv-lite');                                 console.log('iconv-lite...',new Date().getTime()-startTime);//test
+var parseString = require('xml2js').parseString;                        console.log('xml2js...',new Date().getTime()-startTime);//test
 //var parser = require('xml2json');                                       console.log('xml2json...');//test
 
 var app = express();
-var server = require('http').Server(app);                               console.log('http...');//test
-var io = require('socket.io')(server);                                  console.log('socket.io...');//test
+var server = require('http').Server(app);                               console.log('http...',new Date().getTime()-startTime);//test
+var io = require('socket.io')(server);                                  console.log('socket.io...',new Date().getTime()-startTime);//test
 
 //var Excel = require('exceljs');
 //var options = {
@@ -41,7 +36,6 @@ var io = require('socket.io')(server);                                  console.
 //};
 //var workbook = new Excel.stream.xlsx.WorkbookWriter(options);
 //var sheet = workbook.addWorksheet('My Sheet', {properties:{tabColor:{argb:'FFC0000'}}});
-
 //sheet.columns = [
 //    { header: 'product', key: 'product', width: 150 },
 //];
@@ -51,12 +45,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.text());
 app.use('/',express.static('public'));
-var database = require('./dataBase');                                                console.log('./dataBase...');//test
+var database = require('./dataBase');                                                console.log('./dataBase...',new Date().getTime()-startTime);//test
 var ConfigurationError, DBConnectError;
 
 
 tryLoadConfiguration();
-function tryLoadConfiguration(){                                                    console.log('tryLoadConfiguration...');//test
+function tryLoadConfiguration(){                                                    console.log('tryLoadConfiguration...',new Date().getTime()-startTime);//test
     try {
         database.loadConfig();
         ConfigurationError=null;
@@ -65,7 +59,7 @@ function tryLoadConfiguration(){                                                
     }
 }
  if (!ConfigurationError) tryDBConnect();
-function tryDBConnect(postaction) {                                                   console.log('tryDBConnect...');//test
+function tryDBConnect(postaction) {                                                   console.log('tryDBConnect...',new Date().getTime()-startTime);//test
     database.databaseConnection(function (err) {
         DBConnectError = null;
         if (err) {
@@ -153,8 +147,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                     xmlText=xmlText+xmlLine;
                 }
 
-                var textLengthStr=xmlText.length+"";            // console.log("xmlText=",xmlText);
-                var request = require('request');
+                var textLengthStr=xmlText.length+"";
                 io.emit('ask_for_data');
                 var cashserver_url=database.getDBConfig()['cashserver.url'];
                 var cashserver_port=database.getDBConfig()['cashserver.port'];
@@ -175,8 +168,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
 
                     parseString(body, function (err, result) {
                         var outData = {};
-                        if(err) {
-                            console.log(err);
+                        if(err) {       console.log(err);
                             return;
                         }
                         if(!result.gw_srv_rsp.select){
@@ -190,47 +182,50 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                 var cashBox=cashBoxList[fn];
                                 var cashBoxID=cashBox.$.ID;
                                 io.emit('cash_box_id', cashBoxID);
-                                var checkList = cashBoxList[fn].DAT;
-                                for (var i in checkList) {
-                                    var check = checkList[i];
-                                    outData.checkDataID = check.$.DI;                   //DAT ID
-                                    outData.ITN= check.$.TN;                   //ИНН
-                                    outData.dataVersion= check.$.V;           // Версия формата пакета данных
-                                    outData.cashBoxFabricNum = check.$.ZN;
-                                    outData.dataFormDate = check.TS[0];
 
-                                    if(check.Z)check.isZReport=true;                //check.Z - Z-отчет
-                                    else if(check.C[0].$.T=='0')check.isSale=true;
-                                    else if(check.C[0].$.T=='1')check.isReturn=true;
-                                    else if(check.C[0].$.T=='2')check.isInner=true;
+                                var docList = cashBoxList[fn].DAT;                  //list of
 
-                                    if(check.isSale) {
-                                        var goodsList = check.C[0].P;
-                                        outData.productsInCheck = [];
+                                for (var i in docList) {
+                                    var listItem = docList[i];
+                                    if(listItem.Z)listItem.isZReport=true;                //check.Z - Z-отчет
+                                    else if(listItem.C[0].$.T=='0')listItem.isSale=true;
+                                    else if(listItem.C[0].$.T=='1')listItem.isReturn=true;
+                                    else if(listItem.C[0].$.T=='2')listItem.isInner=true;
 
-                                        outData.checkNumber = "1111" + check.C[0].E[0].$.NO;
-                                        outData.totalCheckSum = check.C[0].E[0].$.SM;
-                                        outData.operatorID = check.C[0].E[0].$.CS;
+                                    if(listItem.isSale) {
+                                        var check={};
+                                        check.checkDataID = listItem.$.DI;                   //DAT ID
+                                        check.ITN= listItem.$.TN;                   //ИНН
+                                        check.dataVersion= listItem.$.V;           // Версия формата пакета данных
+                                        check.cashBoxFabricNum = listItem.$.ZN;
+                                        check.dataFormDate = listItem.TS[0];
 
-                                        outData.fixalNumPPO = check.C[0].E[0].$.FN;
-                                        outData.checkDate = check.C[0].E[0].$.TS;
+                                        var goodsList = listItem.C[0].P;
+                                        check.productsInCheck = [];
 
-                                        if (check.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
-                                            var taxInfo = check.C[0].E[0].TX[0].$;
-                                            if (taxInfo.DTNM) outData.AddTaxName = taxInfo.DTNM;
-                                            if (taxInfo.DTPR) outData.AddTaxRate = taxInfo.DTPR;
-                                            if (taxInfo.DTSM) outData.AddTaxSum = taxInfo.DTSM;
-                                            if (taxInfo.TX) outData.taxMark = taxInfo.TX;
-                                            if (taxInfo.TXPR) outData.taxRate = taxInfo.TXPR;
-                                            if (taxInfo.TXSM) outData.taxSum = taxInfo.TXSM;
-                                            if (taxInfo.TXTY) outData.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
+                                        check.checkNumber = "1111" + listItem.C[0].E[0].$.NO;
+                                        check.totalCheckSum = listItem.C[0].E[0].$.SM;
+                                        check.operatorID = listItem.C[0].E[0].$.CS;
+
+                                        check.fixalNumPPO = listItem.C[0].E[0].$.FN;
+                                        check.checkDate = listItem.C[0].E[0].$.TS;
+
+                                        if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
+                                            var taxInfo = listItem.C[0].E[0].TX[0].$;
+                                            if (taxInfo.DTNM) check.AddTaxName = taxInfo.DTNM;
+                                            if (taxInfo.DTPR) check.AddTaxRate = taxInfo.DTPR;
+                                            if (taxInfo.DTSM) check.AddTaxSum = taxInfo.DTSM;
+                                            if (taxInfo.TX) check.taxMark = taxInfo.TX;
+                                            if (taxInfo.TXPR) check.taxRate = taxInfo.TXPR;
+                                            if (taxInfo.TXSM) check.taxSum = taxInfo.TXSM;
+                                            if (taxInfo.TXTY) check.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
                                         }
 
-                                        var payment = check.C[0].M[0].$;
-                                        outData.buyerPaymentSum = payment.SM;
-                                        outData.paymentName = payment.NM;
-                                        outData.paymentType = payment.T;                               //"0" - нал. не "0" - безнал
-                                        if (payment.RM) outData.change = payment.RM;
+                                        var payment = listItem.C[0].M[0].$;
+                                        check.buyerPaymentSum = payment.SM;
+                                        check.paymentName = payment.NM;
+                                        check.paymentType = payment.T;                               //"0" - нал. не "0" - безнал
+                                        if (payment.RM) check.change = payment.RM;
 
                                         for (var pos in goodsList) {
                                             var product = {};
@@ -240,19 +235,14 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                             product.price = goodsList[pos].$.PRC;
                                             product.code = goodsList[pos].$.C;
                                             product.taxMark = goodsList[pos].$.TX;
-                                            outData.productsInCheck.push(product);
+                                            check.productsInCheck.push(product);
                                             //sheet.addRow({product: product.name}).commit();
-                                        }                                                                    //   console.log("outData=",outData);
-                                        io.emit('json_ready', outData);
-                                     //   console.log("json_ready outData.checkNumber=", outData.checkNumber);
+                                        }
+                                        io.emit('json_ready', check);
 
-                                        var saleData={};
-                                        saleData.checkNumber= outData.checkNumber;
-
-                                        var f = function (outData) {                                  console.log("outData.checkNumber 241", outData.checkNumber);
-                                            database.isSaleExists(outData, function (err, res) {      console.log("outData.checkNumber 242", outData.checkNumber);
-                                                                                                        console.log("res.data.checkNumber 243=" + res.data.checkNumber);
-
+                                        var f = function (check) {                                  //console.log("check.checkNumber 241", check.checkNumber);
+                                            database.isSaleExists(check, function (err, res) {      //console.log("check.checkNumber 242", check.checkNumber);
+                                                                                                   // console.log("res.data.checkNumber 243=" + res.data.checkNumber);
                                                 if (err)                                           console.log("APP database.isSaleExists ERROR=", err);
                                                 if (!res.empty)                      console.log("Чек существует в базе " + res.data.checkNumber);
                                                 if (res.empty) {
@@ -264,15 +254,15 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                                 }
                                             });
                                         };
-                                        f(outData);
+                                        f(check);
                                     };
-                                    }
                                 }
-                         //   }
-                         //sheet.commit();
-                         //workbook.commit();
-                               io.emit('data_processed_suc');
-                           //  res.send(outData);
+                                }
+                        //   }
+                        //sheet.commit();
+                        //workbook.commit();
+                        io.emit('data_processed_suc');
+                        //  res.send(outData);
                         res.end();
                     });
                 });
@@ -299,9 +289,9 @@ function getCashBoxesList(req){
 //});
 
 server.listen(port, function (err) {
-    console.log("server runs on port "+ port);
+    console.log("server runs on port "+ port, "  ",new Date().getTime()-startTime);
 });
 
-console.log("end app");
+console.log("end app",new Date().getTime()-startTime);
 
 
