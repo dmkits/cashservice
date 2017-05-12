@@ -1,32 +1,71 @@
+
 console.log('Starting ...');
 var startTime=new Date().getTime();
 
-function startupMode(){                                                   console.log('startupMode()...',new Date().getTime()-startTime);//test
-    var app_params = process.argv.slice(2);
-    if(app_params.length===0) return 'production';
-    return app_params[0];
+//function startupMode(){                                                   log.info('startupMode()...',new Date().getTime()-startTime);//test
+//    var app_params = process.argv.slice(2);
+//    if(app_params.length===0) return 'production';
+//    return app_params[0];
+//}
+//
+//module.exports.startupMode = startupMode;
+function startupParams(){
+    var app_params = {};
+    if(process.argv.length==0) {
+        app_params.mode='production';
+        app_params.port=8080;
+        return app_params;
+    }
+    for(var i=2;i<process.argv.length;i++){
+        if(process.argv[i].indexOf('-p:')==0){
+            var port=process.argv[i].replace("-p:","");
+            if(port>0 && port<65536){
+                app_params.port=port;
+            }
+        }else if(process.argv[i].charAt(0).toUpperCase()>'A'&&process.argv[i].charAt(0).toUpperCase()<'Z'){
+            app_params.mode = process.argv[i];
+        }else if(process.argv[i].indexOf('-log:')==0) {
+            var logParam = process.argv[i].replace("-log:", "");
+            console.log("logParam", logParam);
+            if (logParam.toLowerCase() == "console") {
+                app_params.logToConsole = true;
+            }
+        }
+    }
+    if(!app_params.port)app_params.port=8080;
+    if(!app_params.mode)app_params.mode = 'production';
+    return app_params;
 }
 
-module.exports.startupMode = startupMode;
+var app_params=startupParams();
 
-var fs = require('fs');                                                console.log('fs...',new Date().getTime()-startTime);//test
-var express = require('express');                                      console.log('express...',new Date().getTime()-startTime);//test
+var log=require('winston');
+
+if(!app_params.logToConsole){
+    log.add(log.transports.File, { filename: 'somefile.log', level:'debug',timestamp:true });
+    log.remove(log.transports.Console);
+}
+
+
+module.exports.startupMode = app_params.mode;
+
+var fs = require('fs');                                                log.info('fs...',new Date().getTime()-startTime);//test
+var express = require('express');                                      log.info('express...',new Date().getTime()-startTime);//test
 
 //var app = require('express').createServer();
-var port=8080;
-var path=require ('path');                                              console.log('path...',new Date().getTime()-startTime);//test
-var bodyParser = require('body-parser');                                console.log('body-parser...',new Date().getTime()-startTime);//test
-var cookieParser = require('cookie-parser');                            console.log('cookie-parser...',new Date().getTime()-startTime);//test
-//const uuidV1 = require('uuid/v1');                                      console.log('uuid/v1...');//test
-var request = require('request');                                       console.log('request...',new Date().getTime()-startTime);//test
-var Buffer = require('buffer').Buffer;                                  console.log('buffer...',new Date().getTime()-startTime);//test
-var iconv_lite = require('iconv-lite');                                 console.log('iconv-lite...',new Date().getTime()-startTime);//test
-var parseString = require('xml2js').parseString;                        console.log('xml2js...',new Date().getTime()-startTime);//test
-//var parser = require('xml2json');                                       console.log('xml2json...');//test
+var port=app_params.port;
+var path=require ('path');                                              log.info('path...',new Date().getTime()-startTime);//test
+var bodyParser = require('body-parser');                                log.info('body-parser...',new Date().getTime()-startTime);//test
+var cookieParser = require('cookie-parser');                            log.info('cookie-parser...',new Date().getTime()-startTime);//test
+var request = require('request');                                       log.info('request...',new Date().getTime()-startTime);//test
+var Buffer = require('buffer').Buffer;                                  log.info('buffer...',new Date().getTime()-startTime);//test
+var iconv_lite = require('iconv-lite');                                 log.info('iconv-lite...',new Date().getTime()-startTime);//test
+var parseString = require('xml2js').parseString;                        log.info('xml2js...',new Date().getTime()-startTime);//test
+
 
 var app = express();
-var server = require('http').Server(app);                               console.log('http...',new Date().getTime()-startTime);//test
-var io = require('socket.io')(server);                                  console.log('socket.io...',new Date().getTime()-startTime);//test
+var server = require('http').Server(app);                               log.info('http...',new Date().getTime()-startTime);//test
+var io = require('socket.io')(server);                                  log.info('socket.io...',new Date().getTime()-startTime);//test
 
 //var Excel = require('exceljs');
 //var options = {
@@ -40,17 +79,18 @@ var io = require('socket.io')(server);                                  console.
 //    { header: 'product', key: 'product', width: 150 },
 //];
 
+
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.text());
 app.use('/',express.static('public'));
-var database = require('./dataBase');                                                console.log('./dataBase...',new Date().getTime()-startTime);//test
+var database = require('./dataBase');                                                log.info('./dataBase...',new Date().getTime()-startTime);//test
 var ConfigurationError, DBConnectError;
 
 
 tryLoadConfiguration();
-function tryLoadConfiguration(){                                                    console.log('tryLoadConfiguration...',new Date().getTime()-startTime);//test
+function tryLoadConfiguration(){                                                    log.info('tryLoadConfiguration...',new Date().getTime()-startTime);//test
     try {
         database.loadConfig();
         ConfigurationError=null;
@@ -59,13 +99,13 @@ function tryLoadConfiguration(){                                                
     }
 }
  if (!ConfigurationError) tryDBConnect();
-function tryDBConnect(postaction) {                                                   console.log('tryDBConnect...',new Date().getTime()-startTime);//test
+function tryDBConnect(postaction) {                                                   log.info('tryDBConnect...',new Date().getTime()-startTime);//test
     database.databaseConnection(function (err) {
         DBConnectError = null;
         if (err) {
             DBConnectError = "Failed to connect to database! Reason:" + err;
         }
-        if (postaction)postaction(err);                                                console.log('tryDBConnect DBConnectError=',DBConnectError);//test
+        if (postaction)postaction(err);                                                log.info('tryDBConnect DBConnectError=',DBConnectError);//test
     });
 }
 
@@ -75,7 +115,7 @@ app.get("/sysadmin", function(req, res){
 });
 app.get("/sysadmin/app_state", function(req, res){
     var outData= {};
-    outData.mode= startupMode();
+    outData.mode= app_params.mode;
     if (ConfigurationError) {
         outData.error= ConfigurationError;
         res.send(outData);
@@ -185,7 +225,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                 io.emit('cash_box_id', cashBoxID);
                                 var docList = cashBoxList[fn].DAT;                  //list of DAT
 
-                            var fillDB = function(docList, i){                                        console.log("fillDB ",i);
+                            var fillDB = function(docList, i){                                        log.debug("fillDB ",i);
                                    if(!docList || i>= docList.length) return;
                               //  for (var i in docList) {
                                     var listItem = docList[i];
@@ -203,7 +243,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                         fillDB(docList, i+1);
                                     }
 
-                                    if(listItem.isSale) {                                  console.log("listItem.isSale");
+                                    if(listItem.isSale) {                                  log.debug("listItem.isSale");
                                         var check={};
                                         check.checkDataID = listItem.$.DI;                   //DAT ID
                                         check.ITN= listItem.$.TN;                            //ИНН
@@ -245,7 +285,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                             product.qty = goodsList[pos].$.Q;
                                             product.price = goodsList[pos].$.PRC;
                                             product.code = goodsList[pos].$.C;
-                                            product.taxMark = goodsList[pos].$.TX;
+                                            product.taxMark = goodsList[pos].$.TX;      console.log(" product.taxMark=", product.taxMark);
                                             check.productsInCheck.push(product);
                                         }
                                         io.emit('json_ready', check);
@@ -254,21 +294,22 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
 
                                                 if (err)    {
                                                     io.emit('add_to_db_err', check.checkNumber);
-                                                    console.log("APP database.isSaleExists ERROR=", err);
+                                                    log.error("APP database.isSaleExists ERROR=", err);
                                                     return;
                                                 }
-                                                if (!res.empty) {
-                                                    console.log("Чек существует в базе " + res.data.checkNumber);
+                                                if (!res.empty) {         log.warn("Чек существует в базе " + res.data.checkNumber ,"ChID=",  res.ChID);
                                                     fillDB(docList, i+1);
                                                 }
                                                 if (res.empty) {
-                                                    console.log("Номер чека до database.addToT_Sale=" + res.data.checkNumber);
-                                                    database.addToT_Sale(res.data, function (err, result) {
+                                                    database.addToSale(res.data, function (err, ChID) { console.log('res.data=',res.data);
                                                         if (err)  {
                                                             io.emit('add_to_db_err', check.checkNumber);
-                                                            console.log("APP database.addToT_Sale ERROR=", err);
+                                                            log.error("APP database.addToSale ERROR=", err);
                                                             return;
                                                         }
+                                                        database.addToSaleD(ChID, res.data,function (err, res){
+                                                            if(err) log.error("APP database.addToSaleD ERROR=", err);
+                                                        });
                                                         fillDB(docList, i+1);
                                                     });
                                                 }
