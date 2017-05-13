@@ -26,7 +26,6 @@ function startupParams(){
             app_params.mode = process.argv[i];
         }else if(process.argv[i].indexOf('-log:')==0) {
             var logParam = process.argv[i].replace("-log:", "");
-            console.log("logParam", logParam);
             if (logParam.toLowerCase() == "console") {
                 app_params.logToConsole = true;
             }
@@ -110,10 +109,10 @@ function tryDBConnect(postaction) {                                             
 }
 
 
-app.get("/sysadmin", function(req, res){
+app.get("/sysadmin", function(req, res){                                               log.info('URL: /sysadmin');
     res.sendFile(path.join(__dirname, '/views', 'sysadmin.html'));
 });
-app.get("/sysadmin/app_state", function(req, res){
+app.get("/sysadmin/app_state", function(req, res){                                      log.info('URL: /sysadmin/app_state');
     var outData= {};
     outData.mode= app_params.mode;
     if (ConfigurationError) {
@@ -128,17 +127,17 @@ app.get("/sysadmin/app_state", function(req, res){
         outData.dbConnection='Connected';
     res.send(outData);
 });
-app.get("/sysadmin/startup_parameters", function (req, res) {
+app.get("/sysadmin/startup_parameters", function (req, res) {                         log.info('URL: /sysadmin/startup_parameters');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'startup_parameters.html'));
 });
-app.get("/sysadmin/startup_parameters/get_app_config", function (req, res) {
-    if (ConfigurationError) {
-        res.send({error:ConfigurationError});
-        return;
-    }
-    res.send(database.getDBConfig());
-});
-app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {
+//app.get("/sysadmin/startup_parameters/get_app_config", function (req, res) {          log.info('URL: /sysadmin/startup_parameters/get_app_config');
+//    if (ConfigurationError) {
+//        res.send({error:ConfigurationError});
+//        return;
+//    }
+//    res.send(database.getDBConfig());
+//});
+app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {         log.info('URL: /sysadmin/startup_parameters/get_app_config');
     tryLoadConfiguration();
     if (ConfigurationError) {
         res.send({error:ConfigurationError});
@@ -146,7 +145,7 @@ app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {
     }
     res.send(database.getDBConfig());
 });
-app.post("/sysadmin/startup_parameters/store_app_config_and_reconnect", function (req, res) {
+app.post("/sysadmin/startup_parameters/store_app_config_and_reconnect", function (req, res) {   log.info('URL: /sysadmin/startup_parameters/get_app_config', 'newDBConfigString =', req.body);
     var newDBConfigString = req.body;
     database.setDBConfig(newDBConfigString);
     database.saveConfig(
@@ -160,7 +159,7 @@ app.post("/sysadmin/startup_parameters/store_app_config_and_reconnect", function
         }
     );
 });
-app.get("/sysadmin/import_sales", function (req, res) {
+app.get("/sysadmin/import_sales", function (req, res) {                                         log.info('URL: /sysadmin/import_sales');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'import_sales.html'));
 });
 app.get("/sysadmin/import_sales/get_all_cashboxes", function (req, res) {
@@ -172,7 +171,8 @@ app.get("/sysadmin/import_sales/get_all_cashboxes", function (req, res) {
             res.send(outData);
         });
 });
-app.get("/sysadmin/import_sales/get_sales", function (req, res) {
+app.get("/sysadmin/import_sales/get_sales", function (req, res) {                             log.info('URL: /sysadmin/import_sales/get_sales  ', 'sCashBoxesList =', getCashBoxesList(req),'bdate =', req.query.bdate,
+                                                                                                          'edate =', req.query.edate);
     var sCashBoxesList = getCashBoxesList(req);
     var bdate = req.query.bdate;
     var edate = req.query.edate;
@@ -225,22 +225,22 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                 io.emit('cash_box_id', cashBoxID);
                                 var docList = cashBoxList[fn].DAT;                  //list of DAT
 
-                            var fillDB = function(docList, i){                                        log.debug("fillDB ",i);
+                            var fillDB = function(docList, i){
                                    if(!docList || i>= docList.length) return;
                               //  for (var i in docList) {
                                     var listItem = docList[i];
                                     if(listItem.Z){
-                                        listItem.isZReport=true;
+                                        listItem.isZReport=true;             console.log("isZReport=", i);
                                         fillDB(docList, i+1);
                                     } //check.Z - Z-отчет
                                     else if(listItem.C[0].$.T=='0')listItem.isSale=true;
                                     else if(listItem.C[0].$.T=='1'){
                                         listItem.isReturn=true;
-                                        fillDB(docList, i+1);
+                                        fillDB(docList, i+1);                console.log("Return=", i)
                                     }
                                     else if(listItem.C[0].$.T=='2'){
                                         listItem.isInner=true;
-                                        fillDB(docList, i+1);
+                                        fillDB(docList, i+1);               console.log("isInner=", i)
                                     }
 
                                     if(listItem.isSale) {                                  log.debug("listItem.isSale");
@@ -274,7 +274,7 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
 
                                         var payment = listItem.C[0].M[0].$;
                                         check.buyerPaymentSum = payment.SM;
-                                        check.paymentName = payment.NM;
+                                        if(payment.NM)check.paymentName = payment.NM;
                                         check.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
                                         if (payment.RM) check.change = payment.RM;
 
@@ -291,24 +291,37 @@ app.get("/sysadmin/import_sales/get_sales", function (req, res) {
                                         io.emit('json_ready', check);
 
                                             database.isSaleExists(check, function (err, res) {
-
                                                 if (err)    {
-                                                    io.emit('add_to_db_err', check.checkNumber);
-                                                    log.error("APP database.isSaleExists ERROR=", err);
+                                                    io.emit('add_to_db_err', check.checkNumber);      log.error("APP database.isSaleExists ERROR=", err);
                                                     return;
                                                 }
                                                 if (!res.empty) {         log.warn("Чек существует в базе " + res.data.checkNumber ,"ChID=",  res.ChID);
                                                     fillDB(docList, i+1);
                                                 }
                                                 if (res.empty) {
-                                                    database.addToSale(res.data, function (err, ChID) { console.log('res.data=',res.data);
+                                                    database.addToSale(/*res.data*/ check, function (err, ChID) { console.log('check 302=',check);
                                                         if (err)  {
                                                             io.emit('add_to_db_err', check.checkNumber);
                                                             log.error("APP database.addToSale ERROR=", err);
                                                             return;
                                                         }
-                                                        database.addToSaleD(ChID, res.data,function (err, res){
-                                                            if(err) log.error("APP database.addToSaleD ERROR=", err);
+                                                        database.addToSaleD(ChID, res.data,function (err, resD){
+                                                            if(err){
+                                                                log.error("APP database.addToSaleD ERROR=", err);
+                                                                return;
+                                                            }
+
+                                                            database.addToSalePays(ChID,resD.paymentType, resD.buyerPaymentSum,resD.change,function(err, CHID){
+                                                                if(err)     {
+                                                                    log.error("APP database.addToSalePays ERROR=", err);
+                                                                }
+
+                                                                console.log("addToSalePays result 319=", CHID);
+                                                                database.updateSaleStatus(CHID, function(err, res){
+                                                                    if(err){log.error("APP database.updateSaleStatus ERROR=", err);}
+
+                                                                });
+                                                            })
                                                         });
                                                         fillDB(docList, i+1);
                                                     });

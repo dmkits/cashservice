@@ -1,6 +1,17 @@
 declare @NewChID INT
 select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale
 
+declare @StockID INT, @CRID SMALLINT, @EmpID INT, @OurID INT
+
+select @StockID=c.StockID, @CRID=c.CRID, @OurID = r.OurID
+from r_Crs c
+INNER JOIN r_CRSrvs r ON r.SrvID =c.SrvID
+WHERE c.FacID=@FacID;
+
+select @EmpID = EmpID from r_Opers
+where OperID=@OperID;
+
+
 INSERT into t_sale
         (CHID,  DocID, DocDate, KursMC,  OurID,
         StockID,    CompID,    CodeID1,    CodeID2,    CodeID3,
@@ -11,12 +22,12 @@ INSERT into t_sale
         TPurSumCC_nt, TPurTaxSum,    TPurSumCC_wt,    DocCreateTime,    TRealSum,
         TLevySum)
 VALUES
-        (@NewChID,  @DocID, @DocDate, 1.0,  1,
-        1,    1,    0,    0,    0,
-        0, 0,    1.0,    null,    1,
-        @OperID ,null,    @DocTime, '<Нет дисконтной карты>',    1,
-        null, @CashSumCC,    @ChangeSumCC,    980,    0,
-        0,    0,    22,    0,    0,
+        (@NewChID,  @DocID, @DocDate, 1.0, @OurID,
+        @StockID,    1,    0,    0,    0,
+        0, 0,    1.0,    null,    @CRID,
+        @OperID ,null,    @DocTime, '<Нет дисконтной карты>', @EmpID,
+        @DocID, @CashSumCC,    @ChangeSumCC,    980,    0,
+        0,    0,    0,    0,    0,
         0, 0, 0   ,    @DocCreateTime,    0,
         0)
 
