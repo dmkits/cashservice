@@ -77,49 +77,28 @@
 //                    socket.emit('my other event', { my: 'data' });
 //                });
 
-                socket.on('ask_for_data', function () {
+                socket.on('new_event', function(data){
                     document.getElementById("sql_display_content").innerText=
-                           /* document.getElementById("sql_display_content").innerText+*/"* Отправка запроса кассовому аппарату\n";
-                    //socket.emit('my other event', { my: 'data' });
+                            document.getElementById("sql_display_content").innerText+" * "+data+"\n";
                 });
 
-                socket.on('xml_received', function () {
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+"* Получены данные от кассового аппарата\n";
-                //   socket.emit('my other event', { my: 'data' });
-                });
 
-                socket.on('xml_to_json', function(){
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+"* Данные форматирутся\n";
-                });
-                //io.emit('cash_box_id', cashBoxID);
-                socket.on('cash_box_id', function(data){
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Касcовый аппарат №"+data+"\n";
-                });
-                socket.on('json_ready', function(data){                              //  console.log(data);
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Касса "+data.cashBoxFabricNum+" Чек №"+data.checkNumber+ " от "+data.checkDate+"\n";
-                    for(var i in data.productsInCheck ){
-                        var product = data.productsInCheck[i];
-                        var text = product.posNumber+". "+product.name+" "+product.qty+" "+product.price+'\n';
-                        document.getElementById("sql_display_content").innerText=
-                                document.getElementById("sql_display_content").innerText+text;
-                    }
-                });
-                socket.on('data_processed_suc', function(){
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+"* Данные успешно обработаны\n";
-                });
-                socket.on('response_error', function(data){
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Шлюз вернул ошибку: "+data.error+"\n";
-                });
-                socket.on('add_to_db_err', function(data){
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+ "* Возникла ошибка при записи чека №"+data+" в базу данных\n";
-                });
+
+//
+
+//
+
+
+
+//                socket.on('data_processed_suc', function(){
+//                    document.getElementById("sql_display_content").innerText=
+//                            document.getElementById("sql_display_content").innerText+"* Данные успешно обработаны\n";
+//                });
+
+//                socket.on('add_to_db_err', function(data){
+//                    document.getElementById("sql_display_content").innerText=
+//                            document.getElementById("sql_display_content").innerText+ "* Возникла ошибка при записи чека №"+data+" в базу данных\n";
+//                });
 
                 var borderContainer = APP.initElem("sql_queries_PageContent", BorderContainer, {});
                 var topContentSQL = APP.initElem("sql_queries_TopContent", ContentPane, {region: "top"});
@@ -186,7 +165,7 @@
                     Request.getJSONData({url: "/sysadmin/import_sales/get_sales",
                                 condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params ,
                                 consoleLog: true},
-                            function (success, result) {
+                            function (success, result) {        console.log("success 168=",success,"result 168=",result);
                                 if (!success) {
                                     alert("No connection to the server!");
                                     return;
