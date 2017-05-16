@@ -482,11 +482,17 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {   
 
                             database.fillChequeProds(saleChID,chequeData, chequeProdData, function (err, res) {   //insert into t_SaleD by saleChID if not exists, ...
                                 if (err)    {
-                                    io.emit('new_event', "Не удалось записать позицию №"+ chequeData.posNumber+" в чек №"+chequeData.checkNumber );      log.error("APP database.fillChequeProds: Position in cheque NOT created! Reason:", err);
+                                    io.emit('new_event', "Не удалось записать позицию №"+ chequeProdData.posNumber+" в чек №"+chequeData.checkNumber );      log.error("APP database.fillChequeProds: Position in cheque NOT created! Reason:", err);
                                     return;
                                 }
-
-                                //io.emit('add_to_db_err', check.checkNumber);      log.error("APP database.fillCheque: Sale created with ChID=", check.saleChID);
+                                if(res.notFoundProd){
+                                    io.emit('new_event', res.notFoundProd);
+                                }
+                                if(res.exist){
+                                    io.emit('new_event', " * Найдена позиция №"+ chequeProdData.posNumber+ " "+ chequeProdData.name+" в чеке №"+chequeData.checkNumber );
+                                }else {
+                                    io.emit('new_event', " * Добавлена позиция №"+ chequeProdData.posNumber+ " "+ chequeProdData.name+" в чек №"+chequeData.checkNumber );
+                                }
 
                                 fillChequeProds(saleChID,chequeData, chequeProdsData, ind+1,finishedCallback);
                             });

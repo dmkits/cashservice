@@ -402,13 +402,14 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {    console.log
 
     reqSql.query('select ProdID from r_Prods where Article2=@Article2',
         function (err, recordset) {
+            var outData={};
             if (err) {
                 callback(err, null);
                 return;
             }
             if (!recordset[0]) {        console.log("Не удалось внести позицию! Наименования " + chequeProdData.name + " не найдено в базе");
-                var err="Не удалось внести позицию! Наименования " + chequeProdData.name + " не найдено в базе";
-                callback(err, null);
+                outData.notFoundProd="Не удалось внести позицию! Наименования " + chequeProdData.name + " не найдено в базе";
+                callback(null, outData);
                 return;
             }
             var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
@@ -418,7 +419,8 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {    console.log
                         callback(err, null);
                         return;
                     }
-                    callback(null,ChID);
+                    outData.ChID=ChID
+                    callback(null,outData);
                 });
         });
 }
