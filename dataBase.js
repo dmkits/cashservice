@@ -82,156 +82,90 @@ module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errA
         })
 };
 
-module.exports.isSaleExists = function (data, callback) {
-    var reqSql = new sql.Request(conn);
-    reqSql.input('DocID', sql.Int, data.checkNumber);
-    // reqSql.input('FacID',sql.NVarChar, data.cashBoxFabricNum);
-    var queryString = fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
-
-        reqSql.query(queryString,
-            function (err, recordset) {
-                    if (err) {
-                        callback(err, null);
-                        return;
-                    }
-                var outData = {};
-                outData.data = data;
-                if (recordset.length == 0) {
-                    outData.empty = true;
-                } else outData.ChID = recordset[0].ChID;
-                outData.checkData=data;
-                callback(null, outData);
-            });
-};
-/*(ChID,  DocID, DocDate, KursMC,  OurID,
-    StockID,    CompID,	CodeID1,	CodeID2,	CodeID3,
-    CodeID4, CodeID5,	Discount,	Notes,	CRID,
-    OperID,	CreditID,	DocTime,	DCardID,	EmpID,
-    IntDocID, CashSumCC,	ChangeSumCC,	CurrID,	TSumCC_nt,
-    TTaxSum,	TSumCC_wt,	StateCode,	DeskCode,	Visitors,
-    TPurSumCC_nt, TPurTaxSum,	TPurSumCC_wt,	DocCreateTime,	TRealSum,
-    TLevySum)*/
-
-module.exports.addToSale = function (data, callback) {            //console.log("addToSale ", data);
-
-    //var dch = data.checkDate.split("");
-    //var date = dch[0] + dch[1] + dch[2] + dch[3] + "-" + dch[4] + dch[5] + "-" + dch[6] + dch[7] + " " + dch[8] + dch[9] + ":" + dch[10] + dch[11] + ":" + dch[12] + dch[13];
-    var FacID=data.cashBoxFabricNum;
-    var FacIDNum=FacID.replace("ПБ","");    console.log("FacIDNum=",FacIDNum);
-    var date=formatDate(data.checkDate);
-    var reqSql = new sql.Request(conn);
-
-    var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
-    reqSql.input('DocID', sql.NVarChar, data.checkNumber);
-    reqSql.input('DocDate', sql.NVarChar, date);
-    reqSql.input('OperID', sql.NVarChar, data.operatorID);
-    reqSql.input('DocTime', sql.NVarChar, date);
-    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum);
-    reqSql.input('FacID', sql.NVarChar,FacIDNum);
-    reqSql.input('DocCreateTime', sql.NVarChar, date);
-    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, data.change);
-    else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
-   // reqSql.input('TTaxSum', sql.NVarChar, data.AddTaxSum + data.taxSum);
-   // reqSql.input('TSumCC_wt', sql.NVarChar, data.totalCheckSum);
-
-    reqSql.query(queryString,
-        function (err,recordset) {
-            if (err) {
-                callback(err, null);
-                return;
-            }
-            callback(null, recordset[0].ChID);                       //   console.log("recordset[0].ChID", recordset[0].ChID);
-        });
-};
-<!--ChID,	SrcPosID,	ProdID,	PPID,	UM,	Qty,	PriceCC_nt,	SumCC_nt,	Tax,	TaxSum,	PriceCC_wt,-->
-<!--SumCC_wt,	BarCode,	SecID,	PurPriceCC_nt,	PurTax,	PurPriceCC_wt,	PLID,	Discount,	EmpID,-->
-<!--CreateTime,	ModifyTime,	TaxTypeID,	RealPrice,	RealSum-->
-
-//module.exports.addToSaleD = function (ChID, data, callback) {  console.log("data 149=", data);
+//module.exports.isSaleExists = function (data, callback) {
+//    var reqSql = new sql.Request(conn);
+//    reqSql.input('DocID', sql.Int, data.checkNumber);
+//    // reqSql.input('FacID',sql.NVarChar, data.cashBoxFabricNum);
+//    var queryString = fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
 //
-//    var date = formatDate(data.checkDate);
-//    var productsInCheck = data.productsInCheck;
-//  //  var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
-//
-//    function insertToSaleD(productsInCheck, i) {
-//        //for (var i in productsInCheck) {
-//        if (i >= productsInCheck.length) {
-//         //   addToSalePays(ChID, data.paymentType, data.buyerPaymentSum,data.change) ;
-//            callback(null, data);
-//            return;
-//        } /*return;/*callback(null, "ok");*/
-//
-//        var reqSql = new sql.Request(conn);
-//        var PriceCC_nt = productsInCheck[i].price/1.2;
-//        var Qty = productsInCheck[i].qty;
-//        var SumCC_nt = PriceCC_nt * Qty;
-//        var Tax = productsInCheck[i].price - PriceCC_nt;
-//        var TaxSum = Tax * Qty;
-//        reqSql.input('ChID', sql.NVarChar, ChID);
-//        reqSql.input('SrcPosID', sql.NVarChar, productsInCheck[i].posNumber);
-//        reqSql.input('Article2', sql.NVarChar, productsInCheck[i].name);
-//        reqSql.input('Qty', sql.NVarChar, Qty);
-//        reqSql.input('PriceCC_nt', sql.NVarChar, PriceCC_nt);
-//        reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
-//        reqSql.input('Tax', sql.NVarChar, Tax);
-//        reqSql.input('TaxSum', sql.NVarChar, TaxSum);
-//        reqSql.input('PriceCC_wt', sql.NVarChar, productsInCheck[i].price);
-//        reqSql.input('SumCC_wt', sql.NVarChar, productsInCheck[i].price * Qty);
-//        reqSql.input('PurPriceCC_nt', sql.NVarChar, PriceCC_nt);
-//        reqSql.input('PurTax', sql.NVarChar, Tax);
-//        reqSql.input('PurPriceCC_wt', sql.NVarChar, productsInCheck[i].price);
-//        reqSql.input('CreateTime', sql.NVarChar, date);
-//        reqSql.input('ModifyTime', sql.NVarChar, date);
-//        // reqSql.input('TaxTypeID', sql.NVarChar, productsInCheck[i].taxMark);
-//        reqSql.input('RealPrice', sql.NVarChar, productsInCheck[i].price);
-//        reqSql.input('RealSum', sql.NVarChar, productsInCheck[i].price * Qty);
-//        reqSql.input('OperID', sql.NVarChar, data.operatorID);
-//
-//        reqSql.query('select * from t_saleD where CHID=@ChID AND SrcPosID=@SrcPosID',
+//        reqSql.query(queryString,
 //            function (err, recordset) {
-//                if (err) {
-//                    callback(err, null);
-//                    return;
-//                }
-//                if (!recordset[0]) {
-//                    reqSql.query('select ProdID from r_Prods where Article2=@Article2',
-//                        function (err, recordset) {
-//                            if (err) {
-//                               // console.log("addToSaleD err 202=", err);
-//                                callback(err, null);
-//                                return;
-//                            }
-//                            if (!recordset[0]) {
-//                                console.log("Не удалось внести позицию! Наименования " + productsInCheck[i].name + " не найдено в базе");
-//                            } else {
-//                                var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
-//                                reqSql.query(queryString,
-//                                    function (err, recordset) {
-//
-//                                        if (err) {  //console.log("addToSaleD err 212=", err);
-//                                            callback(err, null);
-//                                        }
-//                                        insertToSaleD(productsInCheck, i + 1);
-//                                        // callback(null, recordset[0].ChID);                          console.log("recordset[0].ChID", recordset[0].ChID);
-//                                    });
-//                            }
-//                        });
-//                } else insertToSaleD(productsInCheck, i + 1);          //Сущ запись  CHID PosID
+//                    if (err) {
+//                        callback(err, null);
+//                        return;
+//                    }
+//                var outData = {};
+//                outData.data = data;
+//                if (recordset.length == 0) {
+//                    outData.empty = true;
+//                } else outData.ChID = recordset[0].ChID;
+//                outData.checkData=data;
+//                callback(null, outData);
 //            });
-//    }
-//    insertToSaleD(productsInCheck, 0);
 //};
 
-module.exports.addToSalePays =function (CHID,PaymentForm,buyerPaymentSum,change,callback){   console.log("addToSalePays");
 
-    var PayFormCode =detectPaymentForm(PaymentForm);
+//module.exports.addToSale = function (data, callback) {
+//
+//    //var dch = data.checkDate.split("");
+//    //var date = dch[0] + dch[1] + dch[2] + dch[3] + "-" + dch[4] + dch[5] + "-" + dch[6] + dch[7] + " " + dch[8] + dch[9] + ":" + dch[10] + dch[11] + ":" + dch[12] + dch[13];
+//    var FacID=data.cashBoxFabricNum;
+//    var FacIDNum=FacID.replace("ПБ","");    console.log("FacIDNum=",FacIDNum);
+//    var date=formatDate(data.checkDate);
+//    var reqSql = new sql.Request(conn);
+//
+//    var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
+//    reqSql.input('DocID', sql.NVarChar, data.checkNumber);
+//    reqSql.input('DocDate', sql.NVarChar, date);
+//    reqSql.input('OperID', sql.NVarChar, data.operatorID);
+//    reqSql.input('DocTime', sql.NVarChar, date);
+//    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum);
+//    reqSql.input('FacID', sql.NVarChar,FacIDNum);
+//    reqSql.input('DocCreateTime', sql.NVarChar, date);
+//    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, data.change);
+//    else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
+//   // reqSql.input('TTaxSum', sql.NVarChar, data.AddTaxSum + data.taxSum);
+//   // reqSql.input('TSumCC_wt', sql.NVarChar, data.totalCheckSum);
+//
+//    reqSql.query(queryString,
+//        function (err,recordset) {
+//            if (err) {
+//                callback(err, null);
+//                return;
+//            }
+//            callback(null, recordset[0].ChID);
+//        });
+//};
 
+function isPaymentExist(CHID, callback){
+    var reqSql = new sql.Request(conn);
+    reqSql.input('CHID', sql.NVarChar, CHID);
+    reqSql.query("select ChID from t_SalePays WHERE ChID=@CHID",
+        function (err, recordset) {
+            var outData={};
+            if (err) {
+                callback(err);           console.log(err);
+                return;
+            }
+            if(recordset[0]) {
+                outData.exist=true;
+                callback(null, outData);
+                return;
+            }
+            callback(null, "not exist");
+        })
+}
+
+function addToSalePays (CHID,cheque,callback){
+
+    var buyerPaymentSum=cheque.buyerPaymentSum;
+    var change=cheque.change;
+    var PayFormCode =detectPaymentForm(cheque.paymentType);
     var reqSql = new sql.Request(conn);
     var query_str = fs.readFileSync('./scripts/add_to_salepays.sql', 'utf8');
     reqSql.input('CHID', sql.NVarChar, CHID);
     reqSql.input('PayFormCode', sql.NVarChar, PayFormCode);
     reqSql.input('SumCC_wt', sql.NVarChar, buyerPaymentSum);
-
 
     reqSql.query(query_str,
         function (err, recordset) {
@@ -261,7 +195,53 @@ module.exports.addToSalePays =function (CHID,PaymentForm,buyerPaymentSum,change,
         })
 };
 
-module.exports.updateSaleStatus = function(CHID, callback){   console.log('updateSaleStatus');
+function deletePayment(ChID, callback){
+    var reqSql = new sql.Request(conn);
+    reqSql.input('CHID', sql.NVarChar, ChID);
+    reqSql.query("DELETE from t_SalePays WHERE ChID=@CHID",
+        function (err, recordset) {
+            if (err) {
+                callback(err);           console.log(err);
+                return;
+            }
+            callback(null, "deleted");
+        })
+}
+
+module.exports.fillToSalePays = function (CHID, cheque, callback) {
+    isPaymentExist(CHID, function (err, res) {
+        var outData={};
+        if (err) {
+            callback(err);
+            return;
+        }
+        if (res.exist) {
+            outData.exist=true;
+            deletePayment(CHID, function (err, res) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+            });
+        }
+        addToSalePays(CHID, cheque, function (err, res) {
+            if (err) {
+                callback(err);
+                return;
+            }
+            updateSaleStatus(CHID, function (err, res) {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                callback(null,outData);
+            })
+        })
+    })
+};
+
+
+function updateSaleStatus (CHID, callback){
 
     var reqSql = new sql.Request(conn);
   //  var query_str = fs.readFileSync('./scripts/add_to_salepays.sql', 'utf8');
@@ -273,21 +253,21 @@ module.exports.updateSaleStatus = function(CHID, callback){   console.log('updat
                 callback(err);
                 console.log(err);
             }
+            callback(null, "updated");
         })
-
 };
 
-function isSaleExists(DOCID,callback){                     console.log("isSaleExists DOCID=",DOCID);
+function isSaleExists(DOCID,callback){
     var reqSql = new sql.Request(conn);
     reqSql.input('DOCID', sql.Int, DOCID);
     reqSql.query('select ChID from t_Sale WHERE DOCID=@DOCID',
         function (err, recordset) {
             var outData={};
             if (err) {
-                callback(err);                              console.log(err);
+                callback(err);                                                                                          console.log(err);
                 return;
             }
-            if(recordset[0]){                                console.log("recordset[0]=",recordset[0]);
+            if(recordset[0]){
                 outData.ChID=recordset[0].ChID;
                 outData.exist=true;
                 callback(null, outData);
@@ -297,7 +277,7 @@ function isSaleExists(DOCID,callback){                     console.log("isSaleEx
         })
 }
 
-function addToSale(data, callback){                        console.log("addToSale");
+function addToSale(data, callback){
     var FacID=data.cashBoxFabricNum;
     var FacIDNum=FacID.replace("ПБ","");
     var date=formatDate(data.checkDate);
@@ -321,21 +301,21 @@ function addToSale(data, callback){                        console.log("addToSal
                 callback(err, null);
                 return;
             }
-            outData.ChID=recordset[0].ChID;                           console.log("recordset.ChID=",recordset);
+            outData.ChID=recordset[0].ChID;
             outData.created=true;
             callback(null, outData);
         });
 }
 
-module.exports.fillChequeTitle = function(chequeData, callback) {          console.log("fillChequeTitle  DATABASE");
+module.exports.fillChequeTitle = function(chequeData, callback) {
 
-    var chequeNum = chequeData.checkNumber;                                console.log("chequeNum=",chequeNum);
+    var chequeNum = chequeData.checkNumber;
     isSaleExists(chequeNum, function (err, res) {
         if (err) {
             callback(err);
             return;
         }
-        if (res.exist) {                                                    console.log("fillChequeTitle res.exist res=",res);
+        if (res.exist) {
             callback(null, res);
             return;
         }
@@ -345,7 +325,7 @@ module.exports.fillChequeTitle = function(chequeData, callback) {          conso
                 callback(err);
                 return;
             }
-            callback(null,res);                                             console.log("fillChequeTitle res creadet res=",res);
+            callback(null,res);
         })
     });
 };
@@ -372,7 +352,7 @@ function isPosExists(ChID, posNum, callback){
         })
 }
 
-function addToSaleD(ChID, chequeData, chequeProdData, callback) {    console.log("addToSaleD  chequeProdData=",chequeProdData);
+function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     var date = formatDate(chequeData.checkDate);
     var PriceCC_nt = chequeProdData.price / 1.2;
     var Qty = chequeProdData.qty;
@@ -407,7 +387,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {    console.log
                 callback(err, null);
                 return;
             }
-            if (!recordset[0]) {        console.log("Не удалось внести позицию! Наименования " + chequeProdData.name + " не найдено в базе");
+            if (!recordset[0]) {
                 outData.notFoundProd="Не удалось внести позицию! Наименования " + chequeProdData.name + " не найдено в базе";
                 callback(null, outData);
                 return;
@@ -425,7 +405,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {    console.log
         });
 }
 
-module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, callback) {          console.log("fillChequeTitle  DATABASE");
+module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, callback) {
 
     var posNum = chequeProdData.posNumber;
     isPosExists(saleChID,posNum, function (err, res) {
@@ -448,27 +428,50 @@ module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, c
     });
 };
 
+module.exports.logToDB = function(Msg,FacID, callback) {              console.log("logToDB");
+    var reqSql = new sql.Request(conn);
+    var CRID;
+    if(!FacID){                                                        console.log("logToDB");
+        CRID=0;
+        //var reqSql = new sql.Request(conn);
+        reqSql.input('CRID', sql.NVarChar, CRID);
+        reqSql.input('Msg', sql.NVarChar, Msg);
+        var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
+        reqSql.query(queryString,
+            function (err, recordset) {
+                if (err) {
+                    callback(err);                              console.log(err);
+                    return;
+                }
+                callback(null,"ок");
+            })
+    }else{                                                             console.log("FacID=",FacID);
+       // var reqSql = new sql.Request(conn);
+        reqSql.input('FacID', sql.NVarChar, FacID);
+        reqSql.query('select  CRID from r_Crs WHERE FacID=@FacID;',
+            function (err, recordset) {
+                if (err) {
+                    callback(err);                              console.log(err);
+                    return;
+                }
+              //  var reqSql = new sql.Request(conn);
+                CRID=recordset[0].CRID;                         console.log("CRID=",CRID);
+                reqSql.input('CRID', sql.NVarChar, CRID);
+                reqSql.input('Msg', sql.NVarChar, Msg);
+                var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
+                reqSql.query(queryString,
+                    function (err, recordset) {
+                        if (err) {
+                            callback(err);                              console.log(err);
+                            return;
+                        }
+                        callback(null,"ок");
+                    })
+            })
+    }
 
-    //var reqSql = new sql.Request(conn);
-    //reqSql.input('DOCID', sql.NVarChar, chequeNum);
-    //var outData={};
-    //reqSql.query('select chid from t_Sale WHERE DOCID=@DOCID',
-    //    function (err, recordset) {
-    //        if (err) {
-    //            callback(err);                              console.log(err);
-    //            return;
-    //        }
-    //        if(recordset[0]){
-    //            outData.CHID=recordset[0];
-    //            outData.exist=true;
-    //            callback(null, outData);
-    //            return;
-    //        }
-    //        else{
-    //
-    //        }
-    //    })
-//};
+};
+
 
 function formatDate(date){
     var dch = date.split("");

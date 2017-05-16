@@ -66,39 +66,23 @@
             function (APP, BorderContainer, LayoutContainer, ContentPane, ItemFileReadStore, TextBox, DateTextBox, Button, ConfirmDialog,
                       ToggleButton,DateTextBox,Request) {
                 moment.locale("uk");
-               // document.getElementById("sql_display_content").innerText="";
-               // var socketDisplay=document.getElementById("sql_display_content");
-               //socketDisplay.innerText="";
-               // var socketText=socketDisplay.innerText;
+
+
 
                 var socket = io.connect(/*'http://localhost:8080'*/);
-//                socket.on('news', function (data) {
-//                    console.log(data);
-//                    socket.emit('my other event', { my: 'data' });
-//                });
 
                 socket.on('new_event', function(data){
-                    document.getElementById("sql_display_content").innerText=
-                            document.getElementById("sql_display_content").innerText+" * "+data+"\n";
+                 var listItem=document.createElement('ul');
+                    btnImportSales.list.appendChild(listItem);
+                    listItem.innerText=data;
+
                 });
 
-
-
-//
-
-//
-
-
-
-//                socket.on('data_processed_suc', function(){
+//                socket.on('new_event', function(data){
 //                    document.getElementById("sql_display_content").innerText=
-//                            document.getElementById("sql_display_content").innerText+"* Данные успешно обработаны\n";
+//                            document.getElementById("sql_display_content").innerText+" * "+data+"\n";
 //                });
 
-//                socket.on('add_to_db_err', function(data){
-//                    document.getElementById("sql_display_content").innerText=
-//                            document.getElementById("sql_display_content").innerText+ "* Возникла ошибка при записи чека №"+data+" в базу данных\n";
-//                });
 
                 var borderContainer = APP.initElem("sql_queries_PageContent", BorderContainer, {});
                 var topContentSQL = APP.initElem("sql_queries_TopContent", ContentPane, {region: "top"});
@@ -148,6 +132,8 @@
                 };
 
                 btnImportSales.onClick=function(){
+                    btnImportSales.list= document.createElement('ul');
+                    document.getElementById("sql_display_content").appendChild(btnImportSales.list);
                     var bdate; var edate;
                     var bdateValue=bDateTextBox.get("value");
                     bdate= moment(bdateValue).format('YYYYMMDD')+"0000";
@@ -178,7 +164,8 @@
                     };
 
                 btnCleanUp.onClick = function () {
-                    document.getElementById("sql_display_content").innerText="";
+                    var displayResult = document.getElementById("sql_display_content");
+                    displayResult.removeChild(displayResult.childNodes[0]);
                 };
             });
 </script>
