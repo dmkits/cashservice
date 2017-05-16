@@ -471,8 +471,6 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {   
 
                         var chequesData= result.sales;
 
-
-
                         var fillChequeProds= function(saleChID, chequeData, chequeProdsData, ind, finishedCallback){
 
                             var chequeProdData= chequeProdsData[ind];
@@ -490,7 +488,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {   
 
                                 //io.emit('add_to_db_err', check.checkNumber);      log.error("APP database.fillCheque: Sale created with ChID=", check.saleChID);
 
-                                fillChequeProds(saleChID,chequeData, chequeProdsData, ind+1);
+                                fillChequeProds(saleChID,chequeData, chequeProdsData, ind+1,finishedCallback);
                             });
                         };
                         //var fillChequePays= function(saleChID, chequePaysData, ind, finishedCallback){
@@ -512,13 +510,14 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {   
                                 return;
                             }
 
-                            database.fillChequeTitle(chequeData, function (err, res) {  console.log("fillChequeTitle");  //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
+                            database.fillChequeTitle(chequeData, function (err, res) {                   console.log("fillChequeTitle");  //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
                                 if (err)    {
                                     console.log(err);
                                     io.emit('new_event', "Произошла ошибка при записи в БД!");      log.error("APP database.fillChequeTitle: Sale NOT created! Reason:", err);
                                     return;
                                 }
-                                chequeData.saleChID=res.ChID;
+                                                                                                              console.log("res.ChID 519=",res.ChID);
+                                chequeData.saleChID=res.ChID;                                                 console.log("chequeData.saleChID 520=",chequeData.saleChID);
                                 if(res.exist){
                                     io.emit('new_event', "Чек №"+chequeData.checkNumber+" найден в БД"  );                   log.info("APP database.fillChequeTitle: Sale found with ChID=", chequeData.saleChID);
                                 }else{

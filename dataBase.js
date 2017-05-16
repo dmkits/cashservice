@@ -287,7 +287,7 @@ function isSaleExists(DOCID,callback){                     console.log("isSaleEx
                 callback(err);                              console.log(err);
                 return;
             }
-            if(recordset[0]){
+            if(recordset[0]){                                console.log("recordset[0]=",recordset[0]);
                 outData.ChID=recordset[0].ChID;
                 outData.exist=true;
                 callback(null, outData);
@@ -321,7 +321,7 @@ function addToSale(data, callback){                        console.log("addToSal
                 callback(err, null);
                 return;
             }
-            outData.ChID=ChID;
+            outData.ChID=recordset[0].ChID;                           console.log("recordset.ChID=",recordset);
             outData.created=true;
             callback(null, outData);
         });
@@ -335,7 +335,7 @@ module.exports.fillChequeTitle = function(chequeData, callback) {          conso
             callback(err);
             return;
         }
-        if (res.exist) {
+        if (res.exist) {                                                    console.log("fillChequeTitle res.exist res=",res);
             callback(null, res);
             return;
         }
@@ -345,7 +345,7 @@ module.exports.fillChequeTitle = function(chequeData, callback) {          conso
                 callback(err);
                 return;
             }
-            callback(null,res);
+            callback(null,res);                                             console.log("fillChequeTitle res creadet res=",res);
         })
     });
 };
