@@ -194,12 +194,12 @@ function getDataFromUniCashServer(xml, callback) {
         callback(error, response, body);
     });
 };
-function getChequesData(body, callback) {
+function getChequesData(body, callback) {                 console.log("body 197=", body);
     var buf = new Buffer(body, 'binary');
     var str = iconv_lite.decode(buf, 'win1251');
     body = iconv_lite.encode(str, 'utf8');
 
-    parseString(body, function (err, result) {
+    parseString(body, function (err, result) {    console.log("result 202=", result);
         var outData = {};
         outData.sales = [];
         if (err) {
@@ -280,6 +280,7 @@ function getChequesData(body, callback) {
                 callback(null, outData);
             }
         }catch (e){
+            emitAndLogEvent("Не удалось обработать данные полученные от кассового сервера! причина:"+e);
             log.warn("Не удалось обработать данные полученные от кассового сервера! причина:",e);
             callback(e, outData);
         }
@@ -367,15 +368,17 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
     emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null, function(){
         database.getXMLForUniCashServerRequest(bdate, edate, sCashBoxesList, function (error, xml) {
             if (error){
-                clientRes.send({error: ""});
+                clientRes.send({error: error});
                 return;
             }
+            var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
             emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
                 getDataFromUniCashServer(xml, function (error, response, body) {
                     emitAndLogEvent('Получены данные от кассового сервера', null, function(){
                         getChequesData(body, function (err, result) {
                             if (err) {
-                                emitAndLogEvent('Не удалось обработать данные кассового сервера!');
+                                emitAndLogEvent('Не удалось обработать данные кассового сервера!\n Ответ сервера:'+err);
+                                clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n Ответ сервера:'+err});
                                 return;
                             }
                             emitAndLogEvent('Данные кассового сервера обработаны успешно', null, function(){
