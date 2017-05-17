@@ -1,13 +1,6 @@
-console.log('Starting ...');
+
 var startTime = new Date().getTime();
 
-//function startupMode(){                                                   log.info('startupMode()...',new Date().getTime()-startTime);//test
-//    var app_params = process.argv.slice(2);
-//    if(app_params.length===0) return 'production';
-//    return app_params[0];
-//}
-//
-//module.exports.startupMode = startupMode;
 function startupParams() {
     var app_params = {};
     if (process.argv.length == 0) {
@@ -134,13 +127,6 @@ app.get("/sysadmin/startup_parameters", function (req, res) {
     log.info('URL: /sysadmin/startup_parameters');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'startup_parameters.html'));
 });
-//app.get("/sysadmin/startup_parameters/get_app_config", function (req, res) {          log.info('URL: /sysadmin/startup_parameters/get_app_config');
-//    if (ConfigurationError) {
-//        res.send({error:ConfigurationError});
-//        return;
-//    }
-//    res.send(database.getDBConfig());
-//});
 app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {
     log.info('URL: /sysadmin/startup_parameters/get_app_config');
     tryLoadConfiguration();
@@ -179,128 +165,197 @@ app.get("/sysadmin/import_sales/get_all_cashboxes", function (req, res) {
     });
 });
 
+function emitAndLogEvent(msg, cashBoxFacID, callback) {
+    database.logToDB(msg, cashBoxFacID, function (err, res) {
+        if (err) {
+            log.error("emitAndLogEvent err=", err);
+            io.emit('new_event', "Не удалось записать log в БД. Reason:"+ err);
+        } else io.emit('new_event', msg);
+        if (callback) callback(err, res);
+    });
+};
+
+function getDataFromUniCashServer(xml, callback) {
+    var cashserver_url = database.getDBConfig()['cashserver.url'];
+    var cashserver_port = database.getDBConfig()['cashserver.port'];
+    var xmlText = "";
+    for (var i in xml) {
+        var xmlLine = xml[i].XMLText;
+        xmlText = xmlText + xmlLine;
+    }
+    var textLengthStr = xmlText.length + "";
+    request.post({
+        headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
+        //uri:'http://5.53.113.251:12702/lsoft',
+        uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
+        body: xmlText,
+        encoding: 'binary'
+    }, function (error, response, body) {
+        callback(error, response, body);
+    });
+};
 function getChequesData(body, callback) {
+    var buf = new Buffer(body, 'binary');
+    var str = iconv_lite.decode(buf, 'win1251');
+    body = iconv_lite.encode(str, 'utf8');
 
     parseString(body, function (err, result) {
         var outData = {};
+        outData.sales = [];
         if (err) {
-            console.log(err);
+            log.info(err);
             callback(err);
             return;
         }
-        if (!result.gw_srv_rsp.select) {   // Проверка на валидность ответа
+        if (!result.gw_srv_rsp.select) {
+            log.warn("Невалидный ответ кассового сервера: " +result.gw_srv_rsp); // Проверка на валидность ответа
             outData.respErr = result.gw_srv_rsp;
-           // io.emit('new_event', "Шлюз вернул ошибку: " + outData.respErr);
-            emitAndLogEvent("Шлюз вернул ошибку: " + outData.respErr);
             callback(outData.respErr);
             return;
         }
-
-        var cashBoxList = result.gw_srv_rsp.select[0].FISC[0].EJ;
-        for (var fn in cashBoxList) {
-            var cashBox = cashBoxList[fn];
-            var cashBoxID = cashBox.$.ID;
-            outData.sales = [];
-
-            var text = "Кассовый аппарат " + cashBoxID;
-            database.logToDB(text,cashBoxID, function(err,res){
-                if (err) console.log(err);
-            });
-            io.emit('new_event', text);
-
-            var docList = cashBoxList[fn].DAT;
-            var fillDocsData = function (docList, i) {
-                if (!docList || i >= docList.length) return;
-                var listItem = docList[i];
-                if (listItem.Z) {
-                    listItem.isZReport = true;
-                    fillDocsData(docList, i + 1);
-                }
-                else if (listItem.C[0].$.T == '0')listItem.isSale = true;
-                else if (listItem.C[0].$.T == '1') {
-                    listItem.isReturn = true;
-                    fillDocsData(docList, i + 1);
-                }
-                else if (listItem.C[0].$.T == '2') {
-                    listItem.isInner = true;
-                    fillDocsData(docList, i + 1);
-                }
-
-                if (listItem.isSale) {
-                    var cheque = {};
-                    cheque.checkDataID = listItem.$.DI;                   //DAT ID
-                    cheque.ITN = listItem.$.TN;                            //ИНН
-                    cheque.dataVersion = listItem.$.V;                     // Версия формата пакета данных
-                    cheque.cashBoxFabricNum = listItem.$.ZN;
-                    cheque.dataFormDate = listItem.TS[0];
-
-                    var goodsList = listItem.C[0].P;
-                    cheque.productsInCheck = [];
-
-                    cheque.checkNumber = "1111" + listItem.C[0].E[0].$.NO;
-                    cheque.totalCheckSum = listItem.C[0].E[0].$.SM;
-                    cheque.operatorID = listItem.C[0].E[0].$.CS;
-
-                    cheque.fixalNumPPO = listItem.C[0].E[0].$.FN;
-                    cheque.checkDate = listItem.C[0].E[0].$.TS;
-
-                    if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
-                        var taxInfo = listItem.C[0].E[0].TX[0].$;
-                        if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM;
-                        if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR;
-                        if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;
-                        if (taxInfo.TX) cheque.taxMark = taxInfo.TX;
-                        if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;
-                        if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;
-                        if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
+        try {
+            var cashBoxList = result.gw_srv_rsp.select[0].FISC[0].EJ;
+            for (var fn in cashBoxList) {
+                var cashBox = cashBoxList[fn];
+                var cashBoxID = cashBox.$.ID;
+                var docList = cashBoxList[fn].DAT;
+                for(var i in docList) {
+                    var listItem = docList[i];
+                    if (listItem.Z) {
+                        listItem.isZReport = true;
+                    }
+                    else if (listItem.C[0].$.T == '0')listItem.isSale = true;
+                    else if (listItem.C[0].$.T == '1') {
+                        listItem.isReturn = true;
+                    }
+                    else if (listItem.C[0].$.T == '2') {
+                        listItem.isInner = true;
                     }
 
-                    var payment = listItem.C[0].M[0].$;
-                    cheque.buyerPaymentSum = payment.SM;
-                    if (payment.NM)cheque.paymentName = payment.NM;
-                    cheque.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
-                    if (payment.RM) cheque.change = payment.RM;
+                    if (listItem.isSale) {
+                        var cheque = {};
+                        cheque.checkDataID = listItem.$.DI;                   //DAT ID
+                        cheque.ITN = listItem.$.TN;                            //ИНН
+                        cheque.dataVersion = listItem.$.V;                     // Версия формата пакета данных
+                        cheque.cashBoxFabricNum = listItem.$.ZN;
+                        cheque.dataFormDate = listItem.TS[0];
 
-                    // io.emit('new_event',  "Касса "+cheque.cashBoxFabricNum+" Чек №"+cheque.checkNumber+ " от "+cheque.checkDate);
+                        var goodsList = listItem.C[0].P;
+                        cheque.productsInCheck = [];
+                        cheque.checkNumber = "1111" + listItem.C[0].E[0].$.NO;
+                        cheque.totalCheckSum = listItem.C[0].E[0].$.SM;
+                        cheque.operatorID = listItem.C[0].E[0].$.CS;
+                        cheque.fixalNumPPO = listItem.C[0].E[0].$.FN;
+                        cheque.checkDate = listItem.C[0].E[0].$.TS;
 
-                    for (var pos in goodsList) {
-                        var product = {};
-                        product.posNumber = goodsList[pos].$.N;
-                        product.name = goodsList[pos].$.NM;
-                        product.qty = goodsList[pos].$.Q;
-                        product.price = goodsList[pos].$.PRC;
-                        product.code = goodsList[pos].$.C;
-                        product.taxMark = goodsList[pos].$.TX;
+                        if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
+                            var taxInfo = listItem.C[0].E[0].TX[0].$;
+                            if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM;
+                            if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR;
+                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;
+                            if (taxInfo.TX) cheque.taxMark = taxInfo.TX;
+                            if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;
+                            if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;
+                            if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
+                        }
 
-                        //var text = ' * ' + product.name + "  " + product.qty + " от " + product.price;
-                        //database.logToDB(text,cashBoxID, function(err,res){
-                        //    if (err) console.log(err);
-                        //});
-                        //io.emit('new_event', text);
-
-                        emitAndLogEvent(' * ' + product.name + "  " + product.qty + " от " + product.price, cashBoxID);
-                        cheque.productsInCheck.push(product);
-                    }
-                    outData.sales.push(cheque);
-                  //  io.emit('new_event', "Касса " + cheque.cashBoxFabricNum + " Чек №" + cheque.checkNumber + " от " + cheque.checkDate);
-                    emitAndLogEvent( "Касса " + cheque.cashBoxFabricNum + " Чек №" + cheque.checkNumber + " от " + cheque.checkDate,cashBoxID);
-                    fillDocsData(docList, i + 1);
+                        var payment = listItem.C[0].M[0].$;
+                        cheque.buyerPaymentSum = payment.SM;
+                        if (payment.NM)cheque.paymentName = payment.NM;
+                        cheque.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
+                        if (payment.RM) cheque.change = payment.RM;
+                        for (var pos in goodsList) {
+                            var product = {};
+                            product.posNumber = goodsList[pos].$.N;
+                            product.name = goodsList[pos].$.NM;
+                            product.qty = goodsList[pos].$.Q;
+                            product.price = goodsList[pos].$.PRC;
+                            product.code = goodsList[pos].$.C;
+                            product.taxMark = goodsList[pos].$.TX;
+                            cheque.productsInCheck.push(product);
+                        }
+                        outData.sales.push(cheque);
+                    };
                 }
-                ;
-            };
-            fillDocsData(docList, 0);
+                callback(null, outData);
+            }
+        }catch (e){
+            log.warn("Не удалось обработать данные полученные от кассового сервера! причина:",e);
+            callback(e, outData);
         }
-        callback(null, outData);//result= chuquesData - array of cheque's data
     });
-}
+};
 
-function emitAndLogEvent(msg, cashBoxID){
-    database.logToDB(msg,cashBoxID, function(err,res){
-        if (err) console.log("emitAndLogEvent err=",err);
-        console.log(" emitAndLogEvent res=",res);
+function fillCheques(chequesData, ind, finishedcallback) {
+    var chequeData = chequesData[ind];
+    if (!chequeData) {
+        finishedcallback();
+        return;
+    }
+
+    database.fillChequeTitle(chequeData, function (err, res) { //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
+        if (err) {
+            log.info(err);
+            log.error("APP database.fillChequeTitle: Sale NOT created! Reason:", err);
+            return;
+        }
+        chequeData.saleChID = res.ChID;
+        var msg;
+        if (res.exist) msg=  "Чек №" + chequeData.checkNumber + " найден в БД";
+        else msg= "Заголовок чека №" + chequeData.checkNumber + " добавлен в БД";
+
+        emitAndLogEvent(msg, chequeData.cashBoxFabricNum,  function(){
+            var saleChID = chequeData.saleChID;
+            var chequeProds = chequeData.productsInCheck;//!!!
+            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (saleChID, chequeData) {
+                fillChequePays(saleChID, chequeData, function (err, res) {
+                    if (err){
+                        log.error("Неудалось внести оплату по чеку в БД Reason: "+err);
+                        return;
+                    }
+                    fillCheques(chequesData, ind + 1,finishedcallback);
+                });
+            });
+        });
+
     });
-    io.emit('new_event', msg);
-}
+};
+function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCallback) {
+    var chequeProdData = chequeProdsData[ind];
+    if (!chequeProdData) {     //finished!!!
+        finishedCallback(saleChID, chequeData);
+        return;
+    }
+
+    database.fillChequeProds(saleChID, chequeData, chequeProdData, function (err, res) {
+        var msg;
+        if (err) {
+            msg="Не удалось записать позицию №" + chequeProdData.posNumber + " в чек №" + chequeData.checkNumber;
+            log.error("APP database.fillChequeProds: Position in cheque NOT created! Reason:", err);
+            return;
+        }
+        if (res.notFoundProd) msg=res.notFoundProd;
+        if (res.exist) msg=" * Найдена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чеке №" + chequeData.checkNumber;
+        else msg=" * Добавлена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чек №" + chequeData.checkNumber;
+        emitAndLogEvent(msg,chequeData.cashBoxFabricNum, function(){
+            fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
+        });
+    });
+};
+function fillChequePays(saleChID, cheque, callback) {
+    database.fillToSalePays(saleChID, cheque, function (err, res) {
+        var msg;
+        if (err) {
+            callback(err);
+            return;
+        }
+        if (res.exist) msg='Оплата по чеку №' + cheque.checkNumber + " обновлена";
+        else msg='Оплата по чеку №' + cheque.checkNumber + " добавлена базу";
+        emitAndLogEvent(msg, cheque.cashBoxFabricNum,function(){
+            callback(null, "ok");
+        } );
+    });
+};
 
 app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
     log.info('URL: /sysadmin/import_sales/get_sales  ', 'sCashBoxesList =', getCashBoxesList(clientReq), 'bdate =', clientReq.query.bdate,
@@ -309,291 +364,34 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
     var bdate = clientReq.query.bdate;
     var edate = clientReq.query.edate;
 
-    database.createXMLSalesRequest(bdate, edate, sCashBoxesList,
-        function (error) {
-            clientRes.send({error: ""});
-        }, function (recordset) {
-            var xmlText = "";
-            for (var i in recordset) {
-                var xmlLine = recordset[i].XMLText;
-                xmlText = xmlText + xmlLine;
+    emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null, function(){
+        database.getXMLForUniCashServerRequest(bdate, edate, sCashBoxesList, function (error, xml) {
+            if (error){
+                clientRes.send({error: ""});
+                return;
             }
-
-            var textLengthStr = xmlText.length + "";
-           emitAndLogEvent( 'Отправка запроса кассовому аппарату');
-          //  io.emit('new_event', 'Отправка запроса кассовому аппарату');
-            var cashserver_url = database.getDBConfig()['cashserver.url'];
-            var cashserver_port = database.getDBConfig()['cashserver.port'];
-            request.post({
-                headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
-                //uri:'http://5.53.113.251:12702/lsoft',
-                uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
-                body: xmlText,
-                encoding: 'binary'
-            }, function (error, response, body) {         //console.log("body=", body);
-                io.emit('new_event', 'Получены данные от кассового аппарата');
-
-                var buf = new Buffer(body, 'binary');
-                io.emit('new_event', " Данные форматирутся");
-                var str = iconv_lite.decode(buf, 'win1251');
-                body = iconv_lite.encode(str, 'utf8');
-
-
-
-                //parseString(body, function (err, result) {
-                //var outData = {};
-                //if(err) {       console.log(err);
-                //    return;
-                //}
-                //if(!result.gw_srv_rsp.select){
-                //    outData.error=result.gw_srv_rsp;
-                //       io.emit('response_error', outData);
-                //    res.send(outData);
-                //    return;
-                //}
-                //var cashBoxList = result.gw_srv_rsp.select[0].FISC[0].EJ;
-                //for (var fn in cashBoxList) {
-                //
-                //        var cashBox=cashBoxList[fn];
-                //        var cashBoxID=cashBox.$.ID;
-                //        io.emit('cash_box_id', cashBoxID);
-                //        var docList = cashBoxList[fn].DAT;                  //list of DAT
-                //
-                //    var fillDB = function(docList, i){
-                //           if(!docList || i>= docList.length) return;
-                //      //  for (var i in docList) {
-                //            var listItem = docList[i];
-                //            if(listItem.Z){
-                //                listItem.isZReport=true;             console.log("isZReport=", i);
-                //                fillDB(docList, i+1);
-                //            } //check.Z - Z-отчет
-                //            else if(listItem.C[0].$.T=='0')listItem.isSale=true;
-                //            else if(listItem.C[0].$.T=='1'){
-                //                listItem.isReturn=true;
-                //                fillDB(docList, i+1);                console.log("Return=", i)
-                //            }
-                //            else if(listItem.C[0].$.T=='2'){
-                //                listItem.isInner=true;
-                //                fillDB(docList, i+1);               console.log("isInner=", i)
-                //            }
-                //
-                //            if(listItem.isSale) {                                  log.debug("listItem.isSale");
-                //                var check={};
-                //                check.checkDataID = listItem.$.DI;                   //DAT ID
-                //                check.ITN= listItem.$.TN;                            //ИНН
-                //                check.dataVersion= listItem.$.V;                     // Версия формата пакета данных
-                //                check.cashBoxFabricNum = listItem.$.ZN;
-                //                check.dataFormDate = listItem.TS[0];
-                //
-                //                var goodsList = listItem.C[0].P;
-                //                check.productsInCheck = [];
-                //
-                //                check.checkNumber = "1111" + listItem.C[0].E[0].$.NO;
-                //                check.totalCheckSum = listItem.C[0].E[0].$.SM;
-                //                check.operatorID = listItem.C[0].E[0].$.CS;
-                //
-                //                check.fixalNumPPO = listItem.C[0].E[0].$.FN;
-                //                check.checkDate = listItem.C[0].E[0].$.TS;
-                //
-                //                if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
-                //                    var taxInfo = listItem.C[0].E[0].TX[0].$;
-                //                    if (taxInfo.DTNM) check.AddTaxName = taxInfo.DTNM;
-                //                    if (taxInfo.DTPR) check.AddTaxRate = taxInfo.DTPR;
-                //                    if (taxInfo.DTSM) check.AddTaxSum = taxInfo.DTSM;
-                //                    if (taxInfo.TX) check.taxMark = taxInfo.TX;
-                //                    if (taxInfo.TXPR) check.taxRate = taxInfo.TXPR;
-                //                    if (taxInfo.TXSM) check.taxSum = taxInfo.TXSM;
-                //                    if (taxInfo.TXTY) check.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
-                //                }
-                //
-                //                var payment = listItem.C[0].M[0].$;
-                //                check.buyerPaymentSum = payment.SM;
-                //                if(payment.NM)check.paymentName = payment.NM;
-                //                check.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
-                //                if (payment.RM) check.change = payment.RM;
-                //
-                //                for (var pos in goodsList) {
-                //                    var product = {};
-                //                    product.posNumber = goodsList[pos].$.N;
-                //                    product.name = goodsList[pos].$.NM;
-                //                    product.qty = goodsList[pos].$.Q;
-                //                    product.price = goodsList[pos].$.PRC;
-                //                    product.code = goodsList[pos].$.C;
-                //                    product.taxMark = goodsList[pos].$.TX;      console.log(" product.taxMark=", product.taxMark);
-                //                    check.productsInCheck.push(product);
-                //                }
-                //                io.emit('json_ready', check);
-                //
-                //
-                //                    database.isSaleExists(check, function (err, res) {
-                //                        if (err)    {
-                //                            io.emit('add_to_db_err', check.checkNumber);      log.error("APP database.isSaleExists ERROR=", err);
-                //                            return;
-                //                        }
-                //                        if (!res.empty) {      log.warn("Чек существует в базе " + res.data.checkNumber, "ChID=", res.ChID);
-                //                            var prodInCheckList=res.checkData.productsInCheck;
-                //                            for(var i= 0, i in prodInCheckList.length){
-                //                                var product=prodInCheckList[i];
-                //                                database.checkPositionExists(res.ChID, res.checkData, product, function(err, res){
-                //                                    if(err){log.error("APP database.checkPositionExists ERROR=", err);}
-                //
-                //                                });
-                //                            }
-                //                            database.addToSaleD(res.ChID, res.checkData, function (err, resD) {   console.log("res.ChID,  ",res.ChID,"res.checkData", res.checkData);
-                //                                if (err) {
-                //                                    log.error("APP database.addToSaleD ERROR=", err);
-                //                                    return;
-                //                                }
-                //                                fillDB(docList, i+1);
-                //                            });
-                //                        }
-                //
-                //
-                //                        if (res.empty) {
-                //                            database.addToSale(/*res.data*/ check, function (err, ChID) {
-                //                                if (err)  {
-                //                                    io.emit('add_to_db_err', check.checkNumber);
-                //                                    log.error("APP database.addToSale ERROR=", err);
-                //                                    return;
-                //                                }
-                //                                database.addToSaleD(ChID, res.data,function (err, resD){
-                //                                    if(err){
-                //                                        log.error("APP database.addToSaleD ERROR=", err);
-                //                                        return;
-                //                                    }
-                //
-                //                                    database.addToSalePays(ChID,resD.paymentType, resD.buyerPaymentSum,resD.change,function(err, CHID){
-                //                                        if(err)     {
-                //                                            log.error("APP database.addToSalePays ERROR=", err);
-                //                                        }
-                //
-                //                                        console.log("addToSalePays result 319=", CHID);
-                //                                        database.updateSaleStatus(CHID, function(err, res){
-                //                                            if(err){
-                //                                                log.error("APP database.updateSaleStatus ERROR=", err);
-                //                                                return;
-                //                                            }
-                //                                            io.emit('data_processed_suc');
-                //
-                //                                        });
-                //                                    })
-                //                                });
-                //                                fillDB(docList, i+1);
-                //                            });
-                //                        }
-                //                    });
-                //            };
-                //        };
-                //    fillDB(docList,0);
-                // }
-                ////   }
-                ////sheet.commit();
-                ////workbook.commit();
-                //
-                ////  res.send(outData);
-                //res.end();
-                //  });
-
-                getChequesData(body, function (err, result) {
-                    if (err) {console.log("err 469=", err);
-                        return;
-                    }
-                    var chequesData = result.sales;
-
-                    var fillChequeProds = function (saleChID, chequeData, chequeProdsData, ind, finishedCallback) {
-                        var chequeProdData = chequeProdsData[ind];
-                        if (!chequeProdData) {
-                            //finished!!!
-                            finishedCallback(saleChID, chequeData);
-                            return;
-                        }
-
-                        database.fillChequeProds(saleChID, chequeData, chequeProdData, function (err, res) {   //insert into t_SaleD by saleChID if not exists, ...
+            emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
+                getDataFromUniCashServer(xml, function (error, response, body) {
+                    emitAndLogEvent('Получены данные от кассового сервера', null, function(){
+                        getChequesData(body, function (err, result) {
                             if (err) {
-                                io.emit('new_event', "Не удалось записать позицию №" + chequeProdData.posNumber + " в чек №" + chequeData.checkNumber);
-                                log.error("APP database.fillChequeProds: Position in cheque NOT created! Reason:", err);
+                                emitAndLogEvent('Не удалось обработать данные кассового сервера!');
                                 return;
                             }
-                            if (res.notFoundProd) {
-                                io.emit('new_event', res.notFoundProd);
-                            }
-                            if (res.exist) {
-                                io.emit('new_event', " * Найдена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чеке №" + chequeData.checkNumber);
-                            } else {
-                                io.emit('new_event', " * Добавлена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чек №" + chequeData.checkNumber);
-                            }
-
-                            fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
-                        });
-                    };
-                    var fillChequePays = function (saleChID, cheque, /*ind,*/ callback) {
-
-                        database.fillToSalePays(saleChID, cheque, function (err, res) {
-                            if (err) {
-                                 callback(err);
-                               // return;
-                            }
-                            if (res.exist) {
-                                io.emit('new_event', 'Оплата по чеку №' + cheque.checkNumber + " обновлена");
-                                callback(null, "ok");
-                                return;
-                            }
-                            io.emit('new_event', 'Оплата по чеку №' + cheque.checkNumber + " добавлена базу");
-                            callback(null, "ok");
-                        });
-                    };
-
-                    var fillCheques = function (chequesData, ind) {
-                        var chequeData = chequesData[ind];
-                        if (!chequeData) {
-                            io.emit('new_event', 'Данные загружены в базу');
-                            clientRes.send({"done": "ok"});
-                            //finished!!!
-                            return;
-                        }
-
-                        database.fillChequeTitle(chequeData, function (err, res) { //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
-                            if (err) {
-                                console.log(err);
-                                io.emit('new_event', "Произошла ошибка при записи в БД!");               // log.error("APP database.fillChequeTitle: Sale NOT created! Reason:", err);
-                                return;
-                            }
-                            // console.log("res.ChID 519=",res.ChID);
-                            chequeData.saleChID = res.ChID;                                                // console.log("chequeData.saleChID 520=",chequeData.saleChID);
-                            if (res.exist) {
-                                io.emit('new_event', "Чек №" + chequeData.checkNumber + " найден в БД");
-                             //   log.info("APP database.fillChequeTitle: Sale found with ChID=", chequeData.saleChID);
-                            } else {
-                                io.emit('new_event', "Заголовок чека №" + chequeData.checkNumber + " добавлен в БД");
-                              //  log.info("APP database.fillCheque: Sale created with ChID=", chequeData.saleChID);
-                            }
-
-                            var saleChID = chequeData.saleChID;                                                       //console.log("saleChID 529=",saleChID);
-                            var chequeProds = chequeData.productsInCheck;//!!!
-
-                            fillChequeProds(saleChID, chequeData, chequeProds, 0,
-                                /*finishedCallback*/function (saleChID, chequeData) {
-                                    if (saleChID) {
-                                        console.log(saleChID);
-                                       // return;
-                                    }
-                                  //  console.log(chequeProdsData);
-
-                                    fillChequePays(saleChID, chequeData, function (err, res) {
-                                            if (err){
-                                                console.log(err);
-                                                return;
-                                            }
-                                                fillCheques(chequesData, ind + 1);
-                                        });
+                            emitAndLogEvent('Данные кассового сервера обработаны успешно', null, function(){
+                                var chequesData = result.sales;
+                                fillCheques(chequesData, 0, /*finishedcallback*/function(){
+                                    emitAndLogEvent( 'Все данные успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function(){
+                                        clientRes.send({"done": "ok"});
+                                    });
                                 });
+                            });
                         });
-                    };
-                    fillCheques(chequesData, 0);
+                    });
                 });
             });
-
         });
+    });
 });
 
 function getCashBoxesList(req) {
@@ -605,11 +403,10 @@ function getCashBoxesList(req) {
     }
     return sCashBoxesList;
 }
-
 server.listen(port, function (err) {
-    console.log("server runs on port " + port, "  ", new Date().getTime() - startTime);
+    console.log("server runs on port " + port);
+    log.info("server runs on port " + port, new Date().getTime() - startTime);
 });
-
-console.log("end app", new Date().getTime() - startTime);
+log.info("end app", new Date().getTime() - startTime);
 
 

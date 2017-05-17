@@ -66,7 +66,7 @@ module.exports.getAllCashBoxes= function(callback) {
     );
 };
 
-module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errAction, successAction) {
+module.exports.getXMLForUniCashServerRequest = function (bdate, edate, cashBoxesID, callback) {
     var reqSql = new sql.Request(conn);
     var query_str = fs.readFileSync('./scripts/sales_report.sql', 'utf8');
     reqSql.input('BDATE', sql.NVarChar, bdate);
@@ -75,67 +75,12 @@ module.exports.createXMLSalesRequest = function (bdate, edate, cashBoxesID, errA
     reqSql.query(query_str,
         function (err, recordset) {
             if (err) {
-                errAction(err);
+                callback(err);
             } else {
-               successAction(recordset);
+                callback(null,recordset);
             }
         })
 };
-
-//module.exports.isSaleExists = function (data, callback) {
-//    var reqSql = new sql.Request(conn);
-//    reqSql.input('DocID', sql.Int, data.checkNumber);
-//    // reqSql.input('FacID',sql.NVarChar, data.cashBoxFabricNum);
-//    var queryString = fs.readFileSync('./scripts/check_t_sale_exists.sql', 'utf8');
-//
-//        reqSql.query(queryString,
-//            function (err, recordset) {
-//                    if (err) {
-//                        callback(err, null);
-//                        return;
-//                    }
-//                var outData = {};
-//                outData.data = data;
-//                if (recordset.length == 0) {
-//                    outData.empty = true;
-//                } else outData.ChID = recordset[0].ChID;
-//                outData.checkData=data;
-//                callback(null, outData);
-//            });
-//};
-
-
-//module.exports.addToSale = function (data, callback) {
-//
-//    //var dch = data.checkDate.split("");
-//    //var date = dch[0] + dch[1] + dch[2] + dch[3] + "-" + dch[4] + dch[5] + "-" + dch[6] + dch[7] + " " + dch[8] + dch[9] + ":" + dch[10] + dch[11] + ":" + dch[12] + dch[13];
-//    var FacID=data.cashBoxFabricNum;
-//    var FacIDNum=FacID.replace("ПБ","");    console.log("FacIDNum=",FacIDNum);
-//    var date=formatDate(data.checkDate);
-//    var reqSql = new sql.Request(conn);
-//
-//    var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
-//    reqSql.input('DocID', sql.NVarChar, data.checkNumber);
-//    reqSql.input('DocDate', sql.NVarChar, date);
-//    reqSql.input('OperID', sql.NVarChar, data.operatorID);
-//    reqSql.input('DocTime', sql.NVarChar, date);
-//    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum);
-//    reqSql.input('FacID', sql.NVarChar,FacIDNum);
-//    reqSql.input('DocCreateTime', sql.NVarChar, date);
-//    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, data.change);
-//    else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
-//   // reqSql.input('TTaxSum', sql.NVarChar, data.AddTaxSum + data.taxSum);
-//   // reqSql.input('TSumCC_wt', sql.NVarChar, data.totalCheckSum);
-//
-//    reqSql.query(queryString,
-//        function (err,recordset) {
-//            if (err) {
-//                callback(err, null);
-//                return;
-//            }
-//            callback(null, recordset[0].ChID);
-//        });
-//};
 
 function isPaymentExist(CHID, callback){
     var reqSql = new sql.Request(conn);
@@ -144,7 +89,7 @@ function isPaymentExist(CHID, callback){
         function (err, recordset) {
             var outData={};
             if (err) {
-                callback(err);           console.log(err);
+                callback(err);
                 return;
             }
             if(recordset[0]) {
@@ -171,7 +116,6 @@ function addToSalePays (CHID,cheque,callback){
         function (err, recordset) {
             if (err) {
                 callback(err);
-                console.log(err);
             } else {
                 if(change){
                     var reqSql = new sql.Request(conn);
@@ -184,7 +128,6 @@ function addToSalePays (CHID,cheque,callback){
                         function (err, recordset) {
                             if (err) {
                                 callback(err);
-                             console.log(err);
                             } else {
                                 callback(null,CHID);
                             }
@@ -201,7 +144,7 @@ function deletePayment(ChID, callback){
     reqSql.query("DELETE from t_SalePays WHERE ChID=@CHID",
         function (err, recordset) {
             if (err) {
-                callback(err);           console.log(err);
+                callback(err);
                 return;
             }
             callback(null, "deleted");
@@ -251,7 +194,7 @@ function updateSaleStatus (CHID, callback){
         function (err, recordset) {
             if (err) {
                 callback(err);
-                console.log(err);
+             return;
             }
             callback(null, "updated");
         })
@@ -264,7 +207,7 @@ function isSaleExists(DOCID,callback){
         function (err, recordset) {
             var outData={};
             if (err) {
-                callback(err);                                                                                          console.log(err);
+                callback(err);
                 return;
             }
             if(recordset[0]){
@@ -338,7 +281,7 @@ function isPosExists(ChID, posNum, callback){
         function (err, recordset) {
             var outData={};
             if (err) {
-                callback(err);                              console.log(err);
+                callback(err);
                 return;
             }
             if(recordset[0]){
@@ -375,7 +318,6 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     reqSql.input('PurPriceCC_wt', sql.NVarChar, chequeProdData.price);
     reqSql.input('CreateTime', sql.NVarChar, date);
     reqSql.input('ModifyTime', sql.NVarChar, date);
-    // reqSql.input('TaxTypeID', sql.NVarChar, chequeProdData.taxMark);
     reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price);
     reqSql.input('RealSum', sql.NVarChar, chequeProdData.price * Qty);
     reqSql.input('OperID', sql.NVarChar, chequeData.operatorID);
@@ -428,41 +370,39 @@ module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, c
     });
 };
 
-module.exports.logToDB = function(Msg,FacID, callback) {              console.log("logToDB");
+module.exports.logToDB = function(Msg,FacID, callback) {
     var reqSql = new sql.Request(conn);
     var CRID;
-    if(!FacID){                                                        console.log("logToDB");
+    if(!FacID){
         CRID=0;
-        //var reqSql = new sql.Request(conn);
         reqSql.input('CRID', sql.NVarChar, CRID);
         reqSql.input('Msg', sql.NVarChar, Msg);
         var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
         reqSql.query(queryString,
             function (err, recordset) {
                 if (err) {
-                    callback(err);                              console.log(err);
+                    callback(err);
                     return;
                 }
                 callback(null,"ок");
             })
-    }else{                                                             console.log("FacID=",FacID);
-       // var reqSql = new sql.Request(conn);
-        reqSql.input('FacID', sql.NVarChar, FacID);
+    }else{
+        var FacIDFormatted=FacID.replace("ПБ","");
+        reqSql.input('FacID', sql.NVarChar, FacIDFormatted);
         reqSql.query('select  CRID from r_Crs WHERE FacID=@FacID;',
             function (err, recordset) {
                 if (err) {
-                    callback(err);                              console.log(err);
+                    callback(err);
                     return;
                 }
-              //  var reqSql = new sql.Request(conn);
-                CRID=recordset[0].CRID;                         console.log("CRID=",CRID);
+                CRID=recordset[0].CRID;
                 reqSql.input('CRID', sql.NVarChar, CRID);
                 reqSql.input('Msg', sql.NVarChar, Msg);
                 var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
                 reqSql.query(queryString,
                     function (err, recordset) {
                         if (err) {
-                            callback(err);                              console.log(err);
+                            callback(err);
                             return;
                         }
                         callback(null,"ок");
