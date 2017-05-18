@@ -132,6 +132,7 @@
                 };
 
                 btnImportSales.onClick=function(){
+                    btnImportSales.set('disabled','true');
                     btnImportSales.list= document.createElement('ul');
                     document.getElementById("sql_display_content").appendChild(btnImportSales.list);
                     var bdate; var edate;
@@ -147,25 +148,29 @@
                             var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
                             cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;
                         }
-                    }
+                    }                                                                                           console.log("btnImportSales.onClick start request");
                     Request.getJSONData({url: "/sysadmin/import_sales/get_sales",
-                                condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params ,
+                                condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params +"&timeout=5000",
                                 consoleLog: true},
-                            function (success, result) {        console.log("success 168=",success,"result 168=",result);
+                            function (success,result) {        console.log("btnImportSales.onClick Request.getJSONData result=",result);
+                                btnImportSales.set('disabled',false);
                                 if (!success) {
                                     alert("No connection to the server! 156");
                                     return;
-                                }
-                                if (result.error) {
+                                }if (result.error) {
                                     console.log("Error:" + JSON.stringify(result.error));
                                     return;
                                 }
                             });
-                    };
+                };
 
                 btnCleanUp.onClick = function () {
+
                     var displayResult = document.getElementById("sql_display_content");
-                    displayResult.removeChild(displayResult.childNodes[0]);
+                    while (displayResult.firstChild) {
+                        displayResult.removeChild(displayResult.firstChild);
+                    }
+                 //   displayResult.removeChild(displayResult.childNodes[0]);
                 };
             });
 </script>

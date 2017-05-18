@@ -221,12 +221,16 @@ function isSaleExists(DOCID,callback){
 }
 
 function addToSale(data, callback){
-    var FacID=data.cashBoxFabricNum;
-    var FacIDNum=FacID.replace("ПБ","");
-    var date=formatDate(data.checkDate);
-    var reqSql = new sql.Request(conn);
-
-    var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
+    try {
+        var FacID = data.cashBoxFabricNum;
+        var FacIDNum = FacID.replace("ПБ", "");
+        var date = formatDate(data.checkDate);
+        var reqSql = new sql.Request(conn);
+        var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
+    }catch(e){
+        callback(e);
+        return;
+    }
     reqSql.input('DocID', sql.NVarChar, data.checkNumber);
     reqSql.input('DocDate', sql.NVarChar, date);
     reqSql.input('OperID', sql.NVarChar, data.operatorID);
@@ -330,7 +334,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                 return;
             }
             if (!recordset[0]) {
-                outData.notFoundProd="Не удалось внести позицию! Наименования " + chequeProdData.name + " не найдено в базе";
+                outData.notFoundProd="Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе";
                 callback(null, outData);
                 return;
             }
@@ -394,6 +398,9 @@ module.exports.logToDB = function(Msg,FacID, callback) {
                 if (err) {
                     callback(err);
                     return;
+                }
+                if(!(recordset && recordset[0])){
+                    callback("Не удалось определить ID кассового аппарата");
                 }
                 CRID=recordset[0].CRID;
                 reqSql.input('CRID', sql.NVarChar, CRID);
