@@ -103,7 +103,7 @@ function isPaymentExist(CHID, callback){
 
 function addToSalePays (CHID,cheque,callback){
 try {
-    var buyerPaymentSum = cheque.buyerPaymentSum;
+    var buyerPaymentSum = cheque.buyerPaymentSum/1000;
     var change = cheque.change;
     var PayFormCode = detectPaymentForm(cheque.paymentType);
     var reqSql = new sql.Request(conn);
@@ -127,7 +127,7 @@ try {
                     reqSql.input('CHID', sql.NVarChar, CHID);
                     reqSql.input('PayFormCode', sql.NVarChar, PayFormCode);
                     reqSql.input('SumCC_wt', sql.NVarChar, buyerPaymentSum);
-                    reqSql.input('SumCC_wt', sql.NVarChar, '-'+change);
+                    reqSql.input('SumCC_wt', sql.NVarChar, '-'+change/1000);
                     reqSql.query(query_str,
                         function (err, recordset) {
                             if (err) {
@@ -239,10 +239,10 @@ function addToSale(data, callback){
     reqSql.input('DocDate', sql.NVarChar, date);
     reqSql.input('OperID', sql.NVarChar, data.operatorID);
     reqSql.input('DocTime', sql.NVarChar, date);
-    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum);
+    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum/1000);
     reqSql.input('FacID', sql.NVarChar,FacIDNum);
     reqSql.input('DocCreateTime', sql.NVarChar, date);
-    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, data.change);
+    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-'+data.change/1000);
     else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
 
     reqSql.query(queryString,
@@ -306,10 +306,10 @@ function isPosExists(ChID, posNum, callback){
 function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     try {
         var date = formatDate(chequeData.checkDate);
-        var PriceCC_nt = chequeProdData.price / 1.2;
-        var Qty = chequeProdData.qty;
+        var PriceCC_nt = chequeProdData.price / 1.2/1000;
+        var Qty = chequeProdData.qty/1000;
         var SumCC_nt = PriceCC_nt * Qty;
-        var Tax = chequeProdData.price - PriceCC_nt;
+        var Tax = chequeProdData.price/1000 - PriceCC_nt;
         var TaxSum = Tax * Qty;
         var reqSql = new sql.Request(conn);
         reqSql.input('ChID', sql.NVarChar, ChID);
@@ -320,15 +320,15 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
         reqSql.input('Tax', sql.NVarChar, Tax);
         reqSql.input('TaxSum', sql.NVarChar, TaxSum);
-        reqSql.input('PriceCC_wt', sql.NVarChar, chequeProdData.price);
-        reqSql.input('SumCC_wt', sql.NVarChar, chequeProdData.price * Qty);
+        reqSql.input('PriceCC_wt', sql.NVarChar, chequeProdData.price/1000);
+        reqSql.input('SumCC_wt', sql.NVarChar, chequeProdData.price/1000 * Qty);
         reqSql.input('PurPriceCC_nt', sql.NVarChar, PriceCC_nt);
         reqSql.input('PurTax', sql.NVarChar, Tax);
-        reqSql.input('PurPriceCC_wt', sql.NVarChar, chequeProdData.price);
+        reqSql.input('PurPriceCC_wt', sql.NVarChar, chequeProdData.price/1000);
         reqSql.input('CreateTime', sql.NVarChar, date);
         reqSql.input('ModifyTime', sql.NVarChar, date);
-        reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price);
-        reqSql.input('RealSum', sql.NVarChar, chequeProdData.price * Qty);
+        reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price/1000);
+        reqSql.input('RealSum', sql.NVarChar, chequeProdData.price/1000 * Qty);
         reqSql.input('OperID', sql.NVarChar, chequeData.operatorID);
     }catch(e){
         callback(e);
