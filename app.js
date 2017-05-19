@@ -189,12 +189,12 @@ function getDataFromUniCashServer(xml, callback) {
 
         uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
         //uri:'http://5.53.113.251:12702/lsoft',//real url
-        //uri:'http://5.53.113.217:12702/lsoft', //test wrong url
-        //uri:'http://5.53.113.251:12702/',//test
-       // uri:'',//test
+        // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
+        // uri:'http://5.53.113.251:12702/',//test empty resp.body
+        // uri:'',//test
         body: xmlText,
         encoding: 'binary'
-        ,timeout:100
+        ,timeout:5000
     }, function (error, response, body) {
         callback(error, response, body);
         return;
@@ -214,15 +214,23 @@ function getChequesData(body, callback) {
             callback(err);
             return;
         }
-        if(result.ERROR){
-            log.warn("Oтвет кассового сервера: " +result.ERROR); // Проверка на валидность ответа
-            outData.respErr ="Oтвет кассового сервера: " + result.ERROR;
+        if(!result){
+            log.warn("Кассовый сервер вернул пустой файл!"); // Проверка на валидность ответа
+            outData.respErr = "Кассовый сервер вернул пустой файл!";
             callback(outData.respErr);
             return;
         }
-        if (!result.gw_srv_rsp.select) {
-            log.warn("Oтвет кассового сервера: " +result.gw_srv_rsp); // Проверка на валидность ответа
-            outData.respErr = "Oтвет кассового сервера: " +result.gw_srv_rsp;
+        if(result && result.ERROR){
+            var stringResult=JSON.stringify(result.ERROR)?JSON.stringify(result.ERROR):result.ERROR;
+            log.warn("Oтвет кассового сервера: " +stringResult); // Проверка на валидность ответа
+            outData.respErr ="Oтвет кассового сервера: " + stringResult;
+            callback(outData.respErr);
+            return;
+        }
+        if (!result.gw_srv_rsp || !result.gw_srv_rsp.select) {
+            var stringResult=JSON.stringify(result)?JSON.stringify(result):result;
+            log.warn("Oтвет кассового сервера: " +stringResult); // Проверка на валидность ответа
+            outData.respErr = "Oтвет кассового сервера: " +stringResult;
             callback(outData.respErr);
             return;
         }
@@ -232,7 +240,7 @@ function getChequesData(body, callback) {
                 var cashBox = cashBoxList[fn];
                 var cashBoxID = cashBox.$.ID;
                 var docList = cashBoxList[fn].DAT;
-                for(var i in docList) {
+                for (var i in docList) {
                     var listItem = docList[i];
                     if (listItem.Z) {
                         listItem.isZReport = true;
@@ -240,38 +248,54 @@ function getChequesData(body, callback) {
                     else if (listItem.C[0].$.T == '0')listItem.isSale = true;
                     else if (listItem.C[0].$.T == '1') {
                         listItem.isReturn = true;
+                        log.error("Операция возврврата не поддерживается!");
+                        callback("Операция возврврата не поддерживается!");
+                        return;
                     }
+                    //else if (listItem.C[0].$.T == '2') {
+                    //    var inner =listItem.C[0].$.T;
+                    //     if(inner.I)listItem.isMoneyIn;
+                    //     else if(inner.O)listItem.isMoneyOut;
+                    //     else{ log.error("Неизвестная операция");
+                    //         callback("Неизвестная операция");
+                    //         return;
+                    //     }
+                    //}
                     else if (listItem.C[0].$.T == '2') {
                         listItem.isInner = true;
+                    }
+                    else {
+                        log.error("Неизвестная операция");
+                        callback("Неизвестная операция");
+                        return;
                     }
 
                     if (listItem.isSale) {
                         var cheque = {};
 
-                        cheque.checkDataID = listItem.$.DI;                   //DAT ID
-                        cheque.ITN = listItem.$.TN;                            //ИНН
-                        cheque.dataVersion = listItem.$.V;                     // Версия формата пакета данных
-                       cheque.cashBoxFabricNum = listItem.$.ZN;
-                      //  cheque.cashBoxFabricNum = listItem.$.Zd; //test
-                        cheque.dataFormDate = listItem.TS[0];
+                        cheque.checkDataID = listItem.$.DI;                   //DAT ID  не исп
+                        cheque.ITN = listItem.$.TN;                            //ИНН не исп
+                        cheque.dataVersion = listItem.$.V;                     // Версия формата пакета данных не исп
+                        cheque.cashBoxFabricNum = listItem.$.ZN;
+                        cheque.dataFormDate = listItem.TS[0];                        //не исп.
 
                         var goodsList = listItem.C[0].P;
                         cheque.productsInCheck = [];
                         cheque.checkNumber = "1111" + listItem.C[0].E[0].$.NO;
-                        cheque.totalCheckSum = listItem.C[0].E[0].$.SM;
+                        cheque.totalCheckSum = listItem.C[0].E[0].$.SM;         //не исп
                         cheque.operatorID = listItem.C[0].E[0].$.CS;
-                        cheque.fixalNumPPO = listItem.C[0].E[0].$.FN;
+                        cheque.fixalNumPPO = listItem.C[0].E[0].$.FN;         //не исп
                         cheque.checkDate = listItem.C[0].E[0].$.TS;
 
                         if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
                             var taxInfo = listItem.C[0].E[0].TX[0].$;
-                            if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM;
-                            if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR;
-                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;
-                            if (taxInfo.TX) cheque.taxMark = taxInfo.TX;
-                            if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;
-                            if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;
-                            if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;       //"0"-включ в стоимость, "1" - не включ.
+                            if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
+                            if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
+                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //не исп
+                            if (taxInfo.TX) cheque.taxMark = taxInfo.TX;     //не исп
+                            if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;  //не исп
+                            if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;   //не исп
+                            if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
                         }
 
                         var payment = listItem.C[0].M[0].$;
@@ -284,19 +308,45 @@ function getChequesData(body, callback) {
                             product.posNumber = goodsList[pos].$.N;
                             product.name = goodsList[pos].$.NM;
                             product.qty = goodsList[pos].$.Q;
-                          //  product.price = goodsList[pos].$.PRC;
-                            product.price=goodsList[pos].$.PrC;
+                            product.price = goodsList[pos].$.PRC;
                             product.code = goodsList[pos].$.C;
                             product.taxMark = goodsList[pos].$.TX;
                             cheque.productsInCheck.push(product);
                         }
                         outData.sales.push(cheque);
-                    };
+                    }
+                    if(listItem.isInner){
+                    var inner={};
+
+                        if(listItem.C[0].I){
+                            inner.isMoneyIn=true;
+                            inner.paymentType = listItem.C[0].I[0].$.T;
+                            inner.paymentTypeName = listItem.C[0].I[0].$.NM;
+                            inner.paymentSum = listItem.C[0].I[0].$.SM;
+                        }
+                        if(listItem.C[0].O){
+                            inner.isMoneyOut=true;
+                            inner.paymentType = listItem.C[0].O[0].$.T;
+                            inner.paymentTypeName = listItem.C[0].O[0].$.NM;
+                            inner.paymentSum = listItem.C[0].O[0].$.SM;
+
+                        }
+
+
+                        inner.paymentDate = listItem.TS[0];
+                        if(listItem.C[0].E[0].$.CS) inner.operatorID=listItem.C[0].E[0].$.CS;
+
+                        inner.checkDataID = listItem.$.DI;
+                        inner.ITN = listItem.$.TN;
+                        inner.dataVersion = listItem.$.V;
+                        inner.cashBoxFabricNum = listItem.$.ZN;
+                        inner.dataFormDate = listItem.TS[0];
+                    }
+
                 }
                 callback(null, outData);
             }
         }catch (e){
-           // emitAndLogEvent("Не удалось обработать данные полученные от кассового сервера! причина:"+e);
             log.warn("Не удалось обработать данные полученные от кассового сервера! причина:",e);
             callback(e, outData);
         }
@@ -310,7 +360,7 @@ function fillCheques(chequesData, ind, finishedcallback) {
         return;
     }
 
-    database.fillChequeTitle(chequeData, function (err, res) { //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
+    database.fillChequeTitle(chequeData, function (err, res) {       //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
         if (err) {
             log.error("APP database.fillChequeTitle: Sale NOT created! Reason:"+ err);
             finishedcallback("Sale NOT created! Reason:"+ err);
@@ -326,15 +376,16 @@ function fillCheques(chequesData, ind, finishedcallback) {
             var chequeProds = chequeData.productsInCheck;//!!!
             fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {
                 if(err){
-                    finishedcallback(err);
+                    finishedcallback("Position not added to cheque! Reason:"+err);
                     return;
                 }
-                fillChequePays(saleChID, chequeData, function (err, res) {
+                fillChequePays(saleChID, chequeData, function (err, res) {              // console.log("fillChequePays saleChID err=",err);
                     if (err){
                         log.error("Не удалось внести оплату по чеку в БД Reason: "+err);
                         finishedcallback("Не удалось внести оплату по чеку в БД Reason: "+err);
                         return;
                     }
+
                     fillCheques(chequesData, ind + 1,finishedcallback);
                 });
             });
@@ -343,12 +394,12 @@ function fillCheques(chequesData, ind, finishedcallback) {
     });
 };
 function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCallback) {
+
     var chequeProdData = chequeProdsData[ind];
     if (!chequeProdData) {     //finished!!!
         finishedCallback(null, saleChID, chequeData);
         return;
     }
-
     database.fillChequeProds(saleChID, chequeData, chequeProdData, function (err, res) {
         var msg;
         if (err) {
@@ -360,10 +411,10 @@ function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCal
             return;
         }
         if (res.notFoundProd) msg=res.notFoundProd;
-        if (res.exist) msg=" * Найдена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чеке №" + chequeData.checkNumber;
+        if (res.exist) msg=" * Найдена позиция №" + chequeProdData.posNumber +  " в чеке №" + chequeData.checkNumber;
         else msg=" * Добавлена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чек №" + chequeData.checkNumber;
         emitAndLogEvent(msg,chequeData.cashBoxFabricNum, function(){
-            fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
+                fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
         });
     });
 };
@@ -399,9 +450,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
             }
            // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
             emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
-                getDataFromUniCashServer(xml, function (error, response, body) {
-                    //clientRes.send({res:"ok"});
-                    //return;
+                getDataFromUniCashServer(xml, function (error, response, body) {          // console.log("getDataFromUniCashServer error=",error ); console.log(" response=",response );console.log(" body=",body );
                     if(error){
                         log.error(error);
                         var errMsg;
@@ -423,16 +472,19 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                         return;
                     }
                     if(!body){
-                        log.error("Кассовый сервер вернул пустой файл!");
-                        emitAndLogEvent("Кассовый сервер вернул пустой файл!",null,function(){
-                            clientRes.send({error: "Кассовый сервер вернул пустой файл!"});
+                        log.error("Кассовый сервер не прислал данные!");
+                        emitAndLogEvent("Кассовый сервер не прислал данные!",null,function(){
+                            clientRes.send({error: "Кассовый сервер не прислал данные!"});
                         });
                         return;
                     }
-                    emitAndLogEvent('Получены данные от кассового сервера', null, function(){
-                        getChequesData(body /*"kjhbkljh" /*test*/, function (err, result) {
+                    emitAndLogEvent('Получен ответ от кассового сервера', null, function(){
+                       // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
+                      //  body="kjhbkljh"; //test
+
+                        getChequesData(body, function (err, result) {
                             if (err) {
-                                emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err, function(){
+                                emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null, function(){
                                     clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
                                 });
                                 return;
@@ -441,9 +493,9 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                 var chequesData = result.sales;
                                 fillCheques(chequesData, 0, /*finishedcallback*/function(err){
                                     if(err){
-                                      //  emitAndLogEvent(err, null, function() {
+                                        emitAndLogEvent(err, null, function() {
                                             clientRes.send({error:err});
-                                      //  });
+                                        });
                                         return;
                                     }
                                     emitAndLogEvent( 'Все данные успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function(){
