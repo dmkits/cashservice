@@ -218,6 +218,8 @@ function getChequesData(body, callback) {
         var outData = {};
         outData.sales = [];
         outData.inners = [];
+        outData.reports = [];
+
         if (err) {
             log.info(err);
             callback(err);
@@ -343,7 +345,62 @@ function getChequesData(body, callback) {
 
                         outData.inners.push(inner);
                     }
+
+                    if(listItem.isZReport){
+                        var report={};
+                        report.checkDataID = listItem.$.DI;
+                        report.ITN = listItem.$.TN;
+                        report.FinID = listItem.$.FN;
+                        report.dataVersion = listItem.$.V;
+                        report.cashBoxFabricNum = listItem.$.ZN;
+                        report.dataFormDate = listItem.TS[0];
+
+                        report.reportNum=listItem.Z[0].$.NO;
+
+                   for(var j in listItem.Z[0].M) {
+                       if (listItem.Z[0].M[j].$[0].T=="0") {
+                           //M[...]  итоговая информация по оборотам по типам оплаты
+                           report.totalCashPaymentIncomeName = listItem.Z[0].M[j].$[0].NM?listItem.Z[0].M[j].$[0].NM:'';  //Название формы оплаты (может не указываться)
+                           report.totalCashPaymentIncomeSum = listItem.Z[0].M[j].$[0].SMI?listItem.Z[0].M[j].$[0].SMI:0; //Сумма полученных денег в копейках  //может отсутствовать
+                           report.totalCashPaymentOutSum = listItem.Z[0].M[j].$[0].SMO?listItem.Z[0].M[j].$[0].SMO:0;
+
+                         //  report.totalCashIncome = listItem.Z[0].M[0].$[0].T;  //Тип оплаты: 0 – наличными
+                         // SMO -Сума выданных денег в копейках  //может отсутствовать
+                       }else{
+                           report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$[0].NM?listItem.Z[0].M[j].$[0].NM:'';  //Название формы оплаты (может не указываться)
+                           report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$[0].SMI?listItem.Z[0].M[j].$[0].SMI:0; //Сумма полученных денег в копейках  //может отсутствовать
+                           report.totalCardPaymentOutSum = listItem.Z[0].M[j].$[0].SMO?listItem.Z[0].M[j].$[0].SMO:0;
+                       }
+                   }
+                        //IO[...]   итоговая информация по внесению денег
+                           if(listItem.Z[0].IO[0].$[0].NM) report.cashPaymentTypeName= listItem.Z[0].IO[0].$[0].NM;    //Название формы оплаты (может не указываться)
+                           report.totalMoneyRec= listItem.Z[0].IO[0].$[0].SMI?listItem.Z[0].IO[0].$[0].SMI:0;    //Сумма полученных денег в копейках
+                           report.totalMoneyExp= listItem.Z[0].IO[0].$[0].SMO?listItem.Z[0].IO[0].$[0].SMO:0; //Сумма выданных денег в копейках
+                           // listItem.Z[0].IO[0].$[0].T;  // Тип оплаты: 0 – наличными
+
+                        //NC[]  итоговая информация по количеству чеков
+                        report.totalSaleCheques =  listItem.Z[0].NC[0].$[0].NI?listItem.Z[0].NC[0].$[0].NI:0;
+                        report.totalReturnCheques  =listItem.Z[0].NC[0].$[0].NO?listItem.Z[0].NC[0].$[0].NO:0;
+
+                        //TXS[...]  отчетную информацию по конкретному налогу.
+                        listItem.Z[0].TXS[0].$[0].DTI;   //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                        listItem.Z[0].TXS[0].$[0].DTNM; //Наименование дополнительного сбора
+                        listItem.Z[0].TXS[0].$[0].DTPR; //Ставка налогового сбора в процентах в копейках
+                        listItem.Z[0].TXS[0].$[0].SMI;  //Итог операций по полученным деньгам в копейках        //может отсутствовать
+                        listItem.Z[0].TXS[0].$[0].TS;   //Дата установки налога
+                        listItem.Z[0].TXS[0].$[0].TX;    //Обозначение налога
+                        listItem.Z[0].TXS[0].$[0].TXAL; //Алгоритм вычисления налога
+                        listItem.Z[0].TXS[0].$[0].TXI; //Налог по полученным деньгам в копейках  //может отсутствовать
+                        listItem.Z[0].TXS[0].$[0].TXPR; //Процент налога
+                        listItem.Z[0].TXS[0].$[0].TXTY; //Признак налога, не включенного в стоимость:
+
+                       // TXO - Налог по выданным деньгам в копейках
+                       // DTO - Дополнительный сбор по выданным деньгам  d копейках
+                       // SMO -Итог операций по выданным деньгам в копейках
+                        outData.reports.push(report);
+                    }
                 }
+
                 callback(null, outData);
             }
         }catch (e){
@@ -506,7 +563,11 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                                     return;
                                                 }
                                                 emitAndLogEvent('Все вносы/выносы успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum,function(){
-                                                    clientRes.send({"done": "ok"});
+                                                   // clientRes.send({"done": "ok"});
+                                                    addToZrep(outData.reports, 0,function(err,res){
+
+                                                    });
+
                                                 })
                                             });
 
@@ -524,7 +585,20 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
         });
     });
 });
+function addToZrep(reports,ind, callback){
+    if(!reports[ind]){
+        callback(null, "done");
+        return;
+    }
+    var report=reports[ind];
+    database.addToZrep(report, function(err, res){
 
+
+
+    });
+
+
+}
 function insertInnerDoc(InnerDocList, ind, callback) {
 
     if (!InnerDocList[ind]) {

@@ -503,6 +503,51 @@ module.exports.addToMonIntExp = function(innerDoc, callback) {
                 })
         })
 };
+//addToZrep
+
+module.exports.addToZrep = function(rep, callback) {
+
+    var FacID=rep.cashBoxFabricNum.replace("ПБ","");
+    var DocDate = formatDate(rep.dataFormDate);
+
+    //var SumCC=innerDoc.paymentSum/100;
+    //var OperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
+
+    var query_str = fs.readFileSync('./scripts/add_to_zrep.sql', 'utf8');
+    var reqSql = new sql.Request(conn);
+
+    reqSql.input('FacID', sql.NVarChar, FacID);
+    reqSql.input('DocDate', sql.NVarChar, DocDate);
+    reqSql.input('FinID', sql.NVarChar, rep.FinID);
+    reqSql.input('ZRepNum', sql.NVarChar, rep.reportNum);
+    reqSql.input('SumMonRec', sql.NVarChar, rep.totalMoneyRec/100);
+    reqSql.input('SumMonExp', sql.NVarChar, rep.totalMoneyExp/100);
+   // reqSql.input('SumCC_wt', sql.NVarChar, rep.totalCashoneyExp/100);
+
+
+    reqSql.query('select * from t_zRep where DocDate=@DocDate AND SumCC=@SumCC',
+        function (err, recordset) {
+            var outData={};
+            if (err) {
+                callback(err);
+                return;
+            }
+            if(recordset[0]){
+                outData.exists=true;
+                callback(null,outData);
+                return
+            }
+
+            reqSql.query(query_str,
+                function (err, recordset) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    callback(null, "done");
+                })
+        })
+};
 
 
 function formatDate(date){
