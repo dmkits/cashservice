@@ -86,7 +86,7 @@
                 var sa_startup_params_appLocalConfig = document.getElementById("sa_startup_params_appLocalConfig");
                 var reloadBtn = new Button({id: "SA_startup_params_BtnAppLocalConfigLoad"}, "SA_startup_params_BtnAppLocalConfigLoad");
                 var saveAndReconnectBtn = new Button({id: "SA_startup_params_BtnAppLocalConfigSaveAndReconnect"}, "SA_startup_params_BtnAppLocalConfigSaveAndReconnect");
-                sa_startup_params_PageContent.getAppConfiguration = function(){
+                sa_startup_params_PageContent.getAppConfiguration = function(){                            console.log("sa_startup_params_PageContent.getAppConfiguration");
                     Request.getJSONData({url: "/sysadmin/startup_parameters/get_app_config", consoleLog: true},
                             function (success, result) {
                                 if (!success) {

@@ -103,14 +103,13 @@ function isPaymentExist(CHID, callback){
 
 function addToSalePays (CHID,cheque,callback){
 try {
-    var buyerPaymentSum = cheque.buyerPaymentSum/1000;
-    var change = cheque.change;
+    var buyerPaymentSumFormatted = cheque.buyerPaymentSum/100;
     var PayFormCode = detectPaymentForm(cheque.paymentType);
     var reqSql = new sql.Request(conn);
     var query_str = fs.readFileSync('./scripts/add_to_salepays.sql', 'utf8');
     reqSql.input('CHID', sql.NVarChar, CHID);
     reqSql.input('PayFormCode', sql.NVarChar, PayFormCode);
-    reqSql.input('SumCC_wt', sql.NVarChar, buyerPaymentSum);
+    reqSql.input('SumCC_wt', sql.NVarChar, buyerPaymentSumFormatted);
 }catch(e){
     callback(e);
     return;
@@ -121,13 +120,13 @@ try {
                 callback(err);
                 return;
                } else {
-                if(change){
+                if(cheque.change){
+                    var changeFormatted = cheque.change/100;
                     var reqSql = new sql.Request(conn);
                     var query_str = fs.readFileSync('./scripts/add_to_salePays', 'utf8');
                     reqSql.input('CHID', sql.NVarChar, CHID);
                     reqSql.input('PayFormCode', sql.NVarChar, PayFormCode);
-                    reqSql.input('SumCC_wt', sql.NVarChar, buyerPaymentSum);
-                    reqSql.input('SumCC_wt', sql.NVarChar, '-'+change/1000);
+                    reqSql.input('SumCC_wt', sql.NVarChar, '-'+changeFormatted);
                     reqSql.query(query_str,
                         function (err, recordset) {
                             if (err) {
@@ -239,10 +238,10 @@ function addToSale(data, callback){
     reqSql.input('DocDate', sql.NVarChar, date);
     reqSql.input('OperID', sql.NVarChar, data.operatorID);
     reqSql.input('DocTime', sql.NVarChar, date);
-    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum/1000);
+    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum/100);
     reqSql.input('FacID', sql.NVarChar,FacIDNum);
     reqSql.input('DocCreateTime', sql.NVarChar, date);
-    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-'+data.change/1000);
+    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-'+data.change/100);
     else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
 
     reqSql.query(queryString,
@@ -306,10 +305,10 @@ function isPosExists(ChID, posNum, callback){
 function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     try {
         var date = formatDate(chequeData.checkDate);
-        var PriceCC_nt = chequeProdData.price / 1.2/1000;
+        var PriceCC_nt = chequeProdData.price / 1.2/100;
         var Qty = chequeProdData.qty/1000;
         var SumCC_nt = PriceCC_nt * Qty;
-        var Tax = chequeProdData.price/1000 - PriceCC_nt;
+        var Tax = chequeProdData.price/100 - PriceCC_nt;
         var TaxSum = Tax * Qty;
         var reqSql = new sql.Request(conn);
         reqSql.input('ChID', sql.NVarChar, ChID);
@@ -320,15 +319,15 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
         reqSql.input('Tax', sql.NVarChar, Tax);
         reqSql.input('TaxSum', sql.NVarChar, TaxSum);
-        reqSql.input('PriceCC_wt', sql.NVarChar, chequeProdData.price/1000);
-        reqSql.input('SumCC_wt', sql.NVarChar, chequeProdData.price/1000 * Qty);
+        reqSql.input('PriceCC_wt', sql.NVarChar, chequeProdData.price/100);
+        reqSql.input('SumCC_wt', sql.NVarChar, chequeProdData.price/100 * Qty);
         reqSql.input('PurPriceCC_nt', sql.NVarChar, PriceCC_nt);
         reqSql.input('PurTax', sql.NVarChar, Tax);
-        reqSql.input('PurPriceCC_wt', sql.NVarChar, chequeProdData.price/1000);
+        reqSql.input('PurPriceCC_wt', sql.NVarChar, chequeProdData.price/100);
         reqSql.input('CreateTime', sql.NVarChar, date);
         reqSql.input('ModifyTime', sql.NVarChar, date);
-        reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price/1000);
-        reqSql.input('RealSum', sql.NVarChar, chequeProdData.price/1000 * Qty);
+        reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price/100);
+        reqSql.input('RealSum', sql.NVarChar, chequeProdData.price/100 * Qty);
         reqSql.input('OperID', sql.NVarChar, chequeData.operatorID);
     }catch(e){
         callback(e);
@@ -428,6 +427,83 @@ module.exports.logToDB = function(Msg,FacID, callback) {
 
 };
 
+module.exports.addToMonIntRec = function(innerDoc, callback) {
+
+    var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
+    var DocDate = formatDate(innerDoc.docDate);
+    var SumCC=innerDoc.paymentSum/100;
+    var OperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
+
+
+
+    var query_str = fs.readFileSync('./scripts/add_to_monIntRec.sql', 'utf8');
+
+    var reqSql = new sql.Request(conn);
+    reqSql.input('FacID', sql.NVarChar, FacID);
+    reqSql.input('DocDate', sql.NVarChar, DocDate);
+    reqSql.input('SumCC', sql.NVarChar, SumCC);
+    reqSql.input('OperID', sql.NVarChar, OperID);
+    reqSql.query('select* from t_MonIntRec where DocDate=@DocDate AND SumCC=@SumCC',
+            function (err, recordset) {
+                var outData={};
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                if(recordset[0]){
+                    outData.exists=true;
+                    callback(null,outData);
+                    return
+                }
+                reqSql.query(query_str,
+                    function (err, recordset) {
+                        if (err) {
+                            callback(err);
+                            return;
+                        }
+                        callback(null, "done");
+                    })
+            })
+};
+
+module.exports.addToMonIntExp = function(innerDoc, callback) {
+
+    var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
+    var DocDate = formatDate(innerDoc.docDate);
+    var SumCC=innerDoc.paymentSum/100;
+    var OperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
+
+    var query_str = fs.readFileSync('./scripts/add_to_monIntExp.sql', 'utf8');
+    var reqSql = new sql.Request(conn);
+    reqSql.input('FacID', sql.NVarChar, FacID);
+    reqSql.input('DocDate', sql.NVarChar, DocDate);
+    reqSql.input('SumCC', sql.NVarChar, SumCC);
+    reqSql.input('OperID', sql.NVarChar, OperID);
+
+    reqSql.query('select * from t_MonIntExp where DocDate=@DocDate AND SumCC=@SumCC',
+        function (err, recordset) {
+            var outData={};
+            if (err) {
+                callback(err);
+                return;
+            }
+            if(recordset[0]){
+                outData.exists=true;
+                callback(null,outData);
+                return
+            }
+
+            reqSql.query(query_str,
+                function (err, recordset) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    callback(null, "done");
+                })
+        })
+};
+
 
 function formatDate(date){
     var dch = date.split("");
@@ -439,35 +515,6 @@ function detectPaymentForm(PaymentForm){
     return  PaymentForm == '0' ? 1 : 2;
 }
 
-/*
- * { checkDataID: '17712',
- ITN: 'ПН 000036837328',
- dataVersion: '1',
- cashBoxFabricNum: 'ПБ4101213753',
- dataFormDate: '20170413094128',
- productsInCheck:
- [ { posNumber: '1',
- name: 'Медовуха майс.0,2л',
- qty: '2000',
- price: '3000',
- code: '45',
- taxMark: '1' } ],
- checkNumber: '111114093',
- totalCheckSum: '6000',
- operatorID: '1',
- fixalNumPPO: '3000101755',
- checkDate: '20170413094128',
- AddTaxName: 'АКЦИЗ 5 ВІДС.',
- AddTaxRate: '6.00',
- AddTaxSum: '286',
- taxMark: '1',
- taxRate: '20.00',
- taxSum: '952',
- isTaxIncluded: '0',
- buyerPaymentSum: '6000',
- paymentName: 'ГОТІВКА',
- paymentType: '0' }
- product.taxMark= 1*/
 
 
 

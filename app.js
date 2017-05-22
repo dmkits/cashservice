@@ -127,8 +127,16 @@ app.get("/sysadmin/startup_parameters", function (req, res) {
     log.info('URL: /sysadmin/startup_parameters');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'startup_parameters.html'));
 });
-app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {
+app.get("/sysadmin/startup_parameters/get_app_config", function (req, res) {
     log.info('URL: /sysadmin/startup_parameters/get_app_config');
+    if (ConfigurationError) {
+        res.send({error:ConfigurationError});
+        return;
+    }
+    res.send(database.getDBConfig());
+});
+app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {
+    log.info('URL: /sysadmin/startup_parameters/load_app_config');
     tryLoadConfiguration();
     if (ConfigurationError) {
         res.send({error: ConfigurationError});
@@ -137,7 +145,7 @@ app.get("/sysadmin/startup_parameters/load_app_config", function (req, res) {
     res.send(database.getDBConfig());
 });
 app.post("/sysadmin/startup_parameters/store_app_config_and_reconnect", function (req, res) {
-    log.info('URL: /sysadmin/startup_parameters/get_app_config', 'newDBConfigString =', req.body);
+    log.info('URL: /sysadmin/startup_parameters/store_app_config_and_reconnect', 'newDBConfigString =', req.body);
     var newDBConfigString = req.body;
     database.setDBConfig(newDBConfigString);
     database.saveConfig(
@@ -209,6 +217,7 @@ function getChequesData(body, callback) {
     parseString(body, function (err, result) {
         var outData = {};
         outData.sales = [];
+        outData.inners = [];
         if (err) {
             log.info(err);
             callback(err);
@@ -252,15 +261,6 @@ function getChequesData(body, callback) {
                         callback("Операция возврврата не поддерживается!");
                         return;
                     }
-                    //else if (listItem.C[0].$.T == '2') {
-                    //    var inner =listItem.C[0].$.T;
-                    //     if(inner.I)listItem.isMoneyIn;
-                    //     else if(inner.O)listItem.isMoneyOut;
-                    //     else{ log.error("Неизвестная операция");
-                    //         callback("Неизвестная операция");
-                    //         return;
-                    //     }
-                    //}
                     else if (listItem.C[0].$.T == '2') {
                         listItem.isInner = true;
                     }
@@ -332,8 +332,7 @@ function getChequesData(body, callback) {
 
                         }
 
-
-                        inner.paymentDate = listItem.TS[0];
+                        inner.docDate = listItem.TS[0];
                         if(listItem.C[0].E[0].$.CS) inner.operatorID=listItem.C[0].E[0].$.CS;
 
                         inner.checkDataID = listItem.$.DI;
@@ -341,13 +340,14 @@ function getChequesData(body, callback) {
                         inner.dataVersion = listItem.$.V;
                         inner.cashBoxFabricNum = listItem.$.ZN;
                         inner.dataFormDate = listItem.TS[0];
-                    }
 
+                        outData.inners.push(inner);
+                    }
                 }
                 callback(null, outData);
             }
         }catch (e){
-            log.warn("Не удалось обработать данные полученные от кассового сервера! причина:",e);
+            log.warn("Не удалось обработать данные полученные от кассового сервера! Причина:",e);
             callback(e, outData);
         }
     });
@@ -498,8 +498,22 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                         });
                                         return;
                                     }
-                                    emitAndLogEvent( 'Все данные успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function(){
-                                        clientRes.send({"done": "ok"});
+                                    emitAndLogEvent( 'Все чеки успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function(){
+                                        var innersDocData = result.inners;
+                                            insertInnerDoc(innersDocData,0,function(err,res){
+                                                if(err){
+                                                    clientRes.send({"error": err});
+                                                    return;
+                                                }
+                                                emitAndLogEvent('Все вносы/выносы успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum,function(){
+                                                    clientRes.send({"done": "ok"});
+                                                })
+                                            });
+
+                                        //database.addInnerDoc(innersDocData, function(err,res){
+                                        //
+                                        //})
+                                       // clientRes.send({"done": "ok"});
                                     });
                                 });
                             });
@@ -510,6 +524,58 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
         });
     });
 });
+
+function insertInnerDoc(InnerDocList, ind, callback) {
+
+    if (!InnerDocList[ind]) {
+        callback(null, "done");
+        return;
+    }
+    var doc = InnerDocList[ind];
+    if (doc.isMoneyIn) {
+        database.addToMonIntRec(doc, function (err,result) {
+            if (err) {
+                emitAndLogEvent('Произошла ошибка при  записи служебного внесения в БД.\n Причина: ' + err, doc.cashBoxFabricNum, function () {
+                    log.error('Произошла ошибка при  записи служебного внесения в БД.Причина: ' + err);
+                    callback(err);
+                });
+                return;
+            }
+            if(result.exists){
+                emitAndLogEvent('Найдено служенбное внесение на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate, doc.cashBoxFabricNum, function () {
+                    log.info('Найдено служенбное внесение на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate);
+                    insertInnerDoc(InnerDocList, ind + 1, callback);
+                });
+                return;
+            }
+            emitAndLogEvent('Служенбное внесение на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate + ' записано в БД ', doc.cashBoxFabricNum, function () {
+                log.info('Служенбное внесение на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate + ' записано в БД');
+                insertInnerDoc(InnerDocList, ind + 1, callback);
+            });
+        });
+    } else if (doc.isMoneyOut) {
+        database.addToMonIntExp(doc, function (err,result) {
+            if (err) {
+                emitAndLogEvent('Произошла ошибка при  записи служебной выдачи  в БД.\n Причина: ' + err, doc.cashBoxFabricNum, function () {
+                    log.error('Произошла ошибка при  записи служебной выдачи в БД.Причина: ' + err);
+                    callback(err);
+                });
+                return;
+            }
+            if(result.exists){
+                emitAndLogEvent('Найдена служеная выдача на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate, doc.cashBoxFabricNum, function () {
+                    log.info('Найдена служеная выдача  на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate);
+                    insertInnerDoc(InnerDocList, ind + 1, callback);
+                });
+                return;
+            }
+            emitAndLogEvent('Служеная выдача на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate + ' записана в БД ', doc.cashBoxFabricNum, function () {
+                log.info('Служеная выдача  на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate + ' записана в БД');
+                insertInnerDoc(InnerDocList, ind + 1, callback);
+            });
+        })
+    }
+};
 
 function getCashBoxesList(req) {
     var sCashBoxesList = "";
