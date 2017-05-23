@@ -1,16 +1,22 @@
-declare @NewChID INT
-select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale
+-- declare @NewChID INT
+-- select @NewChID =ISNULL(MAX(ChID),0)+1 from t_sale
 
-declare @StockID INT, @CRID SMALLINT, @EmpID INT, @OurID INT
+declare @NewChID INT
+exec dbo.z_NewChID 't_sale', @NewChID OUTPUT
+
+declare @StockID INT, @CRID SMALLINT, @OperID INT, @EmpID INT, @OurID INT
 
 select @StockID=c.StockID, @CRID=c.CRID, @OurID = r.OurID
 from r_Crs c
 INNER JOIN r_CRSrvs r ON r.SrvID =c.SrvID
 WHERE c.FacID=@FacID;
 
+
+select @OperID=OperID from  r_OperCrs
+WHERE CRID=@CRID AND CROperID = @CROperID
+
 select @EmpID = EmpID from r_Opers
 where OperID=@OperID;
-
 
 INSERT into t_sale
         (CHID,  DocID, DocDate, KursMC,  OurID,

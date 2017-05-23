@@ -236,7 +236,7 @@ function addToSale(data, callback){
     }
     reqSql.input('DocID', sql.NVarChar, data.checkNumber);
     reqSql.input('DocDate', sql.NVarChar, date);
-    reqSql.input('OperID', sql.NVarChar, data.operatorID);
+    reqSql.input('CROperID', sql.NVarChar, data.operatorID);
     reqSql.input('DocTime', sql.NVarChar, date);
     reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum/100);
     reqSql.input('FacID', sql.NVarChar,FacIDNum);
@@ -306,6 +306,8 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     try {
         var date = formatDate(chequeData.checkDate);
         var Qty = chequeProdData.qty/1000;
+        var FacID = chequeData.cashBoxFabricNum;
+        var FacIDNum = FacID.replace("ПБ", "");
        // var PriceCC_nt = chequeProdData.price / 1.2/100;
       //  var SumCC_nt = PriceCC_nt * Qty;
       //  var Tax = chequeProdData.price/100 - PriceCC_nt;
@@ -334,7 +336,8 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         reqSql.input('ModifyTime', sql.NVarChar, date);
         reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price/100);
         reqSql.input('RealSum', sql.NVarChar, chequeProdData.price/100 * Qty);
-        reqSql.input('OperID', sql.NVarChar, chequeData.operatorID);
+        reqSql.input('FacID', sql.NVarChar,FacIDNum);
+        reqSql.input('CROperID', sql.NVarChar, chequeData.operatorID);
     }catch(e){
         callback(e);
         return;
@@ -438,7 +441,7 @@ module.exports.addToMonIntRec = function(innerDoc, callback) {
     var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
     var DocDate = formatDate(innerDoc.docDate);
     var SumCC=innerDoc.paymentSum/100;
-    var OperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
+    var CROperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
 
 
 
@@ -448,7 +451,7 @@ module.exports.addToMonIntRec = function(innerDoc, callback) {
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('SumCC', sql.NVarChar, SumCC);
-    reqSql.input('OperID', sql.NVarChar, OperID);
+    reqSql.input('CROperID', sql.NVarChar, CROperID);
     reqSql.query('select* from t_MonIntRec where DocDate=@DocDate AND SumCC=@SumCC',
             function (err, recordset) {
                 var outData={};
@@ -477,14 +480,14 @@ module.exports.addToMonIntExp = function(innerDoc, callback) {
     var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
     var DocDate = formatDate(innerDoc.docDate);
     var SumCC=innerDoc.paymentSum/100;
-    var OperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
+    var CROperID=innerDoc.operatorID;   // if no operatorID, operatorID=0;
 
     var query_str = fs.readFileSync('./scripts/add_to_monIntExp.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('SumCC', sql.NVarChar, SumCC);
-    reqSql.input('OperID', sql.NVarChar, OperID);
+    reqSql.input('CROperID', sql.NVarChar, CROperID);
 
     reqSql.query('select * from t_MonIntExp where DocDate=@DocDate AND SumCC=@SumCC',
         function (err, recordset) {
@@ -567,13 +570,13 @@ module.exports.addToZrep = function(rep, callback) {
                         callback(err);
                         return;
                     }
-                    var OperID = recordset[0].OperID;           console.log("OperID=",OperID);
+                    var OperID = recordset[0].OperID;
                     if(!OperID){
                         callback("Не удалось определить OperID для Z-Отчета № "+rep.reportNum+"! Отчет не сохранен!");
                         return;
                     }
-                    reqSql.input('OperID', sql.NVarChar, OperID);
 
+                    reqSql.input('OperID', sql.NVarChar, OperID);
                     reqSql.query(query_str,
                         function (err, recordset) {
                             if (err) {
