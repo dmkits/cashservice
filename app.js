@@ -209,22 +209,26 @@ function getDataFromUniCashServer(xml, callback) {
 
     });
 };
-function getChequesData(body, callback) {
-    var buf = new Buffer(body, 'binary');
-    var str = iconv_lite.decode(buf, 'win1251');
-    body = iconv_lite.encode(str, 'utf8');
+function getChequesData(/*body,*/ callback) {
+ //   var buf = new Buffer(body, 'binary');
+  //  var str = iconv_lite.decode(buf, 'win1251');
+   // body = iconv_lite.encode(str, 'utf8');
 
-    parseString(body, function (err, result) {
+   // parseString(body, function (err, result) {      console.log("result=", JSON.stringify(result));
+
+       var resultString=fs.readFileSync('./resWithCadr.json', 'utf8');                             ////test
+       result = JSON.parse(resultString);
+
         var outData = {};
         outData.sales = [];
         outData.inners = [];
         outData.reports = [];
 
-        if (err) {
-            log.info(err);
-            callback(err);
-            return;
-        }
+        //if (err) {
+        //    log.info(err);
+        //    callback(err);
+        //    return;
+        //}
         if(!result){
             log.warn("Кассовый сервер вернул пустой файл!"); // Проверка на валидность ответа
             outData.respErr = "Кассовый сервер вернул пустой файл!";
@@ -358,41 +362,75 @@ function getChequesData(body, callback) {
                         report.reportNum=listItem.Z[0].$.NO;
 
                    for(var j in listItem.Z[0].M) {
-                       if (listItem.Z[0].M[j].$[0].T=="0") {
+                       if (listItem.Z[0].M[j].$.T=="0") {
                            //M[...]  итоговая информация по оборотам по типам оплаты
-                           report.totalCashPaymentIncomeName = listItem.Z[0].M[j].$[0].NM?listItem.Z[0].M[j].$[0].NM:'';  //Название формы оплаты (может не указываться)
-                           report.totalCashPaymentIncomeSum = listItem.Z[0].M[j].$[0].SMI?listItem.Z[0].M[j].$[0].SMI:0; //Сумма полученных денег в копейках  //может отсутствовать
-                           report.totalCashPaymentOutSum = listItem.Z[0].M[j].$[0].SMO?listItem.Z[0].M[j].$[0].SMO:0;
+                           report.totalCashPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
+                           report.totalCashPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI/100:0; //Сумма полученных денег в копейках  //может отсутствовать
+                           report.totalCashPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
 
-                         //  report.totalCashIncome = listItem.Z[0].M[0].$[0].T;  //Тип оплаты: 0 – наличными
+                         //  report.totalCashIncome = listItem.Z[0].M[0].$.T;  //Тип оплаты: 0 – наличными
                          // SMO -Сума выданных денег в копейках  //может отсутствовать
                        }else{
-                           report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$[0].NM?listItem.Z[0].M[j].$[0].NM:'';  //Название формы оплаты (может не указываться)
-                           report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$[0].SMI?listItem.Z[0].M[j].$[0].SMI:0; //Сумма полученных денег в копейках  //может отсутствовать
-                           report.totalCardPaymentOutSum = listItem.Z[0].M[j].$[0].SMO?listItem.Z[0].M[j].$[0].SMO:0;
+                           report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
+                           report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI:0.00 //Сумма полученных денег в копейках  //может отсутствовать
+                           report.totalCardPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
+                           console.log("report.totalCardPaymentIncomeSum=",report.totalCardPaymentIncomeSum)
                        }
                    }
                         //IO[...]   итоговая информация по внесению денег
-                           if(listItem.Z[0].IO[0].$[0].NM) report.cashPaymentTypeName= listItem.Z[0].IO[0].$[0].NM;    //Название формы оплаты (может не указываться)
-                           report.totalMoneyRec= listItem.Z[0].IO[0].$[0].SMI?listItem.Z[0].IO[0].$[0].SMI:0;    //Сумма полученных денег в копейках
-                           report.totalMoneyExp= listItem.Z[0].IO[0].$[0].SMO?listItem.Z[0].IO[0].$[0].SMO:0; //Сумма выданных денег в копейках
-                           // listItem.Z[0].IO[0].$[0].T;  // Тип оплаты: 0 – наличными
+                           if(listItem.Z[0].IO[0].$.NM) report.cashPaymentTypeName= listItem.Z[0].IO[0].$.NM;    //Название формы оплаты (может не указыватся)
+                           report.totalMoneyRec= listItem.Z[0].IO[0].$.SMI?listItem.Z[0].IO[0].$.SMI:0;    //Сумма полученных денег в копейках
+                           report.totalMoneyExp= listItem.Z[0].IO[0].$.SMO?listItem.Z[0].IO[0].$.SMO:0; //Сумма выданных денег в копейках
+                           // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
 
                         //NC[]  итоговая информация по количеству чеков
-                        report.totalSaleCheques =  listItem.Z[0].NC[0].$[0].NI?listItem.Z[0].NC[0].$[0].NI:0;
-                        report.totalReturnCheques  =listItem.Z[0].NC[0].$[0].NO?listItem.Z[0].NC[0].$[0].NO:0;
+                        report.totalSaleCheques =  listItem.Z[0].NC[0].$.NI?listItem.Z[0].NC[0].$.NI:0;
+                        report.totalReturnCheques  =listItem.Z[0].NC[0].$.NO?listItem.Z[0].NC[0].$.NO:0;
 
+                        report.SumCC_wt=0;
+                        report.Tax_FSum=0;
+                        for(var j in listItem.Z[0].TXS){
+                            var taxItemReport=listItem.Z[0].TXS[j];
+                            report.SumCC_wt=report.SumCC_wt+(taxItemReport.$.SMI ? taxItemReport.$.SMI/100 : 0);
+                            report.Tax_FSum=report.Tax_FSum+(taxItemReport.$.DTI?taxItemReport.$.DTI/100:0);
+
+                            if(taxItemReport.$.TX=="0"){
+                                report.TaxATotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                report.TaxATotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                               // report.TaxATaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                            }
+                            if(taxItemReport.$.TX=="1"){
+                                report.TaxBTotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                report.TaxBTotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                               // report.TaxBTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                            }
+                            if(taxItemReport.$.TX=="2"){
+                                report.TaxCTotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                report.TaxCTotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                //report.TaxCTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                            }
+                            if(taxItemReport.$.TX=="3"){
+                                report.TaxDTotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                report.TaxDTotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                               // report.TaxDTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                            }
+                            if(taxItemReport.$.TX=="4"){
+                                report.TaxETotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                report.TaxETotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                // report.TaxDTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                            }
+                        }
                         //TXS[...]  отчетную информацию по конкретному налогу.
-                        listItem.Z[0].TXS[0].$[0].DTI;   //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
-                        listItem.Z[0].TXS[0].$[0].DTNM; //Наименование дополнительного сбора
-                        listItem.Z[0].TXS[0].$[0].DTPR; //Ставка налогового сбора в процентах в копейках
-                        listItem.Z[0].TXS[0].$[0].SMI;  //Итог операций по полученным деньгам в копейках        //может отсутствовать
-                        listItem.Z[0].TXS[0].$[0].TS;   //Дата установки налога
-                        listItem.Z[0].TXS[0].$[0].TX;    //Обозначение налога
-                        listItem.Z[0].TXS[0].$[0].TXAL; //Алгоритм вычисления налога
-                        listItem.Z[0].TXS[0].$[0].TXI; //Налог по полученным деньгам в копейках  //может отсутствовать
-                        listItem.Z[0].TXS[0].$[0].TXPR; //Процент налога
-                        listItem.Z[0].TXS[0].$[0].TXTY; //Признак налога, не включенного в стоимость:
+                       // listItem.Z[0].TXS[0].$[0].DTI;   //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                        //listItem.Z[0].TXS[0].$[0].DTNM; //Наименование дополнительного сбора
+                       // listItem.Z[0].TXS[0].$[0].DTPR; //Ставка налогового сбора в процентах в копейках
+                        //listItem.Z[0].TXS[0].$[0].SMI;  //Итог операций по полученным деньгам в копейках        //может отсутствовать
+                       // listItem.Z[0].TXS[0].$[0].TS;   //Дата установки налога ----
+                        //listItem.Z[0].TXS[0].$[0].TX;    //Обозначение налога
+                       // listItem.Z[0].TXS[0].$[0].TXAL; //Алгоритм вычисления налога ---
+                       // listItem.Z[0].TXS[0].$[0].TXI; //Налог по полученным деньгам в копейках  //может отсутствовать
+                       // listItem.Z[0].TXS[0].$[0].TXPR; //Процент налога
+                      //  listItem.Z[0].TXS[0].$[0].TXTY; //Признак налога, не включенного в стоимость:---
 
                        // TXO - Налог по выданным деньгам в копейках
                        // DTO - Дополнительный сбор по выданным деньгам  d копейках
@@ -407,7 +445,7 @@ function getChequesData(body, callback) {
             log.warn("Не удалось обработать данные полученные от кассового сервера! Причина:",e);
             callback(e, outData);
         }
-    });
+  //  });   //parseString
 };
 
 function fillCheques(chequesData, ind, finishedcallback) {
@@ -497,49 +535,57 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
     var bdate = clientReq.query.bdate;
     var edate = clientReq.query.edate;
 
-    emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null, function(){
-        database.getXMLForUniCashServerRequest(bdate, edate, sCashBoxesList, function (error, xml) {
-            if (error){
-                emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null, function() {
-                    clientRes.send({error: error});
-                });
-                return;
-            }
+    //-------
+
+    //emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null, function(){
+    //    database.getXMLForUniCashServerRequest(bdate, edate, sCashBoxesList, function (error, xml) {
+    //        if (error){
+    //            emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null, function() {
+    //                clientRes.send({error: error});
+    //            });
+    //            return;
+    //        }
+
            // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
-            emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
-                getDataFromUniCashServer(xml, function (error, response, body) {          // console.log("getDataFromUniCashServer error=",error ); console.log(" response=",response );console.log(" body=",body );
-                    if(error){
-                        log.error(error);
-                        var errMsg;
-                        try{
-                            errMsg= JSON.parse(error)
-                        }catch(e){
-                            errMsg=error;
-                        }
-                        emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,function(){
-                            clientRes.send({error:error});
-                        });
-                        return;
-                    }
-                    if(!response){
-                        log.error("Кассовый сервер не отвечает!");
-                        emitAndLogEvent("Кассовый сервер не отвечает!",null, function(){
-                            clientRes.send({error: "Кассовый сервер не отвечает!"});
-                        });
-                        return;
-                    }
-                    if(!body){
-                        log.error("Кассовый сервер не прислал данные!");
-                        emitAndLogEvent("Кассовый сервер не прислал данные!",null,function(){
-                            clientRes.send({error: "Кассовый сервер не прислал данные!"});
-                        });
-                        return;
-                    }
-                    emitAndLogEvent('Получен ответ от кассового сервера', null, function(){
+
+
+          //  emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
+          //      getDataFromUniCashServer(xml, function (error, response, body) {          // console.log("getDataFromUniCashServer error=",error ); console.log(" response=",response );console.log(" body=",body );
+          //          if(error){
+          //              log.error(error);
+          //              var errMsg;
+          //              try{
+          //                  errMsg= JSON.parse(error)
+          //              }catch(e){
+          //                  errMsg=error;
+          //              }
+          //              emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,function(){
+          //                  clientRes.send({error:error});
+          //              });
+          //              return;
+          //          }
+          //          if(!response){
+          //              log.error("Кассовый сервер не отвечает!");
+          //              emitAndLogEvent("Кассовый сервер не отвечает!",null, function(){
+          //                  clientRes.send({error: "Кассовый сервер не отвечает!"});
+          //              });
+          //              return;
+          //          }
+          //          if(!body){
+          //              log.error("Кассовый сервер не прислал данные!");
+          //              emitAndLogEvent("Кассовый сервер не прислал данные!",null,function(){
+          //                  clientRes.send({error: "Кассовый сервер не прислал данные!"});
+          //              });
+          //              return;
+          //          }
+          //          emitAndLogEvent('Получен ответ от кассового сервера', null, function(){
+
+
+                     //---------
                        // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
                       //  body="kjhbkljh"; //test
 
-                        getChequesData(body, function (err, result) {
+                        getChequesData(/*body,*/ function (err, result) {
                             if (err) {
                                 emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null, function(){
                                     clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
@@ -564,41 +610,56 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                                 }
                                                 emitAndLogEvent('Все вносы/выносы успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum,function(){
                                                    // clientRes.send({"done": "ok"});
-                                                    addToZrep(outData.reports, 0,function(err,res){
-
+                                                    addToZrep(result.reports, 0,function(err,res) {
+                                                        if (err) {
+                                                            clientRes.send({"error": err});
+                                                            return;
+                                                        }
+                                                        emitAndLogEvent('Все Z-Отчеты успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function () {
+                                                            clientRes.send({"done": "ok"});
+                                                        });
                                                     });
-
-                                                })
+                                                });
                                             });
-
-                                        //database.addInnerDoc(innersDocData, function(err,res){
-                                        //
-                                        //})
-                                       // clientRes.send({"done": "ok"});
                                     });
                                 });
                             });
                         });
                     });
-                });
-            });
-        });
-    });
-});
-function addToZrep(reports,ind, callback){
-    if(!reports[ind]){
+                //});
+//            });
+//        });
+//    });
+//});
+
+function addToZrep(reports, ind, callback) {
+    if (!reports[ind]) {
         callback(null, "done");
         return;
     }
-    var report=reports[ind];
-    database.addToZrep(report, function(err, res){
-
-
-
+    var report = reports[ind];
+    database.addToZrep(report, function (err, res) {
+        if (err) {
+            emitAndLogEvent('Произошла ошибка при  записи Z-Отчета  в БД.\n Причина: ' + err, report.cashBoxFabricNum, function () {
+                log.error('Произошла ошибка при  записи Z-Отчета в БД.Причина: ' + err);
+                callback(err);
+            });
+            return;
+        }
+        if (res.exists) {
+            emitAndLogEvent('Найден Z-Отчет №' + report.reportNum + ' от ' + report.dataFormDate,report.cashBoxFabricNum, function () {
+                log.info('Найден Z-Отчет №' + report.reportNum + ' от ' + report.dataFormDate);
+                addToZrep(reports, ind + 1, callback);
+            });
+            return;
+        }
+        emitAndLogEvent('Добавлен Z-Отчет №' + report.reportNum + ' от ' + report.dataFormDate,report.cashBoxFabricNum, function () {
+            log.info('Добавлен Z-Отчет №' + report.reportNum + ' от ' + report.dataFormDate);
+            addToZrep(reports, ind + 1, callback);
+        });
     });
-
-
 }
+
 function insertInnerDoc(InnerDocList, ind, callback) {
 
     if (!InnerDocList[ind]) {

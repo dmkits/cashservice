@@ -305,11 +305,17 @@ function isPosExists(ChID, posNum, callback){
 function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     try {
         var date = formatDate(chequeData.checkDate);
-        var PriceCC_nt = chequeProdData.price / 1.2/100;
         var Qty = chequeProdData.qty/1000;
-        var SumCC_nt = PriceCC_nt * Qty;
-        var Tax = chequeProdData.price/100 - PriceCC_nt;
-        var TaxSum = Tax * Qty;
+       // var PriceCC_nt = chequeProdData.price / 1.2/100;
+      //  var SumCC_nt = PriceCC_nt * Qty;
+      //  var Tax = chequeProdData.price/100 - PriceCC_nt;
+      //  var TaxSum = Tax * Qty;
+
+         var PriceCC_nt = 0;
+          var SumCC_nt = 0;
+          var Tax = 0;
+          var TaxSum = 0;
+
         var reqSql = new sql.Request(conn);
         reqSql.input('ChID', sql.NVarChar, ChID);
         reqSql.input('SrcPosID', sql.NVarChar, chequeProdData.posNumber);
@@ -509,23 +515,39 @@ module.exports.addToZrep = function(rep, callback) {
 
     var FacID=rep.cashBoxFabricNum.replace("ПБ","");
     var DocDate = formatDate(rep.dataFormDate);
+    var SumCard=rep.totalCardPaymentIncomeSum?rep.totalCardPaymentIncomeSum:0;
 
     //var SumCC=innerDoc.paymentSum/100;
     //var OperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
 
     var query_str = fs.readFileSync('./scripts/add_to_zrep.sql', 'utf8');
     var reqSql = new sql.Request(conn);
-
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('FinID', sql.NVarChar, rep.FinID);
     reqSql.input('ZRepNum', sql.NVarChar, rep.reportNum);
     reqSql.input('SumMonRec', sql.NVarChar, rep.totalMoneyRec/100);
     reqSql.input('SumMonExp', sql.NVarChar, rep.totalMoneyExp/100);
-   // reqSql.input('SumCC_wt', sql.NVarChar, rep.totalCashoneyExp/100);
+    reqSql.input('SumMonExp', sql.NVarChar, rep.totalMoneyExp/100);
+    reqSql.input('SumCash', sql.NVarChar, rep.totalCashPaymentIncomeSum);
+    reqSql.input('SumCard', sql.NVarChar, SumCard);
+    reqSql.input('SumCC_wt', sql.NVarChar, rep.SumCC_wt);
+
+    reqSql.input('Sum_A', sql.NVarChar, rep.TaxATotalIncomeSum);
+    reqSql.input('Sum_B', sql.NVarChar, rep.TaxBTotalIncomeSum);
+    reqSql.input('Sum_C', sql.NVarChar, rep.TaxCTotalIncomeSum);
+    reqSql.input('Sum_D', sql.NVarChar, rep.TaxDTotalIncomeSum);
+    reqSql.input('Sum_E', sql.NVarChar, rep.TaxETotalIncomeSum);
+
+    reqSql.input('Tax_A', sql.NVarChar, rep.TaxATotalTaxSum);
+    reqSql.input('Tax_B', sql.NVarChar, rep.TaxBTotalTaxSum);
+    reqSql.input('Tax_C', sql.NVarChar, rep.TaxCTotalTaxSum);
+    reqSql.input('Tax_D', sql.NVarChar, rep.TaxDTotalTaxSum);
+    reqSql.input('Tax_E', sql.NVarChar, rep.TaxETotalTaxSum);
+    reqSql.input('Tax_F', sql.NVarChar, rep.Tax_FSum);
 
 
-    reqSql.query('select * from t_zRep where DocDate=@DocDate AND SumCC=@SumCC',
+    reqSql.query('select * from t_zRep where ZRepNum=@ZRepNum AND DocDate=@DocDate',
         function (err, recordset) {
             var outData={};
             if (err) {
@@ -538,14 +560,29 @@ module.exports.addToZrep = function(rep, callback) {
                 return
             }
 
-            reqSql.query(query_str,
+            var getOperIdStr=fs.readFileSync('./scripts/get_operid.sql', 'utf8');
+            reqSql.query(getOperIdStr ,
                 function (err, recordset) {
                     if (err) {
                         callback(err);
                         return;
                     }
-                    callback(null, "done");
-                })
+                    var OperID = recordset[0].OperID;           console.log("OperID=",OperID);
+                    if(!OperID){
+                        callback("Не удалось определить OperID для Z-Отчета № "+rep.reportNum+"! Отчет не сохранен!");
+                        return;
+                    }
+                    reqSql.input('OperID', sql.NVarChar, OperID);
+
+                    reqSql.query(query_str,
+                        function (err, recordset) {
+                            if (err) {
+                                callback(err);
+                                return;
+                            }
+                            callback(null, "done");
+                        });
+                });
         })
 };
 
