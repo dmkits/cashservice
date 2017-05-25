@@ -190,10 +190,10 @@ module.exports.fillToSalePays = function (CHID, cheque, callback) {
 function updateSaleStatus (CHID, callback){
 
     var reqSql = new sql.Request(conn);
-  //  var query_str = fs.readFileSync('./scripts/add_to_salepays.sql', 'utf8');
+    var query_str = fs.readFileSync('./scripts/update_sale_status.sql', 'utf8');
     reqSql.input('CHID', sql.NVarChar, CHID);
 
-    reqSql.query('UPDATE t_Sale SET StateCode=22 WHERE CHID=@CHID',
+    reqSql.query(query_str,
         function (err, recordset) {
             if (err) {
                 callback(err);
@@ -203,10 +203,14 @@ function updateSaleStatus (CHID, callback){
         })
 };
 
-function isSaleExists(DOCID,callback){
+function isSaleExists(chequeData,callback){
     var reqSql = new sql.Request(conn);
+    var DOCID = chequeData.checkNumber;
+    var FacID=chequeData.cashBoxFabricNum.replace("ПБ","");
     reqSql.input('DOCID', sql.Int, DOCID);
-    reqSql.query('select ChID from t_Sale WHERE DOCID=@DOCID',
+    reqSql.input('FacID', sql.NVarChar, FacID);
+    var queryString = fs.readFileSync('./scripts/is_sale_exists.sql', 'utf8');
+    reqSql.query(queryString,
         function (err, recordset) {
             var outData={};
             if (err) {
@@ -259,8 +263,8 @@ function addToSale(data, callback){
 
 module.exports.fillChequeTitle = function(chequeData, callback) {
 
-    var chequeNum = chequeData.checkNumber;
-    isSaleExists(chequeNum, function (err, res) {
+  //  var chequeNum = chequeData.checkNumber;
+    isSaleExists(chequeData, function (err, res) {
         if (err) {
             callback(err);
             return;
@@ -284,7 +288,8 @@ function isPosExists(ChID, posNum, callback){
     var reqSql = new sql.Request(conn);
     reqSql.input('ChID', sql.NVarChar, ChID);
     reqSql.input('SrcPosID', sql.NVarChar, posNum);
-    reqSql.query('select ChID,SrcPosID  from t_SaleD WHERE ChID=@ChID AND SrcPosID=@SrcPosID',
+    var queryString = fs.readFileSync('./scripts/is_position_exists.sql', 'utf8');
+    reqSql.query(queryString,
         function (err, recordset) {
             var outData={};
             if (err) {
@@ -442,17 +447,15 @@ module.exports.addToMonIntRec = function(innerDoc, callback) {
     var DocDate = formatDate(innerDoc.docDate);
     var SumCC=innerDoc.paymentSum/100;
     var CROperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
-
-
-
-    var query_str = fs.readFileSync('./scripts/add_to_monIntRec.sql', 'utf8');
-
     var reqSql = new sql.Request(conn);
+
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('SumCC', sql.NVarChar, SumCC);
     reqSql.input('CROperID', sql.NVarChar, CROperID);
-    reqSql.query('select* from t_MonIntRec where DocDate=@DocDate AND SumCC=@SumCC',
+
+    var isRecExistsStr = fs.readFileSync('./scripts/is_monIntRec_exists.sql', 'utf8');
+    reqSql.query(isRecExistsStr,
             function (err, recordset) {
                 var outData={};
                 if (err) {
@@ -464,6 +467,7 @@ module.exports.addToMonIntRec = function(innerDoc, callback) {
                     callback(null,outData);
                     return
                 }
+                var query_str = fs.readFileSync('./scripts/add_to_monIntRec.sql', 'utf8');
                 reqSql.query(query_str,
                     function (err, recordset) {
                         if (err) {
@@ -482,14 +486,14 @@ module.exports.addToMonIntExp = function(innerDoc, callback) {
     var SumCC=innerDoc.paymentSum/100;
     var CROperID=innerDoc.operatorID;   // if no operatorID, operatorID=0;
 
-    var query_str = fs.readFileSync('./scripts/add_to_monIntExp.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('SumCC', sql.NVarChar, SumCC);
     reqSql.input('CROperID', sql.NVarChar, CROperID);
 
-    reqSql.query('select * from t_MonIntExp where DocDate=@DocDate AND SumCC=@SumCC',
+    var isExpExistsStr = fs.readFileSync('./scripts/is_monIntExp_exists.sql', 'utf8');
+    reqSql.query(isExpExistsStr,
         function (err, recordset) {
             var outData={};
             if (err) {
@@ -501,7 +505,7 @@ module.exports.addToMonIntExp = function(innerDoc, callback) {
                 callback(null,outData);
                 return
             }
-
+            var query_str = fs.readFileSync('./scripts/add_to_monIntExp.sql', 'utf8');
             reqSql.query(query_str,
                 function (err, recordset) {
                     if (err) {
@@ -550,7 +554,8 @@ module.exports.addToZrep = function(rep, callback) {
     reqSql.input('Tax_F', sql.NVarChar, rep.Tax_FSum);
 
 
-    reqSql.query('select * from t_zRep where ZRepNum=@ZRepNum AND DocDate=@DocDate',
+    var isRepExistStr=fs.readFileSync('./scripts/is_rep_exists.sql', 'utf8');
+    reqSql.query(isRepExistStr,
         function (err, recordset) {
             var outData={};
             if (err) {

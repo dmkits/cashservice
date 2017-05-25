@@ -4,7 +4,8 @@ define(["dojo/request/xhr", "app", "dojo/domReady!"],
             jsonHeader: {"X-Requested-With": "application/json; charset=utf-8"},
             showRequestErrorDialog: false,
             /** getJSONData
-             * params.url, params.condition, params.consoleLog
+             * params.url, params.condition, params.timeout, , params.consoleLog
+             * default params.timeout=120000
              * if success : callback(true,data), if not success callback(false,error)
              * @param params
              * @param callback
@@ -14,7 +15,7 @@ define(["dojo/request/xhr", "app", "dojo/domReady!"],
                 var url = params["url"], condition = params["condition"], consoleLog = params["consoleLog"],timeout=params["timeout"];
                 if (condition) url = url + "?" + condition;
                 var prop={headers: this.jsonHeader, handleAs: "json"};
-                if(timeout) prop.timeout= timeout;
+                prop.timeout= (timeout)?timeout:"120000";
                 var showRequestErrorDialog=this.showRequestErrorDialog;
                 xhr.get(url, prop).then(
                     function (data) {

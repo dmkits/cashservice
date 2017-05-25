@@ -150,7 +150,8 @@
                         }
                     }                                                                                           console.log("btnImportSales.onClick start request");
                     Request.getJSONData({url: "/sysadmin/import_sales/get_sales",
-                                condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params +"&timeout=5000",
+                                condition: "bdate=" + bdate+ "&edate=" + edate + "&" + cashbox_params,
+                                timeout:"5000",
                                 consoleLog: true},
                             function (success,result) {        console.log("btnImportSales.onClick Request.getJSONData result=",result);
                                 btnImportSales.set('disabled',false);
