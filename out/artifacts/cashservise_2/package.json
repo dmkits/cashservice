@@ -1,0 +1,26 @@
+{
+  "name": "cashcerviceUS",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "./app.js"
+  },
+  "dependencies": {
+    "body-parser": "~1.16.1",
+    "buffer": "^5.0.6",
+    "cookie-parser": "~1.4.3",
+    "download": "^5.0.3",
+    "exceljs": "^0.4.6",
+    "express": "~4.14.0",
+    "fs": "~0.0.1",
+    "http": "0.0.0",
+    "iconv-lite": "^0.4.17",
+    "mssql": "~3.3.0",
+    "path": "~0.12.7",
+    "request": "^2.81.0",
+    "socket.io": "^1.7.3",
+    "uuid": "^3.0.1",
+    "winston": "^2.3.1",
+    "xml2js": "^0.4.17"
+  }
+}
