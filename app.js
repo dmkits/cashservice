@@ -454,13 +454,13 @@ function fillCheques(chequesData, ind, finishedcallback) {
         return;
     }
 
-    database.fillChequeTitle(chequeData, function (err, res) {       //insert into t_Sale if not exists, in chequeData.saleChID write t_Sale.CHID
+    database.fillChequeTitle(chequeData, function (err, res) {       console.log("fillChequeTitle=,chequeData.checkNum=",chequeData.checkNumber);
         if (err) {
             log.error("APP database.fillChequeTitle: Sale NOT created! Reason:"+ err);
             finishedcallback("Sale NOT created! Reason:"+ err);
             return;
         }
-        chequeData.saleChID = res.ChID;
+        chequeData.saleChID = res.ChID;             console.log("res NUM=",chequeData.checkNumber,"res CHID=",res.ChID);
         var msg;
         if (res.exist) msg=  "Чек №" + chequeData.checkNumber + " найден в БД";
         else msg= "Заголовок чека №" + chequeData.checkNumber + " добавлен в БД";
@@ -468,7 +468,7 @@ function fillCheques(chequesData, ind, finishedcallback) {
         emitAndLogEvent(msg, chequeData.cashBoxFabricNum,  function(){
             var saleChID = chequeData.saleChID;
             var chequeProds = chequeData.productsInCheck;//!!!
-            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {
+            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {console.log("fillChequeTitle=,chequeData.checkNum=",chequeData.checkNumber,"saleChID=",saleChID);
                 if(err){
                     finishedcallback("Position not added to cheque! Reason:"+err);
                     return;
@@ -691,8 +691,8 @@ function insertInnerDoc(InnerDocList, ind, callback) {
                 return;
             }
             if(result.exists){
-                emitAndLogEvent('Найдена служеная выдача на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate, doc.cashBoxFabricNum, function () {
-                    log.info('Найдена служеная выдача  на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate);
+                emitAndLogEvent('Найдена служебная выдача на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate, doc.cashBoxFabricNum, function () {
+                    log.info('Найдена службная выдача  на сумму ' + doc.paymentSum / 100 + ' от ' + doc.docDate);
                     insertInnerDoc(InnerDocList, ind + 1, callback);
                 });
                 return;

@@ -31,6 +31,7 @@
         <div id="sysadmin_TopActions">
             <button id="display_startup_params">Startup params</button>
             <button id="display_import_sales">Import sales</button>
+            <button id="btnLoadLOG">load Log</button>
         </div>
     </div>
     <div id="sysadmin_ContentContainer"></div>
@@ -66,6 +67,7 @@
 
                 var startupBtn = new Button({id:"display_startup_params"},"display_startup_params");
                 var importSalesBtn = new Button({id:"display_import_sales"},"display_import_sales");
+                var btnLoadLOG = new Button({id:"btnLoadLOG"},"btnLoadLOG");
 
                 var sysadmin_ContentContainer = APP.initElem("sysadmin_ContentContainer",
                         StackContainer, {region: "center", tabPosition: "top", class: "sysadmin_Content"});
@@ -107,27 +109,29 @@
                             }
                     )
                 };
-                sysadmin_MainContainer.runSysadminContentPage = function (id, title, closable, contentURL) {
+                sysadmin_MainContainer.runSysadminContentPage = function (owner, id, title, closable, contentURL) {
                     console.log("sysadmin_MainContainer.runSysadminContentPage: ", contentURL);//!!!IT'S FOR TESTING!!!
-                    var pageContentPane =
-                            APP.initChildTo(sysadmin_ContentContainer, "PageContentPane_" + id,
-                                    XContentPane, {title: title, closable: closable,parseOnLoad: false,style: "margin:0;padding:0;"});
-                    sysadmin_ContentContainer.selectChild(pageContentPane);
-                    pageContentPane.set("content", "");
-                    pageContentPane.set("href", contentURL);
-                    pageContentPane.updateDBState = function () {
-                        document.getElementById("sysadmin_app_mode").innerHTML = "";
-                        document.getElementById("sysadmin_dbName").innerHTML = "";
-                        document.getElementById("sysadmin_connectToDBState").innerHTML = "";
-                        sysadmin_MainContainer.getAppState();
-                    };
+                    if(!owner.pageContentPane){
+                        owner.pageContentPane=
+                                APP.initChildTo(sysadmin_ContentContainer, "PageContentPane_" + id,
+                                        XContentPane, {title: title, closable: closable,parseOnLoad: false,style: "margin:0;padding:0;"});
+                        owner.pageContentPane.set("content", "");
+                        owner.pageContentPane.set("href", contentURL);
+                        owner.pageContentPane.updateDBState = function () {
+                            document.getElementById("sysadmin_app_mode").innerHTML = "";
+                            document.getElementById("sysadmin_dbName").innerHTML = "";
+                            document.getElementById("sysadmin_connectToDBState").innerHTML = "";
+                            sysadmin_MainContainer.getAppState();
+                        };
+                    }
+                    sysadmin_ContentContainer.selectChild(owner.pageContentPane);
                 };
 
                 startupBtn.onClick=function() {
-                   sysadmin_MainContainer.runSysadminContentPage("startup_parameters", "Startup parameters", false, "/sysadmin/startup_parameters");
+                   sysadmin_MainContainer.runSysadminContentPage(startupBtn, "startup_parameters", "Startup parameters", false, "/sysadmin/startup_parameters");
                 };
                 importSalesBtn.onClick=function(){
-                    sysadmin_MainContainer.runSysadminContentPage("import_sales", "Import sales", false, "/sysadmin/import_sales");
+                    sysadmin_MainContainer.runSysadminContentPage(importSalesBtn, "import_sales", "Import sales", false, "/sysadmin/import_sales");
                 };
                 sysadmin_MainContainer.getAppState();
             });

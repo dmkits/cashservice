@@ -33,24 +33,7 @@ module.exports.databaseConnection=function(callback){
     });
 };
 
-//module.exports.setConfirmedOrderInfo = function (ChID, name, tel, email, callback) {
-//    var textInfo = "name:"+ name+",tel:"+tel+",email:"+email;
-//    var reqSql = new sql.Request(conn);
-//    var query_str = fs.readFileSync('./scripts/mobile_confirmed_order_info.sql', 'utf8');
-//
-//    reqSql.input('ChID',sql.Int, ChID);
-//    reqSql.input('OrderInfo',sql.NVarChar, textInfo);
-//
-//    reqSql.query(query_str,
-//        function (err,recordset) {
-//            if (err) {
-//                callback(err, null);
-//            }
-//            else {
-//                callback(null, recordset);
-//            }
-//        });
-//};
+
 
 module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
@@ -284,13 +267,13 @@ module.exports.fillChequeTitle = function(chequeData, callback) {
     });
 };
 
-function isPosExists(ChID, posNum, callback){
+function isPosExists(ChID, posNum, callback){   console.log("ChID isPosExists=",ChID);
     var reqSql = new sql.Request(conn);
     reqSql.input('ChID', sql.NVarChar, ChID);
     reqSql.input('SrcPosID', sql.NVarChar, posNum);
     var queryString = fs.readFileSync('./scripts/is_position_exists.sql', 'utf8');
     reqSql.query(queryString,
-        function (err, recordset) {
+        function (err, recordset) {          console.log("recordset isPosExists=",recordset);
             var outData={};
             if (err) {
                 callback(err);
