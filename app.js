@@ -717,41 +717,30 @@ function getCashBoxesList(req) {
     return sCashBoxesList;
 }
 
-app.get("/sysadmin/logs", function (req, res) {   log.info("/sysadmin/logs");
-    log.info('URL: /sysadmin/startup_parameters');
-    res.sendFile(path.join(__dirname, '/views/sysadmin', 'logs.html'));
-    //var outData = {};
-    //outData.mode = app_params.mode;
-    //if (ConfigurationError) {
-    //    outData.error = ConfigurationError;
-    //    res.send(outData);
-    //    return;
-    //}
-    //outData.configuration = database.getDBConfig();
-    //if (DBConnectError)
-    //    outData.dbConnection = DBConnectError;
-    //else
-    //    outData.dbConnection = 'Connected';
-    //res.sendf(outData);
+app.get("/sysadmin/cashRegLogs", function (req, res) {
+    log.info('URL: "/sysadmin/cashRegLogs"');
+    res.sendFile(path.join(__dirname, '/views/sysadmin', 'cashRegLogs.html'));
 });
-app.get("/sysadmin/logs/get_logs_for_crid/*", function (req, res) { log.info("/sysadmin/logs/get_logs_for_crid/* params=",req.params," ", JSON.stringify(req.query));
+app.get("/sysadmin/cashRegLogs/get_logs_for_crid/*", function (req, res) {
+    log.info("/sysadmin/cashRegLogs/get_logs_for_crid/* params=",req.params," ", JSON.stringify(req.query));
     //var filename = req.params[0];
     var outData={};
   //  var fileContentString=fs.readFileSync('./reportsConfig/'+filename+'.json', 'utf8');
-    outData.columns= [ { "data":"LogID", "name":"LogID", "width":100, "type":"text" }
-                      ,{ "data":"CRID", "name":"CRID", "width":100, "type":"text" }
-                      ,{ "data":"DocTime", "name":"DocTime", "width":150, "type":"text", "dateFormat":"DD.MM.YYYY"}
-                      ,{ "data":"CashRegAction", "name":"CashRegAction", "width":100, "type":"text"}
-                      ,{ "data":"Status", "name":"Status", "width":50, "type":"text"}
-                      ,{ "data":"Msg", "name":"Msg", "width":400, "type":"text"}
-                      ,{ "data":"Notes", "name":"Notes", "width":100, "type":"text"}
+    outData.columns= [ { "data":"LogID", "name":"LogID", "width":60, "type":"numeric" }
+                      ,{ "data":"CRID", "name":"CRID", "width":60, "type":"numeric" }
+                      ,{ "data":"DocTime", "name":"DocTime", "width":120, "type":"text", "dateFormat":"DD.MM.YYYY HH:mm:ss"}
+                      //,{ "data":"CashRegAction", "name":"CashRegAction", "width":100, "type":"text"}
+                      //,{ "data":"Status", "name":"Status", "width":50, "type":"text"}
+                      ,{ "data":"Msg", "name":"Msg", "width":500, "type":"text"}
+                      ,{ "data":"Notes", "name":"Notes", "width":300, "type":"text"}
                       ]; //JSON.parse(getJSONWithoutComments(fileContentString));
     var bdate = req.query.BDATE, edate = req.query.EDATE;
+    var crId=req.params[0];
     if (!bdate&&!edate) {
         res.send(outData);
         return;
     }
-    database.getLogs(bdate,edate,/*crId,*/
+    database.getLogs(bdate,edate+" 23:59:59",crId,
         function (error,recordset) {
             if (error){
                 outData.error=error;
@@ -761,6 +750,71 @@ app.get("/sysadmin/logs/get_logs_for_crid/*", function (req, res) { log.info("/s
             outData.items=recordset;
             res.send(outData);
         });
+});
+
+app.get("/sysadmin/sales", function (req, res) {
+    log.info("URL: /sysadmin/sales");
+    res.sendFile(path.join(__dirname, '/views/sysadmin', 'sales.html'));
+});
+
+app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
+    log.info("/sysadmin/Sales/get_sales_for_crid/* params=",req.params," ", JSON.stringify(req.query));
+    var outData={};
+    outData.columns= [
+         { "data":"ProdName", "name":"ProdName", "width":300, "type":"text"}
+        ,{ "data":"UM", "name":"UM", "width":30, "type":"numeric"}
+        ,{ "data":"Qty", "name":"Qty", "width":60, "type":"numeric"}
+        ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":60, "type":"numeric"}
+        ,{ "data":"Sum_wt", "name":"Sum_wt", "width":60, "type":"numeric"}
+    ];
+    var bdate = req.query.BDATE, edate = req.query.EDATE;
+    var initialCRID= req.params[0];                console.log("initialCRID relt=", initialCRID);
+    var CRID;
+    if (!bdate&&!edate) {
+        res.send(outData);
+        return;
+    }
+    if(initialCRID==-1){
+        database.getAllCashBoxes(function (err, result) {                       console.log("getAllCashBoxes inside if");
+            var outData = {};
+            if (err) {
+                outData.error = err.message;
+                return;
+            }
+            CRID='(';
+            for(var i in result) {
+                CRID = CRID + result[i].CRID + ",";  console.log("getAllCashBoxes CRID=", CRID);
+            }
+            CRID=CRID.substring(0,CRID.length-1)+")";   console.log("785 CRID=", CRID);
+            database.getSales(bdate,edate,CRID,
+                function (error,recordset) {
+                    if (error){
+                        outData.error=error;
+                        res.send(outData);
+                        return;
+                    }
+                    outData.items=recordset;
+                    res.send(outData);
+                    return;
+                });
+        });
+
+    }
+   else{
+        CRID = '('+req.params[0]+')';                                       console.log("getAllCashBoxes CRID=", CRID);
+        database.getSales(bdate,edate,CRID,
+            function (error,recordset) {
+                if (error){
+                    outData.error=error;
+                    res.send(outData);
+                    return;
+                }
+                outData.items=recordset;
+                res.send(outData);
+              //  return;
+            });
+    }
+
 });
 
 server.listen(port, function (err) {

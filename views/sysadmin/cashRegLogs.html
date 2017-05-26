@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<div id="sysadmin_CashRegLogs_PageContainer" style="width:100%;height:100%;">
+    <div id="sysadmin_CashRegLogs_ContentPaneLeft" style="width:165px;height:100%; margin:0;padding:0;">
+        <table>
+            <tr><th>Кассовые аппараты</th></tr>
+            <tr><td id="sysadmin_CashRegLogs_CrsButtons">
+            </td></tr>
+        </table>
+    </div>
+    <div id="sysadmin_CashRegLogs_ContentPaneDetailContainer" style="width:100%;height:100%; margin:0;padding:0;"></div>
+</div>
+</body>
+<script type="text/javascript">
+    require(["app", "dojo/dom-style", "dijit/layout/BorderContainer", "dijit/layout/StackContainer", "dijit/layout/ContentPane",
+                "dijit/form/Button", "templateDocumentSimpleTable","request"],
+            function (APP, domStyle, BorderContainer, StackContainer, ContentPane, Button, TDocumentSimpleTable, Request) {
+                var sysadmin_CashRegLogs_PageContainer=
+                        APP.instanceForID("sysadmin_CashRegLogs_PageContainer", BorderContainer, {});
+                APP.instanceForID("sysadmin_CashRegLogs_ContentPaneLeft", ContentPane, {region:'left', splitter:true});
+
+                var sysadmin_CashRegLogs_ContentPaneDetailContainer=
+                        APP.instanceForID("sysadmin_CashRegLogs_ContentPaneDetailContainer", StackContainer, {region:'center'});
+
+                var sysadmin_CashRegLogs_CrsButtons=document.getElementById("sysadmin_CashRegLogs_CrsButtons");
+                var btnAllCRs;
+
+                sysadmin_CashRegLogs_PageContainer.createReportButtons=function(){
+
+                    Request.getJSONData({url: "/sysadmin/import_sales/get_all_cashboxes",consoleLog: true},
+                            function (success, data) {          console.log("createReportButtons data=",data);
+                                if (!success) {
+                                    sysadmin_CashRegLogs_PageContainer.innerHTML = "<div><b style='color:red'>No connection!</b></div>";
+                                    return;
+                                }
+                               // var item = JSON.parse(data.jsonFormattedText);
+                                for (var i in data.items) {
+                                    var item=data.items[i];
+                                    sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, item.CRID, "Касса ID "+item.FacID);
+                                }
+                              //  firstButton.onClick();
+                            });
+                };
+
+//                sysadmin_CashRegLogs_PageContainer.getAllCashBoxes=function() {
+//
+//                    Request.getJSONData({url: "/sysadmin/import_sales/get_all_cashboxes", consoleLog: true},
+//                            function (success, result) {
+//                                if (!success) {
+//                                    alert("No connection to the server! 112");
+//                                    return;
+//                                }
+//                                if (result.error) {
+//                                    alert("Cannot get configuration parameters! Reason:"+result.error);
+//                                    return;
+//                                }
+//                                sysadmin_CashRegLogs_PageContainer.setToggleCashBoxID(result.items);
+//                            });
+//                };
+//                sysadmin_CashRegLogs_PageContainer.getAllCashBoxes();
+//
+//                sysadmin_CashRegLogs_PageContainer.setToggleCashBoxID=function(data){
+//                    for(var i in data){
+//                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:true,label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
+//                        toggleBtn.domNode.firstChild.setAttribute("style", "width:150px;");
+//                        toggleBtn.startup();
+//                        cash_boxes_buttons.appendChild(toggleBtn.domNode);
+//                        leftContentImportSales.startup();
+//                    }
+//                };
+
+                sysadmin_CashRegLogs_PageContainer.addButtonTo = function (parent, id, name) {
+                   // var button = new Button({id:id, label:name});
+                    var button = new Button({id:id, label:name});
+                    button.onClick= function(){
+                        var instance=this;
+                        if (!button.document){
+                            button.document =
+                                    APP.childFor(sysadmin_CashRegLogs_ContentPaneDetailContainer, "sysadmin_CashRegLogs_TableSales"+instance.id,
+                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/cashRegLogs/get_logs_for_crid/'+instance.id})
+                                            .addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE")
+                                            .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:40px;"})
+//                                            .addTotalSumNumberTextBox("ИТОГО кол-во:",260, "TotalQty", {style:"font-weight:bold;",inputStyle:"width:60px;"})
+//                                            .addTotalSumNumberTextBox("ИТОГО сумма:",200, "TotalSum", {style:"font-weight:bold;",inputStyle:"width:80px;",
+//                                             pattern:"###,###,##0.00#######"})
+                                            .startUp();
+                        }
+                        sysadmin_CashRegLogs_ContentPaneDetailContainer.selectChild(button.document);
+                    };
+                    button.domNode.firstChild.setAttribute("style", "width:150px;");
+                    button.startup();
+                    sysadmin_CashRegLogs_CrsButtons.appendChild(button.domNode);
+                    return button;
+                };
+                btnAllCRs= sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, -1, "Все кассы");
+                sysadmin_CashRegLogs_PageContainer.createReportButtons();
+                sysadmin_CashRegLogs_PageContainer.layout();
+                btnAllCRs.onClick();
+            });
+</script>
+</html>

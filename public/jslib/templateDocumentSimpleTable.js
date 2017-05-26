@@ -54,7 +54,7 @@ define(["dojo/_base/declare", "app", "templateDocumentBase", "hTableSimpleFilter
             loadDetailContent: function(detailContentHTable, url, condition){                                       //console.log("TemplateDocumentSimpleTable loadDetailContent");
                 detailContentHTable.setContentFromUrl({url:url,condition:condition});
             },
-            setDetailContentErrorMsg: function(detailContentErrorMsg){
+            setDetailContentErrorMsg: function(detailContentErrorMsg){t
                 this.detailContentErrorMsg= detailContentErrorMsg;
                 return this;
             },

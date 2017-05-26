@@ -589,16 +589,21 @@ function detectPaymentForm(PaymentForm){
 }
 
 
-module.exports.getLogs = function(bdate,edate, /*crId,*/ callback) {
-   // var outData={};
-   // var bdate = formatDate(bdate);
-   // var edate = formatDate(edate);
+module.exports.getLogs = function(bdate,edate, crId, callback) {
+    var reqStr;
+
     var reqSql = new sql.Request(conn);
+   if(crId==-1){
+       reqStr="SELECT * FROM  z_LogCashReg WHERE DocTime BETWEEN @BDATE AND @EDATE order by LogID";
+   }else{
+       reqSql.input("CRID", sql.NVarChar,crId);
+       reqStr="SELECT * FROM  z_LogCashReg WHERE DocTime BETWEEN @BDATE AND @EDATE AND CRID = @CRID order by LogID";
+   }
 
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
 
-        reqSql.query("SELECT * FROM  z_LogCashReg WHERE DocTime BETWEEN @BDATE AND @EDATE order by LogID",
+        reqSql.query(reqStr,
             function (error,recordset) {
                 if (error){
                     callback(error);
@@ -606,6 +611,27 @@ module.exports.getLogs = function(bdate,edate, /*crId,*/ callback) {
                 }
                 callback(null,recordset);
             });
+};
+
+
+module.exports.getSales = function(bdate,edate, crId, callback) {                     console.log("getSales");
+    var reqStr=fs.readFileSync('./scripts/get_sales.sql', 'utf8');
+
+    var reqSql = new sql.Request(conn);
+
+
+    reqSql.input("BDATE", sql.NVarChar,bdate);
+    reqSql.input("EDATE", sql.NVarChar,edate);
+    reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales crId=",crId);
+
+    reqSql.query(reqStr,
+        function (error,recordset) {                console.log("getSales error=",error);
+            if (error){
+                callback(error);
+                return;
+            }
+            callback(null,recordset);
+        });
 };
 
 

@@ -36,7 +36,8 @@
         <div id="sysadmin_TopActions">
             <button id="display_startup_params">Startup params</button>
             <button id="display_import_sales">Import sales</button>
-            <button id="btnLoadLOG">load Log</button>
+            <button id="btnCashRegLog">Cash reg log</button>
+            <button id="btnGetSales">Sales</button>
         </div>
     </div>
     <div id="sysadmin_ContentContainer"></div>
@@ -72,7 +73,8 @@
 
                 var startupBtn = new Button({id:"display_startup_params"},"display_startup_params");
                 var importSalesBtn = new Button({id:"display_import_sales"},"display_import_sales");
-                var btnLoadLOG = new Button({id:"btnLoadLOG"},"btnLoadLOG");
+                var btnCashRegLog = new Button({id:"btnCashRegLog"},"btnCashRegLog");
+                var btnGetSales = new Button({id:"btnGetSales"},"btnGetSales");
 
                 var sysadmin_ContentContainer = APP.instanceForID("sysadmin_ContentContainer",
                         StackContainer, {region: "center", tabPosition: "top", class: "sysadmin_Content"});
@@ -138,8 +140,11 @@
                 importSalesBtn.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(importSalesBtn, "import_sales", "Import sales", false, "/sysadmin/import_sales");
                 };
-                btnLoadLOG.onClick=function(){
-                    sysadmin_MainContainer.runSysadminContentPage(btnLoadLOG, "btnLoadLOG", "load Log", false, "/sysadmin/logs");
+                btnCashRegLog.onClick=function(){
+                    sysadmin_MainContainer.runSysadminContentPage(btnCashRegLog, "btnCashRegLog", "Cash reg log", false, "/sysadmin/cashRegLogs");
+                };
+                btnGetSales.onClick=function(){
+                    sysadmin_MainContainer.runSysadminContentPage(btnGetSales, "btnGetSales", "Sales", false, "/sysadmin/sales");
                 };
                 sysadmin_MainContainer.getAppState();
             });
