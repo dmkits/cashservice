@@ -589,15 +589,24 @@ function detectPaymentForm(PaymentForm){
 }
 
 
+module.exports.getLogs = function(bdate,edate, /*crId,*/ callback) {
+   // var outData={};
+   // var bdate = formatDate(bdate);
+   // var edate = formatDate(edate);
+    var reqSql = new sql.Request(conn);
 
+    reqSql.input("BDATE", sql.NVarChar,bdate);
+    reqSql.input("EDATE", sql.NVarChar,edate);
 
-
-
-
-
-
-
-
+        reqSql.query("SELECT * FROM  z_LogCashReg WHERE DocTime BETWEEN @BDATE AND @EDATE order by LogID",
+            function (error,recordset) {
+                if (error){
+                    callback(error);
+                    return;
+                }
+                callback(null,recordset);
+            });
+};
 
 
 

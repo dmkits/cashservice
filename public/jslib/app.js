@@ -1,62 +1,54 @@
 /**
- * Created by ianagez on 15.02.2017.
+ * Created by dmkits on 18.12.16.
  */
 define(["dijit/registry"],
-    function (registry) {
+    function(registry) {
         return {
-            /**
-             * Inited DOJO element for HTML element
-             * @param registry
-             * @param ID
-             * @param htmlElemName
-             * @param Class
-             * @param Params
-             * @returns {*}
-             */
-            initElem: function (htmlElemName, Class, Params) {      console.log("initElem");
-                var Object = null;
-                if (registry!=null) Object = registry.byId(htmlElemName);
-                if (Object==null) {
-                    Params.id = htmlElemName;
-                    Object = new Class(Params, htmlElemName);
+            instance: function(htmlElemID, Class, params) {
+                var instance = registry.byId(htmlElemID);
+                if (!instance) {
+                    if (!params) params={};
+                    params.id = htmlElemID;
+                    instance = new Class(params);
                 }
-                return Object;
+                return instance;
             },
-            /**
-             * Inited DOJO child element for DOJO parent element
-             * @param registry
-             * @param ID
-             * @param Parent
-             * @param Class
-             * @param Params
-             * @returns {*}
-             */
-            initChildTo: function (Parent, ID, Class, Params) {
-                var Object = null;
-                if (registry!=null) Object = registry.byId(ID);
-                if (Object==null) {
-                    Params.id = ID;
-                    Object = new Class(Params);
-                    if (Parent!=null) Parent.addChild(Object);
+            instanceFor: function(htmlElem, Class, params) {
+                var id = htmlElem.getAttribute("id"), instance;
+                if (id!=undefined) instance = registry.byId(id);
+                if (!instance) {
+                    if (!params) params={};
+                    params.id = id;
+                    instance = new Class(params, htmlElem);
                 }
-                return Object;
+                return instance;
             },
-
-            doDialogMsg: function (params){
-                //dialog msg
+            instanceForID: function(htmlElemID, Class, params) {
+                var instance = registry.byId(htmlElemID);
+                if (!instance) {
+                    if (!params) params={};
+                    params.id = htmlElemID;
+                    instance = new Class(params, htmlElemID);
+                }
+                return instance;
             },
-            doRequestErrorDialog: function (){
-                this.doDialogMsg({title:"Внимание",content:"Невозможно завершить операцию! <br>Нет всязи с сервером!",
-                    style:"width:300px;", btnOkLabel:"OK", btnCancelLabel:"Закрыть"});
+            childFor: function(parent, ID, Class, params) {
+                var instance = registry.byId(ID);
+                if (!instance) {
+                    if (!params) params={};
+                    params.id = ID;
+                    instance = new Class(params);
+                    if (parent!=null) parent.addChild(instance);
+                }
+                return instance;
             },
-
-            today: function (){
+            today: function(){
                 return moment().toDate();
             },
-            curMonthBDate: function (){
+            curMonthBDate: function(){
                 return moment().startOf('month').toDate();
             },
-            curMonthEDate: function (){
+            curMonthEDate: function(){
                 return moment().endOf('month').toDate();
             }
         }

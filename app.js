@@ -123,10 +123,12 @@ app.get("/sysadmin/app_state", function (req, res) {
         outData.dbConnection = 'Connected';
     res.send(outData);
 });
+
 app.get("/sysadmin/startup_parameters", function (req, res) {
     log.info('URL: /sysadmin/startup_parameters');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'startup_parameters.html'));
 });
+
 app.get("/sysadmin/startup_parameters/get_app_config", function (req, res) {
     log.info('URL: /sysadmin/startup_parameters/get_app_config');
     if (ConfigurationError) {
@@ -714,6 +716,53 @@ function getCashBoxesList(req) {
     }
     return sCashBoxesList;
 }
+
+app.get("/sysadmin/logs", function (req, res) {   log.info("/sysadmin/logs");
+    log.info('URL: /sysadmin/startup_parameters');
+    res.sendFile(path.join(__dirname, '/views/sysadmin', 'logs.html'));
+    //var outData = {};
+    //outData.mode = app_params.mode;
+    //if (ConfigurationError) {
+    //    outData.error = ConfigurationError;
+    //    res.send(outData);
+    //    return;
+    //}
+    //outData.configuration = database.getDBConfig();
+    //if (DBConnectError)
+    //    outData.dbConnection = DBConnectError;
+    //else
+    //    outData.dbConnection = 'Connected';
+    //res.sendf(outData);
+});
+app.get("/sysadmin/logs/get_logs_for_crid/*", function (req, res) { log.info("/sysadmin/logs/get_logs_for_crid/* params=",req.params," ", JSON.stringify(req.query));
+    //var filename = req.params[0];
+    var outData={};
+  //  var fileContentString=fs.readFileSync('./reportsConfig/'+filename+'.json', 'utf8');
+    outData.columns= [ { "data":"LogID", "name":"LogID", "width":100, "type":"text" }
+                      ,{ "data":"CRID", "name":"CRID", "width":100, "type":"text" }
+                      ,{ "data":"DocTime", "name":"DocTime", "width":150, "type":"text", "dateFormat":"DD.MM.YYYY"}
+                      ,{ "data":"CashRegAction", "name":"CashRegAction", "width":100, "type":"text"}
+                      ,{ "data":"Status", "name":"Status", "width":50, "type":"text"}
+                      ,{ "data":"Msg", "name":"Msg", "width":400, "type":"text"}
+                      ,{ "data":"Notes", "name":"Notes", "width":100, "type":"text"}
+                      ]; //JSON.parse(getJSONWithoutComments(fileContentString));
+    var bdate = req.query.BDATE, edate = req.query.EDATE;
+    if (!bdate&&!edate) {
+        res.send(outData);
+        return;
+    }
+    database.getLogs(bdate,edate,/*crId,*/
+        function (error,recordset) {
+            if (error){
+                outData.error=error;
+                res.send(outData);
+                return;
+            }
+            outData.items=recordset;
+            res.send(outData);
+        });
+});
+
 server.listen(port, function (err) {
     console.log("server runs on port " + port);
     log.info("server runs on port " + port, new Date().getTime() - startTime);

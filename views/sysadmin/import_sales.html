@@ -84,13 +84,13 @@
 //                });
 
 
-                var borderContainer = APP.initElem("sql_queries_PageContent", BorderContainer, {});
-                var topContentSQL = APP.initElem("sql_queries_TopContent", ContentPane, {region: "top"});
-                var leftContentImportSales = APP.initElem("sql_queries_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
-                var detailContentImportSales = APP.initElem("sql_queries_DetailContent", ContentPane, {region: "center"});
-                var rightContentImportSales = APP.initElem("sql_queries_RightContent", ContentPane, {region: "right",splitter: true});
-                var sql_display_content= APP.initElem("sql_display_content", ContentPane, {region: "right",splitter: true});
-                var sql_display_content_header=APP.initElem("sql_display_content", ContentPane, {region: "right",splitter: true});
+                var borderContainer = APP.instanceForID("sql_queries_PageContent", BorderContainer, {});
+                var topContentSQL = APP.instanceForID("sql_queries_TopContent", ContentPane, {region: "top"});
+                var leftContentImportSales = APP.instanceForID("sql_queries_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
+                var detailContentImportSales = APP.instanceForID("sql_queries_DetailContent", ContentPane, {region: "center"});
+                var rightContentImportSales = APP.instanceForID("sql_queries_RightContent", ContentPane, {region: "right",splitter: true});
+                var sql_display_content= APP.instanceForID("sql_display_content", ContentPane, {region: "right",splitter: true});
+                var sql_display_content_header=APP.instanceForID("sql_display_content", ContentPane, {region: "right",splitter: true});
                 sql_display_content.startup();
                 sql_display_content_header.startup();
 
@@ -98,10 +98,10 @@
                 var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
                 var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
                 var cash_boxes_buttons=document.getElementById('cash_boxes_buttons');
-                var btnImportSales = APP.initElem("import_sales_btn", Button, {});
-                var btnSendImportSales = APP.initElem("import_sales_sendBtn", Button, {});
+                var btnImportSales = APP.instanceForID("import_sales_btn", Button, {});
+                var btnSendImportSales = APP.instanceForID("import_sales_sendBtn", Button, {});
                 //import_sales_cleanBtn
-                var btnCleanUp=APP.initElem("import_sales_cleanBtn", Button, {});
+                var btnCleanUp=APP.instanceForID("import_sales_cleanBtn", Button, {});
                 var displayXMLResult = document.getElementById("display_result");
 
                 detailContentImportSales.getAllCashBoxes=function() {

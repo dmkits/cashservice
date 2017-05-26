@@ -9,11 +9,16 @@
     <!--[if IE]>
     <!--<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">-->
     <![endif]-->
+    <script src="/jslib/handsontable/handsontable.full.min.js"></script>
+    <link rel="stylesheet" media="screen" href="/jslib/handsontable/handsontable.full.min.css">
+    <script src="/jslib/handsontable/numbro/languages/ru-RU.min.js"></script>
+    <script src="/jslib/numeral/languages/ru.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/jslib/moment/moment-with-locales.js"></script>
     <!--<link rel="icon" type="image/gif" href="/icons/icon1.ico"/>-->
     <link rel="stylesheet" href="/jslib/dijit/themes/claro/claro.css" media="screen">
     <script type="text/javascript" src="/jslib/dojo/dojo.js" data-dojo-config="async:true,parseOnLoad:false"></script>
+    <link rel="stylesheet" href="/jslib/htable.css" media="screen">
     <link rel="stylesheet" type="text/css" href="/css/sysadmin.css" media="screen">
 
     <title>CASHSERVISE-US</title>
@@ -43,24 +48,24 @@
             function (APP, BorderContainer, StackContainer, ContentPane, ToggleButton, XContentPane, Button, Request) {                    console.log("STARTING SYSADMIN PAGE...");//!!!IT'S FOR TESTING!!!
                moment.locale("uk");
 
-                var sysadmin_MainContainer = APP.initElem("sysadmin_MainContainer", BorderContainer, {design: "headline"});
-                var sysadmin_TopContainer = APP.initElem("sysadmin_TopContainer",
+                var sysadmin_MainContainer = APP.instanceForID("sysadmin_MainContainer", BorderContainer, {design: "headline"});
+                var sysadmin_TopContainer = APP.instanceForID("sysadmin_TopContainer",
                         BorderContainer, {
                             region: "top",
                             design: "sidebar",
                             class: "sysadmin_TopContent",
                             gutters: true
                         });
-                var sysadmin_TopImg = APP.initElem("sysadmin_TopImg", ContentPane, {
+                var sysadmin_TopImg = APP.instanceForID("sysadmin_TopImg", ContentPane, {
                     region: "left",
                     class: "sysadmin_TopContent"
                 });
                 sysadmin_TopImg.set("content", '<image src="icons/cashbox40x40.ico" style="position:absolute; margin:0px;">');
-                var sysadmin_TopStateInfo = APP.initElem("sysadmin_TopStateInfo", ContentPane, {
+                var sysadmin_TopStateInfo = APP.instanceForID("sysadmin_TopStateInfo", ContentPane, {
                     region: "top",
                     class: "sysadmin_TopContent"
                 });
-                var sysadmin_TopActions = APP.initElem("sysadmin_TopActions", ContentPane, {
+                var sysadmin_TopActions = APP.instanceForID("sysadmin_TopActions", ContentPane, {
                     region: "bottom",
                     class: "sysadmin_TopContent"
                 });
@@ -69,7 +74,7 @@
                 var importSalesBtn = new Button({id:"display_import_sales"},"display_import_sales");
                 var btnLoadLOG = new Button({id:"btnLoadLOG"},"btnLoadLOG");
 
-                var sysadmin_ContentContainer = APP.initElem("sysadmin_ContentContainer",
+                var sysadmin_ContentContainer = APP.instanceForID("sysadmin_ContentContainer",
                         StackContainer, {region: "center", tabPosition: "top", class: "sysadmin_Content"});
                 sysadmin_MainContainer.startup();
 
@@ -113,7 +118,7 @@
                     console.log("sysadmin_MainContainer.runSysadminContentPage: ", contentURL);//!!!IT'S FOR TESTING!!!
                     if(!owner.pageContentPane){
                         owner.pageContentPane=
-                                APP.initChildTo(sysadmin_ContentContainer, "PageContentPane_" + id,
+                                APP.childFor(sysadmin_ContentContainer, "PageContentPane_" + id,
                                         XContentPane, {title: title, closable: closable,parseOnLoad: false,style: "margin:0;padding:0;"});
                         owner.pageContentPane.set("content", "");
                         owner.pageContentPane.set("href", contentURL);
@@ -132,6 +137,9 @@
                 };
                 importSalesBtn.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(importSalesBtn, "import_sales", "Import sales", false, "/sysadmin/import_sales");
+                };
+                btnLoadLOG.onClick=function(){
+                    sysadmin_MainContainer.runSysadminContentPage(btnLoadLOG, "btnLoadLOG", "load Log", false, "/sysadmin/logs");
                 };
                 sysadmin_MainContainer.getAppState();
             });
