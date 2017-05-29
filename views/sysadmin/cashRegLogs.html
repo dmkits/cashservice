@@ -41,7 +41,7 @@
                                // var item = JSON.parse(data.jsonFormattedText);
                                 for (var i in data.items) {
                                     var item=data.items[i];
-                                    sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, item.CRID, "Касса ID "+item.FacID);
+                                    sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+item.CRID, "Касса ID "+item.FacID);
                                 }
                               //  firstButton.onClick();
                             });
@@ -97,7 +97,7 @@
                     sysadmin_CashRegLogs_CrsButtons.appendChild(button.domNode);
                     return button;
                 };
-                btnAllCRs= sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, -1, "Все кассы");
+                btnAllCRs= sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+'-1', "Все кассы");
                 sysadmin_CashRegLogs_PageContainer.createReportButtons();
                 sysadmin_CashRegLogs_PageContainer.layout();
                 btnAllCRs.onClick();

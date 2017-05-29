@@ -735,7 +735,7 @@ app.get("/sysadmin/cashRegLogs/get_logs_for_crid/*", function (req, res) {
                       ,{ "data":"Notes", "name":"Notes", "width":300, "type":"text"}
                       ]; //JSON.parse(getJSONWithoutComments(fileContentString));
     var bdate = req.query.BDATE, edate = req.query.EDATE;
-    var crId=req.params[0];
+    var crId=req.params[0].replace("CashRegLogs","");
     if (!bdate&&!edate) {
         res.send(outData);
         return;
@@ -760,24 +760,22 @@ app.get("/sysadmin/sales", function (req, res) {
 app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
     log.info("/sysadmin/Sales/get_sales_for_crid/* params=",req.params," ", JSON.stringify(req.query));
     var outData={};
-    outData.columns= [
-         { "data":"ProdName", "name":"ProdName", "width":300, "type":"text"}
+    outData.columns= [{ "data":"ProdName", "name":"ProdName", "width":300, "type":"text"}
         ,{ "data":"UM", "name":"UM", "width":30, "type":"numeric"}
-        ,{ "data":"Qty", "name":"Qty", "width":60, "type":"numeric"}
-        ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":60, "type":"numeric"}
-        ,{ "data":"Sum_wt", "name":"Sum_wt", "width":60, "type":"numeric"}
+        ,{ "data":"Qty", "name":"Qty", "width":100, "type":"numeric"}
+        ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":150, "type":"numeric"}
+        ,{ "data":"Sum_wt", "name":"Sum_wt", "width":150, "type":"numeric"}
     ];
-    var bdate = req.query.BDATE, edate = req.query.EDATE;
-    var initialCRID= req.params[0];                console.log("initialCRID relt=", initialCRID);
-    var CRID;
-    if (!bdate&&!edate) {
+    var bdate = req.query.BDATE, edate = req.query.EDATE;  // console.log("bdate=", req.query.BDATE, "edate=", req.query.EDATE);
+    if (!bdate&&!edate) {                     console.log("inside if outData=", outData);
         res.send(outData);
         return;
     }
+    var CRID;
+    var initialCRID= req.params[0].replace("Sales","");
     if(initialCRID==-1){
         database.getAllCashBoxes(function (err, result) {                       console.log("getAllCashBoxes inside if");
-            var outData = {};
-            if (err) {
+            if (err) {                                                  console.log("err 779=", err);
                 outData.error = err.message;
                 return;
             }
@@ -786,14 +784,14 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                 CRID = CRID + result[i].CRID + ",";  console.log("getAllCashBoxes CRID=", CRID);
             }
             CRID=CRID.substring(0,CRID.length-1)+")";   console.log("785 CRID=", CRID);
-            database.getSales(bdate,edate,CRID,
+            database.getSales(bdate,edate+" 23:59:59",CRID,
                 function (error,recordset) {
-                    if (error){
+                    if (error){                                             console.log("error 790=", error);
                         outData.error=error;
                         res.send(outData);
                         return;
                     }
-                    outData.items=recordset;
+                    outData.items=recordset;                console.log("outData 795=",outData);
                     res.send(outData);
                     return;
                 });
@@ -801,10 +799,10 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
 
     }
    else{
-        CRID = '('+req.params[0]+')';                                       console.log("getAllCashBoxes CRID=", CRID);
-        database.getSales(bdate,edate,CRID,
+        CRID = '('+initialCRID+')';                                       console.log("getAllCashBoxes CRID=", CRID);
+        database.getSales(bdate,edate+" 23:59:59",CRID,
             function (error,recordset) {
-                if (error){
+                if (error){                                           console.log("error 806=", error);
                     outData.error=error;
                     res.send(outData);
                     return;
@@ -814,7 +812,6 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
               //  return;
             });
     }
-
 });
 
 server.listen(port, function (err) {

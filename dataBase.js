@@ -620,13 +620,13 @@ module.exports.getSales = function(bdate,edate, crId, callback) {               
     var reqSql = new sql.Request(conn);
 
 
-    reqSql.input("BDATE", sql.NVarChar,bdate);
-    reqSql.input("EDATE", sql.NVarChar,edate);
-    reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales crId=",crId);
+    reqSql.input("BDATE", sql.NVarChar,bdate);        console.log("getSales bdate=",bdate);
+    reqSql.input("EDATE", sql.NVarChar,edate);        console.log("getSales crId=",crId);
+    reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales edate=",edate);
 
     reqSql.query(reqStr,
-        function (error,recordset) {                console.log("getSales error=",error);
-            if (error){
+        function (error,recordset) {          console.log("getSales recordset=",recordset);
+            if (error){                    console.log("getSales error=",error);
                 callback(error);
                 return;
             }

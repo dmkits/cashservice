@@ -40,7 +40,7 @@
                                 }
                                 for (var i in data.items) {
                                     var item=data.items[i];
-                                    sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, item.CRID, "Касса ID "+item.FacID);
+                                    sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales"+item.CRID, "Касса ID "+item.FacID);
                                 }
                             });
                 };
@@ -68,7 +68,7 @@
                     sysadmin_Sales_CrsButtons.appendChild(button.domNode);
                     return button;
                 };
-                btnAllCRs= sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, -1, "Все кассы");
+                btnAllCRs= sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales-1", "Все кассы");
                 sysadmin_Sales_PageContainer.createReportButtons();
                 sysadmin_Sales_PageContainer.layout();
                 btnAllCRs.onClick();
