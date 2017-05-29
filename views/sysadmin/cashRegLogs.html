@@ -32,7 +32,7 @@
 
                 sysadmin_CashRegLogs_PageContainer.createReportButtons=function(){
 
-                    Request.getJSONData({url: "/sysadmin/import_sales/get_all_cashboxes",consoleLog: true},
+                    Request.getJSONData({url: "/sysadmin/get_all_cashboxes",consoleLog: true},
                             function (success, data) {          console.log("createReportButtons data=",data);
                                 if (!success) {
                                     sysadmin_CashRegLogs_PageContainer.innerHTML = "<div><b style='color:red'>No connection!</b></div>";

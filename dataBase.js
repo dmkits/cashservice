@@ -619,14 +619,13 @@ module.exports.getSales = function(bdate,edate, crId, callback) {               
 
     var reqSql = new sql.Request(conn);
 
-
-    reqSql.input("BDATE", sql.NVarChar,bdate);        console.log("getSales bdate=",bdate);
-    reqSql.input("EDATE", sql.NVarChar,edate);        console.log("getSales crId=",crId);
-    reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales edate=",edate);
+    reqSql.input("BDATE", sql.NVarChar,bdate);
+    reqSql.input("EDATE", sql.NVarChar,edate);
+    reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales crId=",crId);
 
     reqSql.query(reqStr,
-        function (error,recordset) {          console.log("getSales recordset=",recordset);
-            if (error){                    console.log("getSales error=",error);
+        function (error,recordset) {                console.log("getSales error=",error);
+            if (error){
                 callback(error);
                 return;
             }
@@ -634,6 +633,21 @@ module.exports.getSales = function(bdate,edate, crId, callback) {               
         });
 };
 
+
+module.exports.exportProds = function(crId, callback) {                     console.log("exportProds");
+    var reqStr=fs.readFileSync('./scripts/export_products.sql', 'utf8');
+    var reqSql = new sql.Request(conn);
+    reqSql.input("CRID", sql.NVarChar,crId);         console.log("exportProds crId=",crId);
+
+    reqSql.query(reqStr,
+        function (error,recordset) {                console.log("exportProds recordset=",recordset);
+            if (error){
+                callback(error);
+                return;
+            }
+            callback(null,recordset);
+        });
+};
 
 
 

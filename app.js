@@ -165,7 +165,7 @@ app.get("/sysadmin/import_sales", function (req, res) {
     log.info('URL: /sysadmin/import_sales');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'import_sales.html'));
 });
-app.get("/sysadmin/import_sales/get_all_cashboxes", function (req, res) {
+app.get("/sysadmin/get_all_cashboxes", function (req, res) {
     database.getAllCashBoxes(function (err, result) {
         var outData = {};
         if (err) outData.error = err.message;
@@ -774,16 +774,16 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
     var CRID;
     var initialCRID= req.params[0].replace("Sales","");
     if(initialCRID==-1){
-        database.getAllCashBoxes(function (err, result) {                       console.log("getAllCashBoxes inside if");
+        database.getAllCashBoxes(function (err, result) {
             if (err) {                                                  console.log("err 779=", err);
                 outData.error = err.message;
                 return;
             }
-            CRID='(';
+            CRID='';
             for(var i in result) {
                 CRID = CRID + result[i].CRID + ",";  console.log("getAllCashBoxes CRID=", CRID);
             }
-            CRID=CRID.substring(0,CRID.length-1)+")";   console.log("785 CRID=", CRID);
+            CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
             database.getSales(bdate,edate+" 23:59:59",CRID,
                 function (error,recordset) {
                     if (error){                                             console.log("error 790=", error);
@@ -791,7 +791,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                         res.send(outData);
                         return;
                     }
-                    outData.items=recordset;                console.log("outData 795=",outData);
+                    outData.items=recordset;
                     res.send(outData);
                     return;
                 });
@@ -799,7 +799,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
 
     }
    else{
-        CRID = '('+initialCRID+')';                                       console.log("getAllCashBoxes CRID=", CRID);
+        CRID = initialCRID;
         database.getSales(bdate,edate+" 23:59:59",CRID,
             function (error,recordset) {
                 if (error){                                           console.log("error 806=", error);
@@ -812,6 +812,72 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
               //  return;
             });
     }
+});
+
+app.get("/sysadmin/exportProds", function (req, res) {
+    log.info('URL: "/sysadmin/exportProds"');
+    res.sendFile(path.join(__dirname, '/views/sysadmin', 'exportProds.html'));
+});
+
+app.get("/sysadmin/export_prods/export_prods", function (req, res) {
+    log.info("/sysadmin/export_prods/export_prods  params=",req.params," ", JSON.stringify(req.query));
+
+   var CRIDLIST= getCashBoxesList(req);    console.log("CRIDLIST=",CRIDLIST);
+
+    var outData={};
+    //outData.columns= [{ "data":"ProdName", "name":"ProdName", "width":300, "type":"text"}
+    //    ,{ "data":"UM", "name":"UM", "width":30, "type":"numeric"}
+    //    ,{ "data":"Qty", "name":"Qty", "width":100, "type":"numeric"}
+    //    ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":150, "type":"numeric"}
+    //    ,{ "data":"Sum_wt", "name":"Sum_wt", "width":150, "type":"numeric"}
+    //];
+    //var bdate = req.query.BDATE, edate = req.query.EDATE;  // console.log("bdate=", req.query.BDATE, "edate=", req.query.EDATE);
+    //if (!bdate&&!edate) {                     console.log("inside if outData=", outData);
+    //    res.send(outData);
+    //    return;
+    //}
+
+
+    var CRID;
+    //var initialCRID= req.params[0].replace("ExportProds","");
+    if(CRIDLIST.indexOf("-1")>=0){
+        database.getAllCashBoxes(function (err, result) {
+            if (err) {                                                  console.log("err 779=", err);
+                outData.error = err.message;
+                return;
+            }
+            CRID='';
+            for(var i in result) {
+                CRID = CRID + result[i].CRID + ",";  console.log("getAllCashBoxes CRID=", CRID);
+            }
+            CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
+            database.exportProds(CRID,
+                function (error,recordset) {
+                    if (error){                                             console.log("error 790=", error);
+                        outData.error=error;
+                        res.send(outData);
+                        return;
+                    }
+                    outData.items=recordset;            console.log("getAllCashBoxes recordset=", recordset);
+                    res.send(outData);
+                    return;
+                });
+        });
+    }
+    //else{
+    //    CRID = initialCRID;
+    //    database.exportProds(CRID,
+    //        function (error,recordset) {
+    //            if (error){                                           console.log("error 806=", error);
+    //                outData.error=error;
+    //                res.send(outData);
+    //                return;
+    //            }
+    //            outData.items=recordset;
+    //            res.send(outData);
+    //            //  return;
+    //        });
+    //}
 });
 
 server.listen(port, function (err) {
