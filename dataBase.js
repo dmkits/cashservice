@@ -54,7 +54,7 @@ module.exports.getXMLForUniCashServerRequest = function (bdate, edate, cashBoxes
     var query_str = fs.readFileSync('./scripts/sales_report.sql', 'utf8');
     reqSql.input('BDATE', sql.NVarChar, bdate);
     reqSql.input('EDATE', sql.NVarChar, edate);
-    reqSql.input('CRIDLIST', sql.NVarChar, cashBoxesID);
+    reqSql.input('CRID', sql.NVarChar, cashBoxesID);
     reqSql.query(query_str,
         function (err, recordset) {
             if (err) {
@@ -634,13 +634,13 @@ module.exports.getSales = function(bdate,edate, crId, callback) {               
 };
 
 
-module.exports.exportProds = function(crId, callback) {                     console.log("exportProds");
+module.exports.exportProds = function(crId, callback) {
     var reqStr=fs.readFileSync('./scripts/export_products.sql', 'utf8');
     var reqSql = new sql.Request(conn);
-    reqSql.input("CRID", sql.NVarChar,crId);         console.log("exportProds crId=",crId);
+    reqSql.input("CRID", sql.NVarChar,crId);
 
     reqSql.query(reqStr,
-        function (error,recordset) {                console.log("exportProds recordset=",recordset);
+        function (error,recordset) {
             if (error){
                 callback(error);
                 return;
@@ -650,7 +650,20 @@ module.exports.exportProds = function(crId, callback) {                     cons
 };
 
 
+module.exports.getPrices = function(crId, callback) {                     console.log("getPrices");
+    var reqStr=fs.readFileSync('./scripts/get_prices.sql', 'utf8');
 
+    var reqSql = new sql.Request(conn);
 
+    reqSql.input("CRID", sql.NVarChar,crId);
+
+    reqSql.query(reqStr,function (error,recordset) {           console.log("getPrices recordset=",recordset);
+            if (error){                                      console.log("getPrices error=",error);
+                callback(error);
+                return;
+            }
+            callback(null,recordset);
+        });
+};
 
 

@@ -39,6 +39,7 @@
             <button id="btnCashRegLog">Cash reg log</button>
             <button id="btnGetSales">Sales</button>
             <button id="btnExportProds">Export Prods</button>
+            <button id="btnGetPrices">Get Prices</button>
         </div>
     </div>
     <div id="sysadmin_ContentContainer"></div>
@@ -77,6 +78,7 @@
                 var btnCashRegLog = new Button({id:"btnCashRegLog"},"btnCashRegLog");
                 var btnGetSales = new Button({id:"btnGetSales"},"btnGetSales");
                 var btnExportProds = new Button({id:"btnExportProds"},"btnExportProds");
+                var btnGetPrices = new Button({id:"btnGetPrices"},"btnGetPrices");
 
                 var sysadmin_ContentContainer = APP.instanceForID("sysadmin_ContentContainer",
                         StackContainer, {region: "center", tabPosition: "top", class: "sysadmin_Content"});
@@ -150,6 +152,9 @@
                 };
                 btnExportProds.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(btnExportProds, "btnExportProds", "Export Prods", false, "/sysadmin/exportProds");
+                };
+                btnGetPrices.onClick=function(){
+                    sysadmin_MainContainer.runSysadminContentPage(btnGetPrices, "btnGetPrices", "Get Prices", false, "/sysadmin/get_prices");
                 };
                 sysadmin_MainContainer.getAppState();
             });

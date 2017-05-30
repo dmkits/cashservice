@@ -1,80 +1,3 @@
-<!--<!DOCTYPE HTML>-->
-<!--<html lang="en">-->
-<!--<head>-->
-    <!--<meta charset="UTF-8">-->
-    <!--<title></title>-->
-<!--</head>-->
-<!--<body>-->
-<!--<div id="sysadmin_ExportProds_PageContainer" style="width:100%;height:100%;">-->
-    <!--<div id="sysadmin_ExportProds_ContentPaneLeft" style="width:165px;height:100%; margin:0;padding:0;">-->
-        <!--<table>-->
-            <!--<tr><th>Кассовые аппараты</th></tr>-->
-            <!--<tr><td id="sysadmin_ExportProds_CrsButtons">-->
-            <!--</td></tr>-->
-        <!--</table>-->
-    <!--</div>-->
-    <!--<div id="sysadmin_ExportProds_ContentPaneDetailContainer" style="width:100%;height:100%; margin:0;padding:0;"></div>-->
-<!--</div>-->
-<!--</body>-->
-<!--<script type="text/javascript">-->
-    <!--require(["app", "dojo/dom-style", "dijit/layout/BorderContainer", "dijit/layout/StackContainer", "dijit/layout/ContentPane",-->
-                <!--"dijit/form/Button", "templateDocumentSimpleTable","request"],-->
-            <!--function (APP, domStyle, BorderContainer, StackContainer, ContentPane, Button, TDocumentSimpleTable, Request) {-->
-                <!--var sysadmin_ExportProds_PageContainer=-->
-                        <!--APP.instanceForID("sysadmin_ExportProds_PageContainer", BorderContainer, {});-->
-                <!--APP.instanceForID("sysadmin_ExportProds_ContentPaneLeft", ContentPane, {region:'left', splitter:true});-->
-
-                <!--var sysadmin_ExportProds_ContentPaneDetailContainer=-->
-                        <!--APP.instanceForID("sysadmin_ExportProds_ContentPaneDetailContainer", StackContainer, {region:'center'});-->
-
-                <!--var sysadmin_ExportProds_CrsButtons=document.getElementById("sysadmin_ExportProds_CrsButtons");-->
-                <!--var btnAllCRs;-->
-
-                <!--sysadmin_ExportProds_PageContainer.createReportButtons=function(){-->
-
-                    <!--Request.getJSONData({url: "/sysadmin/export_ExportProds/get_all_cashboxes",consoleLog: true},-->
-                            <!--function (success, data) {          console.log("createReportButtons data=",data);-->
-                                <!--if (!success) {-->
-                                    <!--sysadmin_ExportProds_PageContainer.innerHTML = "<div><b style='color:red'>No connection!</b></div>";-->
-                                    <!--return;-->
-                                <!--}-->
-                                <!--for (var i in data.items) {-->
-                                    <!--var item=data.items[i];-->
-                                    <!--sysadmin_ExportProds_PageContainer.addButtonTo(sysadmin_ExportProds_CrsButtons, "ExportProds"+item.CRID, "Касса ID "+item.FacID);-->
-                                <!--}-->
-                            <!--});-->
-                <!--};-->
-
-                <!--sysadmin_ExportProds_PageContainer.addButtonTo = function (parent, id, name) {-->
-                    <!--// var button = new Button({id:id, label:name});-->
-                    <!--var button = new Button({id:id, label:name});-->
-                    <!--button.onClick= function(){-->
-                        <!--var instance=this;-->
-                        <!--if (!button.document){-->
-                            <!--button.document =-->
-                                    <!--APP.childFor(sysadmin_ExportProds_ContentPaneDetailContainer, "sysadmin_ExportProds_TableExportProds"+instance.id,-->
-                                            <!--TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/ExportProds/exportProds_to_crid/'+instance.id})-->
-                                            <!--.addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE")-->
-                                            <!--.addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:40px;"})-->
-<!--//                                            .addTotalSumNumberTextBox("ИТОГО кол-во:",260, "TotalQty", {style:"font-weight:bold;",inputStyle:"width:60px;"})-->
-<!--//                                            .addTotalSumNumberTextBox("ИТОГО сумма:",200, "TotalSum", {style:"font-weight:bold;",inputStyle:"width:80px;",-->
-<!--//                                             pattern:"###,###,##0.00#######"})-->
-                                    <!--.startUp();-->
-                        <!--}-->
-                        <!--sysadmin_ExportProds_ContentPaneDetailContainer.selectChild(button.document);-->
-                    <!--};-->
-                    <!--button.domNode.firstChild.setAttribute("style", "width:150px;");-->
-                    <!--button.startup();-->
-                    <!--sysadmin_ExportProds_CrsButtons.appendChild(button.domNode);-->
-                    <!--return button;-->
-                <!--};-->
-                <!--btnAllCRs= sysadmin_ExportProds_PageContainer.addButtonTo(sysadmin_ExportProds_CrsButtons, "ExportProds-1", "Все кассы");-->
-                <!--sysadmin_ExportProds_PageContainer.createReportButtons();-->
-                <!--sysadmin_ExportProds_PageContainer.layout();-->
-                <!--btnAllCRs.onClick();-->
-            <!--});-->
-<!--</script>-->
-<!--</html>-->
 
 
 <!DOCTYPE html>
@@ -84,8 +7,8 @@
     <title></title>
 </head>
 <body id="body">
-<div id="sql_queries_PageContent" style="width:100%;height:100%;">
-    <div id="sql_queries_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
+<div id="export_prods_PageContent" style="width:100%;height:100%;">
+    <div id="export_prods_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
         <div style="color:dimgrey;text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Загрузка наименований товара в кассовый аппарат </div>
         <table width="100%" style="margin-top:5px; margin-bottom: 5px" >
             <tr>
@@ -105,21 +28,21 @@
             </tr>
         </table>
     </div>
-    <div id="sql_queries_LeftContent" style="width:200px;height:100%; margin:0;padding:0; ">
-        <div id="sql_buttons_header" style="height:15px; color: dimgray; font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты</div>
+    <div id="export_prods_LeftContent" style="width:200px;height:100%; margin:0;padding:0; ">
+        <div id="export_prods_header" style="height:15px; color: dimgray; font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты</div>
         <table align="center" width="100%" style="margin-top: 10px">
             <!--<tr><th style="height:15px;color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9;">Кассовые аппараты</th></tr>-->
-            <tr><td id="cash_boxes_buttons">
+            <tr><td id="export_prods_cash_boxes_buttons">
             </td></tr>
         </table>
     </div>
-    <div id="sql_queries_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
-        <div id="sql_display_content_header" style="height:15px; color: dimgray;font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
-        <div id="sql_display_content" style="border:none;/*width:100%*/;height: calc(100% - 42px); overflow-y: scroll"></div>
+    <div id="export_prods_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
+        <div id="export_prods_display_content_header" style="height:15px; color: dimgray;font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
+        <div id="export_prods_display_content" style="border:none;/*width:100%*/;height: calc(100% - 42px); overflow-y: scroll"></div>
     
     </div>
-    <div id="sql_queries_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
-        <div id="display_result">
+    <div id="export_prods_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
+        <div id="export_prods_display_result">
         </div>
     </div>
 </div>
@@ -133,6 +56,7 @@
                 moment.locale("uk");
 
 
+ console.log("start");
 
                 var socket = io.connect(/*'http://localhost:8080'*/);
 
@@ -143,31 +67,34 @@
 
                 });
 
+                console.log("after socket");
+
 //                socket.on('new_event', function(data){
 //                    document.getElementById("sql_display_content").innerText=
 //                            document.getElementById("sql_display_content").innerText+" * "+data+"\n";
 //                });
 
 
-                var borderContainer = APP.instanceForID("sql_queries_PageContent", BorderContainer, {});
-                var topContentSQL = APP.instanceForID("sql_queries_TopContent", ContentPane, {region: "top"});
-                var leftContentexportProds = APP.instanceForID("sql_queries_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
-                var detailContentexportProds = APP.instanceForID("sql_queries_DetailContent", ContentPane, {region: "center"});
-                var rightContentexportProds = APP.instanceForID("sql_queries_RightContent", ContentPane, {region: "right",splitter: true});
-                var sql_display_content= APP.instanceForID("sql_display_content", ContentPane, {region: "right",splitter: true});
-                var sql_display_content_header=APP.instanceForID("sql_display_content", ContentPane, {region: "right",splitter: true});
-                sql_display_content.startup();
-                sql_display_content_header.startup();
+                var borderContainer = APP.instanceForID("export_prods_PageContent", BorderContainer, {});
+                var topContentSQL = APP.instanceForID("export_prods_TopContent", ContentPane, {region: "top"});
+                var leftContentexportProds = APP.instanceForID("export_prods_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
+                var detailContentexportProds = APP.instanceForID("export_prods_DetailContent", ContentPane, {region: "center"});
+                var rightContentexportProds = APP.instanceForID("export_prods_RightContent", ContentPane, {region: "right",splitter: true});
+                var export_prods_display_content= APP.instanceForID("export_prods_display_content", ContentPane, {region: "right",splitter: true});
+                var export_prods_display_content_header=APP.instanceForID("export_prods_display_content", ContentPane, {region: "right",splitter: true});
+                export_prods_display_content.startup();
+                export_prods_display_content_header.startup();
 
+                console.log("after var");
 
                 //var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
                // var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
-                var cash_boxes_buttons=document.getElementById('cash_boxes_buttons');
+                var export_prods_cash_boxes_buttons=document.getElementById('export_prods_cash_boxes_buttons');
                 var btnExportProds = APP.instanceForID("export_prods_btn", Button, {});
                 var btnSendexportProds = APP.instanceForID("export_prods_sendBtn", Button, {});
                 //export_prods_cleanBtn
                 var btnCleanUp=APP.instanceForID("export_prods_cleanBtn", Button, {});
-                var displayXMLResult = document.getElementById("display_result");
+                var displayXMLResult = document.getElementById("export_prods_display_result");
 
                 detailContentexportProds.getAllCashBoxes=function() {
 
@@ -185,29 +112,29 @@
                             });
                 };
                 detailContentexportProds.getAllCashBoxes();
-                var cashBoxesList=[];
-                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:true,label:"Все кассы", crid:'ExportProds-1'});//
-                cashBoxesList.push(allCashBoxesBtn);
-                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:150px;");
-                allCashBoxesBtn.startup();
-                cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
 
+                var cashBoxesList=[];
+
+                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"export_prods-1"});//
+                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:150px; margin-top:15px;");
                 allCashBoxesBtn.watch("checked",function() {
                     if (allCashBoxesBtn.get('checked') == true) {
                         for (var i in cashBoxesList) {
-                            if (cashBoxesList[i].crid != 'ExportProds-1') {
+                            if(cashBoxesList[i]!=allCashBoxesBtn) {
                                 cashBoxesList[i].set('checked', false);
                             }
                         }
                     }
                 });
+                allCashBoxesBtn.startup();
+
                 detailContentexportProds.setToggleCashBoxID=function(data){
                     for(var i in data){
                         var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:false,label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
                         cashBoxesList.push(toggleBtn);
                         toggleBtn.domNode.firstChild.setAttribute("style", "width:150px;");
                         toggleBtn.startup();
-                        cash_boxes_buttons.appendChild(toggleBtn.domNode);
+                        export_prods_cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentexportProds.startup();
                         toggleBtn.watch("checked",function() {
                             if (this.checked == true) {
@@ -217,12 +144,15 @@
                             }
                         });
                     }
+                    cashBoxesList[0].set('checked', true);
+                    cashBoxesList.push(allCashBoxesBtn);
+                    export_prods_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
                 };
 
                 btnExportProds.onClick=function(){
                     btnExportProds.set('disabled','true');
                     btnExportProds.list= document.createElement('ul');
-                    document.getElementById("sql_display_content").appendChild(btnExportProds.list);
+                    document.getElementById("export_prods_display_content").appendChild(btnExportProds.list);
 //                    var bdate; var edate;
 //                    var bdateValue=bDateTextBox.get("value");
 //                    bdate= moment(bdateValue).format('YYYYMMDD')+"0000";
@@ -256,7 +186,7 @@
 
                 btnCleanUp.onClick = function () {
 
-                    var displayResult = document.getElementById("sql_display_content");
+                    var displayResult = document.getElementById("export_prods_display_content");
                     while (displayResult.firstChild) {
                         displayResult.removeChild(displayResult.firstChild);
                     }

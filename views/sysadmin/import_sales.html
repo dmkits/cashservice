@@ -9,8 +9,8 @@
     <title></title>
 </head>
 <body id="body">
-<div id="sql_queries_PageContent" style="width:100%;height:100%;">
-    <div id="sql_queries_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
+<div id="import_sales_PageContent" style="width:100%;height:100%;">
+    <div id="import_sales_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
         <div style="color:dimgrey;text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Обмен с кассовыми аппаратами </div>
         <table width="100%" style="margin-top:5px; margin-bottom: 5px" >
             <!--<tr><th>Обмен с кассавыми аппаратами</th></tr>-->
@@ -31,30 +31,20 @@
             </tr>
         </table>
     </div>
-    <div id="sql_queries_LeftContent" style="width:200px;height:100%; margin:0;padding:0; ">
-        <div id="sql_buttons_header" style="height:15px; color: dimgray; font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты</div>
+    <div id="import_sales_LeftContent" style="width:200px;height:100%; margin:0;padding:0; ">
+        <div id="import_sales_buttons_header" style="height:15px; color: dimgray; font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты</div>
         <table align="center" width="100%" style="margin-top: 10px">
             <!--<tr><th style="height:15px;color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9;">Кассовые аппараты</th></tr>-->
-            <tr><td id="cash_boxes_buttons">
+            <tr><td id="import_sales_cash_boxes_buttons">
             </td></tr>
         </table>
     </div>
-    <div id="sql_queries_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
-        <div id="sql_display_content_header" style="height:15px; color: dimgray;font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
-        <div id="sql_display_content" style="border:none;/*width:100%*/;height: calc(100% - 42px); overflow-y: scroll"></div>
-        <!--<table width='100%' height='100%'>-->
-        <!--<table align="center" width="100%">-->
-            <!--<tr><th style="color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; ">Результат обработки</th></tr>-->
-            <!--<tr>-->
-                <!--<td style="padding-top:3px;padding-left:2px;padding-right:6px;">-->
-                    <!--&lt;!&ndash;<textarea id="sql_display_content" style="border:none;width:100%;height:100%;"></textarea>&ndash;&gt;-->
-                    <!--<div id="sql_display_content" style="border:none;width:100%;height:100%; overflow-y: scroll"></div>-->
-                <!--</td>-->
-            <!--</tr>-->
-        <!--</table>-->
+    <div id="import_sales_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
+        <div id="import_sales_display_content_header" style="height:15px; color: dimgray;font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
+        <div id="import_sales_display_content" style="border:none;/*width:100%*/;height: calc(100% - 42px); overflow-y: scroll"></div>
     </div>
-    <div id="sql_queries_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
-        <div id="display_result">
+    <div id="import_sales_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
+        <div id="import_sales_display_result">
         </div>
     </div>
 </div>
@@ -79,30 +69,30 @@
                 });
 
 //                socket.on('new_event', function(data){
-//                    document.getElementById("sql_display_content").innerText=
-//                            document.getElementById("sql_display_content").innerText+" * "+data+"\n";
+//                    document.getElementById("import_sales_display_content").innerText=
+//                            document.getElementById("import_sales_display_content").innerText+" * "+data+"\n";
 //                });
 
 
-                var borderContainer = APP.instanceForID("sql_queries_PageContent", BorderContainer, {});
-                var topContentSQL = APP.instanceForID("sql_queries_TopContent", ContentPane, {region: "top"});
-                var leftContentImportSales = APP.instanceForID("sql_queries_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
-                var detailContentImportSales = APP.instanceForID("sql_queries_DetailContent", ContentPane, {region: "center"});
-                var rightContentImportSales = APP.instanceForID("sql_queries_RightContent", ContentPane, {region: "right",splitter: true});
-                var sql_display_content= APP.instanceForID("sql_display_content", ContentPane, {region: "right",splitter: true});
-                var sql_display_content_header=APP.instanceForID("sql_display_content", ContentPane, {region: "right",splitter: true});
-                sql_display_content.startup();
-                sql_display_content_header.startup();
+                var borderContainer = APP.instanceForID("import_sales_PageContent", BorderContainer, {});
+                var topContentSQL = APP.instanceForID("import_sales_TopContent", ContentPane, {region: "top"});
+                var leftContentImportSales = APP.instanceForID("import_sales_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
+                var detailContentImportSales = APP.instanceForID("import_sales_DetailContent", ContentPane, {region: "center"});
+                var rightContentImportSales = APP.instanceForID("import_sales_RightContent", ContentPane, {region: "right",splitter: true});
+                var import_sales_display_content= APP.instanceForID("import_sales_display_content", ContentPane, {region: "right",splitter: true});
+                var import_sales_display_content_header=APP.instanceForID("import_sales_display_content", ContentPane, {region: "right",splitter: true});
+                import_sales_display_content.startup();
+                import_sales_display_content_header.startup();
 
 
                 var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
                 var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
-                var cash_boxes_buttons=document.getElementById('cash_boxes_buttons');
+                var import_sales_cash_boxes_buttons=document.getElementById('import_sales_cash_boxes_buttons');
                 var btnImportSales = APP.instanceForID("import_sales_btn", Button, {});
                 var btnSendImportSales = APP.instanceForID("import_sales_sendBtn", Button, {});
                 //import_sales_cleanBtn
                 var btnCleanUp=APP.instanceForID("import_sales_cleanBtn", Button, {});
-                var displayXMLResult = document.getElementById("display_result");
+                var displayXMLResult = document.getElementById("import_sales_display_result");
 
                 detailContentImportSales.getAllCashBoxes=function() {
 
@@ -121,32 +111,61 @@
                 };
                 detailContentImportSales.getAllCashBoxes();
 
+                var cashBoxesList=[];
+
+                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"import_sales-1"});//
+                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:150px; margin-top:15px;");
+                allCashBoxesBtn.watch("checked",function() {
+                    if (allCashBoxesBtn.get('checked') == true) {
+                        for (var i in cashBoxesList) {
+                            if(cashBoxesList[i]!=allCashBoxesBtn) {
+                                cashBoxesList[i].set('checked', false);
+                            }
+                        }
+                    }
+                });
+                allCashBoxesBtn.startup();
+
                 detailContentImportSales.setToggleCashBoxID=function(data){
                     for(var i in data){
-                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:true,label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
+                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
+                        cashBoxesList.push(toggleBtn);
                         toggleBtn.domNode.firstChild.setAttribute("style", "width:150px;");
                         toggleBtn.startup();
-                        cash_boxes_buttons.appendChild(toggleBtn.domNode);
+                        import_sales_cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentImportSales.startup();
+                        toggleBtn.watch("checked",function() {
+                            if (this.checked == true) {
+                                if(allCashBoxesBtn.get("checked")==true){
+                                    allCashBoxesBtn.set('checked', false);
+                                }
+                            }
+                        });
                     }
+                    cashBoxesList[0].set('checked', true);
+                    cashBoxesList.push(allCashBoxesBtn);
+                    import_sales_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
                 };
+
+
+
 
                 btnImportSales.onClick=function(){
                     btnImportSales.set('disabled','true');
                     btnImportSales.list= document.createElement('ul');
-                    document.getElementById("sql_display_content").appendChild(btnImportSales.list);
+                    document.getElementById("import_sales_display_content").appendChild(btnImportSales.list);
                     var bdate; var edate;
                     var bdateValue=bDateTextBox.get("value");
                     bdate= moment(bdateValue).format('YYYYMMDD')+"0000";
                     var edateValue=eDateTextBox.get("value");
                     edate= moment(edateValue).format('YYYYMMDD')+"2359";
 
-                    var cashBoxesList=leftContentImportSales.getChildren();
+                  //  var cashBoxesList=leftContentImportSales.getChildren();
                     var cashbox_params;
                     for (var i in cashBoxesList) {
                         if(cashBoxesList[i].checked==true){
                             var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
-                            cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;
+                            cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;   console.log("cashbox_params=",cashbox_params);
                         }
                     }                                                                                           console.log("btnImportSales.onClick start request");
                     Request.getJSONData({url: "/sysadmin/import_sales/get_sales",
@@ -167,7 +186,7 @@
 
                 btnCleanUp.onClick = function () {
 
-                    var displayResult = document.getElementById("sql_display_content");
+                    var displayResult = document.getElementById("import_sales_display_content");
                     while (displayResult.firstChild) {
                         displayResult.removeChild(displayResult.firstChild);
                     }

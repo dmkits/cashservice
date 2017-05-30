@@ -530,75 +530,84 @@ function fillChequePays(saleChID, cheque, callback) {
 };
 
 app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
-    log.info('URL: /sysadmin/import_sales/get_sales  ', 'sCashBoxesList =', getCashBoxesList(clientReq), 'bdate =', clientReq.query.bdate,
-        'edate =', clientReq.query.edate);
-    var sCashBoxesList = getCashBoxesList(clientReq);
+    log.info('URL: /sysadmin/import_sales/get_sales  params=',  clientReq.query);
     var bdate = clientReq.query.bdate;
     var edate = clientReq.query.edate;
 
-    emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null, function(){
-        database.getXMLForUniCashServerRequest(bdate, edate, sCashBoxesList, function (error, xml) {
-            if (error){
-                emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null, function() {
-                    clientRes.send({error: error});
-                });
-                return;
-            }
+    emitAndLogEvent('Поиск кассовых аппаратов',null, function(){
 
-           // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
+             getCRIDList(clientReq, function (err, CRID) {
+                  if (err) {
+                      log.error(err);
+                      emitAndLogEvent(err,null,function(){
+                          clientRes.send({error: err});
+                      });
+                      return;
+                  }
 
-            emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
-                getDataFromUniCashServer(xml, function (error, response, body) {          // console.log("getDataFromUniCashServer error=",error ); console.log(" response=",response );console.log(" body=",body );
-                    if(error){
-                        log.error(error);
-                        var errMsg;
-                        try{
-                            errMsg= JSON.parse(error)
-                        }catch(e){
-                            errMsg=error;
-                        }
-                        emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,function(){
-                            clientRes.send({error:error});
-                        });
-                        return;
-                    }
-                    if(!response){
-                        log.error("Кассовый сервер не отвечает!");
-                        emitAndLogEvent("Кассовый сервер не отвечает!",null, function(){
-                            clientRes.send({error: "Кассовый сервер не отвечает!"});
-                        });
-                        return;
-                    }
-                    if(!body){
-                        log.error("Кассовый сервер не прислал данные!");
-                        emitAndLogEvent("Кассовый сервер не прислал данные!",null,function(){
-                            clientRes.send({error: "Кассовый сервер не прислал данные!"});
-                        });
-                        return;
-                    }
-                    emitAndLogEvent('Получен ответ от кассового сервера', null, function(){
+                 emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null, function(){
+                database.getXMLForUniCashServerRequest(bdate, edate, CRID, function (error, xml) {
+                if (error){
+                    emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null, function() {
+                        clientRes.send({error: error});
+                    });
+                    return;
+                }
 
-                       // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
-                      //  body="kjhbkljh"; //test
+                // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
 
-                        getChequesData(body, function (err, result) {
-                            if (err) {
-                                emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null, function(){
-                                    clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
-                                });
-                                return;
+                emitAndLogEvent('Отправка запроса кассовому серверу',null, function(){
+                    getDataFromUniCashServer(xml, function (error, response, body) {          // console.log("getDataFromUniCashServer error=",error ); console.log(" response=",response );console.log(" body=",body );
+                        if(error){
+                            log.error(error);
+                            var errMsg;
+                            try{
+                                errMsg= JSON.parse(error)
+                            }catch(e){
+                                errMsg=error;
                             }
-                            emitAndLogEvent('Данные кассового сервера обработаны успешно', null, function(){
-                                var chequesData = result.sales;
-                                fillCheques(chequesData, 0, /*finishedcallback*/function(err){
-                                    if(err){
-                                        emitAndLogEvent(err, null, function() {
-                                            clientRes.send({error:err});
-                                        });
-                                        return;
-                                    }
-                                    emitAndLogEvent( 'Все чеки успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function(){
-                                        var innersDocData = result.inners;
+                            emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,function(){
+                                clientRes.send({error:error});
+                            });
+                            return;
+                        }
+                        if(!response){
+                            log.error("Кассовый сервер не отвечает!");
+                            emitAndLogEvent("Кассовый сервер не отвечает!",null, function(){
+                                clientRes.send({error: "Кассовый сервер не отвечает!"});
+                            });
+                            return;
+                        }
+                        if(!body){
+                            log.error("Кассовый сервер не прислал данные!");
+                            emitAndLogEvent("Кассовый сервер не прислал данные!",null,function(){
+                                clientRes.send({error: "Кассовый сервер не прислал данные!"});
+                            });
+                            return;
+                        }
+                        emitAndLogEvent('Получен ответ от кассового сервера', null, function(){
+
+                            // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
+                            //  body="kjhbkljh"; //test
+
+                            getChequesData(body, function (err, result) {
+                                if (err) {
+                                    emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null, function(){
+                                        clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
+                                    });
+                                    return;
+                                }
+                                emitAndLogEvent('Данные кассового сервера обработаны успешно', null, function(){
+                                    var chequesData = result.sales;
+                                    fillCheques(chequesData, 0, /*finishedcallback*/function(err){
+                                        if(err){
+                                            emitAndLogEvent(err, null, function() {
+                                                clientRes.send({error:err});
+                                            });
+                                            return;
+                                        }
+                                        emitAndLogEvent( 'Все чеки успешно обработаны и загружены в БД', chequesData.cashBoxFabricNum, function(){
+                                            var innersDocData = result.inners;
                                             insertInnerDoc(innersDocData,0,function(err,res){
                                                 if(err){
                                                     clientRes.send({"error": err});
@@ -616,6 +625,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                                     });
                                                 });
                                             });
+                                        });
                                     });
                                 });
                             });
@@ -624,7 +634,9 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                 });
             });
         });
+
     });
+});
 });
 
 function addToZrep(reports, ind, callback) {
@@ -759,20 +771,31 @@ app.get("/sysadmin/sales", function (req, res) {
 
 app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
     log.info("/sysadmin/Sales/get_sales_for_crid/* params=",req.params," ", JSON.stringify(req.query));
+    var initialCRID= req.params[0].replace("Sales","");
     var outData={};
-    outData.columns= [{ "data":"ProdName", "name":"ProdName", "width":300, "type":"text"}
-        ,{ "data":"UM", "name":"UM", "width":30, "type":"numeric"}
-        ,{ "data":"Qty", "name":"Qty", "width":100, "type":"numeric"}
-        ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":150, "type":"numeric"}
-        ,{ "data":"Sum_wt", "name":"Sum_wt", "width":150, "type":"numeric"}
-    ];
-    var bdate = req.query.BDATE, edate = req.query.EDATE;  // console.log("bdate=", req.query.BDATE, "edate=", req.query.EDATE);
-    if (!bdate&&!edate) {                     console.log("inside if outData=", outData);
+    outData.columns=[];
+    if(initialCRID==-1){
+        outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
+    }
+    outData.columns.push(
+         { "data":"Date", "name":"Date", "width":120, "type":"text","dateFormat":"DD.MM.YYYY HH:mm:ss"}
+        ,{ "data":"ChequeNumber", "name":"ChequeNum", "width":80, "type":"numeric"}
+        ,{ "data":"PosNumber", "name":"PosNumber", "width":80, "type":"numeric"}
+        ,{"data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
+        ,{"data":"Article1", "name":"УКТВЭД (Article1)", "width":120, "type":"text"}
+        ,{ "data":"UM", "name":"UM", "width":50, "type":"numeric"}
+        ,{ "data":"Qty", "name":"Qty", "width":50, "type":"numeric", format:"#,###,###,##0.[#########]", language:"ru-RU"}
+        ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
+        ,{ "data":"Sum_wt", "name":"Sum_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
+    );
+    var bdate = req.query.BDATE, edate = req.query.EDATE;
+
+    if (!bdate&&!edate) {
         res.send(outData);
         return;
     }
     var CRID;
-    var initialCRID= req.params[0].replace("Sales","");
+   // var initialCRID= req.params[0].replace("Sales","");
     if(initialCRID==-1){
         database.getAllCashBoxes(function (err, result) {
             if (err) {                                                  console.log("err 779=", err);
@@ -796,7 +819,6 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                     return;
                 });
         });
-
     }
    else{
         CRID = initialCRID;
@@ -820,64 +842,121 @@ app.get("/sysadmin/exportProds", function (req, res) {
 });
 
 app.get("/sysadmin/export_prods/export_prods", function (req, res) {
-    log.info("/sysadmin/export_prods/export_prods  params=",req.params," ", JSON.stringify(req.query));
+    log.info("/sysadmin/export_prods/export_prods  params=", req.query);
+    var outData = {};
+    getCRIDList(req, function (err, CRID) {
+        if (err) {
+            outData.error = err;
+            res.send(outData);
+            return;
+        }
+        database.exportProds(CRID,
+            function (error, recordset) {
+                if (error) {
+                    outData.error = error;
+                    res.send(outData);
+                    return;
+                }
+                outData.items = recordset;                                console.log("outData.items=",outData.items);
+                res.send(outData);
+                return;
+            });
+    });
+});
 
-   var CRIDLIST= getCashBoxesList(req);    console.log("CRIDLIST=",CRIDLIST);
-
-    var outData={};
-    //outData.columns= [{ "data":"ProdName", "name":"ProdName", "width":300, "type":"text"}
-    //    ,{ "data":"UM", "name":"UM", "width":30, "type":"numeric"}
-    //    ,{ "data":"Qty", "name":"Qty", "width":100, "type":"numeric"}
-    //    ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":150, "type":"numeric"}
-    //    ,{ "data":"Sum_wt", "name":"Sum_wt", "width":150, "type":"numeric"}
-    //];
-    //var bdate = req.query.BDATE, edate = req.query.EDATE;  // console.log("bdate=", req.query.BDATE, "edate=", req.query.EDATE);
-    //if (!bdate&&!edate) {                     console.log("inside if outData=", outData);
-    //    res.send(outData);
-    //    return;
-    //}
+app.get("/sysadmin/get_prices", function (req, res) {
+    log.info('URL: "/sysadmin/get_prices"');
+    res.sendFile(path.join(__dirname, '/views/sysadmin', 'get_prices.html'));
+});
 
 
-    var CRID;
-    //var initialCRID= req.params[0].replace("ExportProds","");
-    if(CRIDLIST.indexOf("-1")>=0){
+
+function getCRIDList(req,callback){
+    var CRID="";
+
+    for(var itemName in req.query){
+        if (itemName.indexOf("cashbox_")>=0){
+            CRID=CRID+req.query[itemName]+",";
+        }
+    }
+    CRID=CRID.substring(0,CRID.length-1);
+
+    if(CRID.indexOf("-1")>=0){
         database.getAllCashBoxes(function (err, result) {
-            if (err) {                                                  console.log("err 779=", err);
+            if (err) {
+                callback(err);
+                return;
+            }
+            CRID='';
+            if(result.length<1){
+                callback("Не удалось получить список кассовых аппаратов");
+                return;
+            }
+            for(var i in result) {
+                CRID = CRID + result[i].CRID + ",";
+            }
+            CRID=CRID.substring(0,CRID.length-1);
+            callback(null,CRID );
+            return;
+        });
+    }else{
+        callback(null,CRID );
+    }
+}
+
+app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
+
+    log.info("/sysadmin/GetPrices/get_prices_for_crid/*  params=",req.params," ", JSON.stringify(req.query));
+    var outData={};
+    outData.columns= [{ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
+        ,{ "data":"Article1", "name":"УКТВЭД (Article1)", "width":100, "type":"text"}
+        ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}
+        ,{ "data":"ProdPrice", "name":"ProdPrice", "width":60, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
+        ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"}
+    ];
+    var CRID;
+    var initialCRID= req.params[0].replace("GetPrices","");
+    if(initialCRID==-1){
+        database.getAllCashBoxes(function (err, result) {
+            if (err) {                                                  console.log("err =", err);
                 outData.error = err.message;
                 return;
             }
             CRID='';
             for(var i in result) {
-                CRID = CRID + result[i].CRID + ",";  console.log("getAllCashBoxes CRID=", CRID);
+                CRID = CRID + result[i].CRID + ",";
             }
             CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
-            database.exportProds(CRID,
+            database.getPrices(CRID,
                 function (error,recordset) {
-                    if (error){                                             console.log("error 790=", error);
+                    if (error){                                             console.log("error =", error);
                         outData.error=error;
                         res.send(outData);
-                        return;
+                       // return;
+                    }else {
+                        outData.items = recordset;
+                        res.send(outData);
+                      //  return;
                     }
-                    outData.items=recordset;            console.log("getAllCashBoxes recordset=", recordset);
-                    res.send(outData);
-                    return;
                 });
         });
+
     }
-    //else{
-    //    CRID = initialCRID;
-    //    database.exportProds(CRID,
-    //        function (error,recordset) {
-    //            if (error){                                           console.log("error 806=", error);
-    //                outData.error=error;
-    //                res.send(outData);
-    //                return;
-    //            }
-    //            outData.items=recordset;
-    //            res.send(outData);
-    //            //  return;
-    //        });
-    //}
+    else{
+        CRID = initialCRID;
+        database.getPrices(CRID,
+            function (error,recordset) {
+                if (error){                                           console.log("error=", error);
+                    outData.error=error;
+                    res.send(outData);
+                   // return;
+                }else {
+                    outData.items = recordset;
+                    console.log("outData.items=", outData.items);
+                    res.send(outData);
+                }
+            });
+    }
 });
 
 server.listen(port, function (err) {
