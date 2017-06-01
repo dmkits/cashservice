@@ -6,9 +6,9 @@
 </head>
 <body>
 <div id="sysadmin_CashRegLogs_PageContainer" style="width:100%;height:100%;">
-    <div id="sysadmin_CashRegLogs_ContentPaneLeft" style="width:165px;height:100%; margin:0;padding:0;">
+    <div id="sysadmin_CashRegLogs_ContentPaneLeft" style="width:170px;height:100%; margin:0;padding:0;">
         <table>
-            <tr><th>Кассовые аппараты</th></tr>
+            <tr><th>Кассовые аппараты<br/>(тип ЭККА MINI-T)</th></tr>
             <tr><td id="sysadmin_CashRegLogs_CrsButtons">
             </td></tr>
         </table>
@@ -41,7 +41,7 @@
                                // var item = JSON.parse(data.jsonFormattedText);
                                 for (var i in data.items) {
                                     var item=data.items[i];
-                                    sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+item.CRID, "Касса ID "+item.FacID);
+                                    sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+item.CRID, item.CRName+" "+item.FacID);
                                 }
                               //  firstButton.onClick();
                             });
@@ -82,8 +82,8 @@
                         if (!button.document){
                             button.document =
                                     APP.childFor(sysadmin_CashRegLogs_ContentPaneDetailContainer, "sysadmin_CashRegLogs_TableSales"+instance.id,
-                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/cashRegLogs/get_logs_for_crid/'+instance.id})
-                                            .addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE")
+                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/cashRegLogs/get_logs_for_crid/'+instance.id, buttonPrint:false})
+                                            .addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE",APP.today())
                                             .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:40px;"})
 //                                            .addTotalSumNumberTextBox("ИТОГО кол-во:",260, "TotalQty", {style:"font-weight:bold;",inputStyle:"width:60px;"})
 //                                            .addTotalSumNumberTextBox("ИТОГО сумма:",200, "TotalSum", {style:"font-weight:bold;",inputStyle:"width:80px;",

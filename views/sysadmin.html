@@ -34,12 +34,12 @@
             <div id="sysadmin_dbValidateState" style="display:inline;margin-left:20px;"></div>
         </div>
         <div id="sysadmin_TopActions">
-            <button id="display_startup_params">Startup params</button>
             <button id="display_import_sales">Import sales</button>
             <button id="btnCashRegLog">Cash reg log</button>
             <button id="btnGetSales">Sales</button>
             <button id="btnExportProds">Export Prods</button>
-            <button id="btnGetPrices">Get Prices</button>
+            <button id="btnGetPrices">Price List</button>
+            <button id="display_startup_params">Startup params</button>
         </div>
     </div>
     <div id="sysadmin_ContentContainer"></div>
@@ -73,12 +73,20 @@
                     class: "sysadmin_TopContent"
                 });
 
-                var startupBtn = new Button({id:"display_startup_params"},"display_startup_params");
-                var importSalesBtn = new Button({id:"display_import_sales"},"display_import_sales");
-                var btnCashRegLog = new Button({id:"btnCashRegLog"},"btnCashRegLog");
-                var btnGetSales = new Button({id:"btnGetSales"},"btnGetSales");
-                var btnExportProds = new Button({id:"btnExportProds"},"btnExportProds");
-                var btnGetPrices = new Button({id:"btnGetPrices"},"btnGetPrices");
+                var functionalButtons=[];
+
+                var startupBtn = new ToggleButton({id:"display_startup_params",iconClass:'dijitCheckBoxIcon'},"display_startup_params");
+                functionalButtons.push(startupBtn);
+                var importSalesBtn = new ToggleButton({id:"display_import_sales",iconClass:'dijitCheckBoxIcon'},"display_import_sales");
+                functionalButtons.push(importSalesBtn);
+                var btnCashRegLog = new ToggleButton({id:"btnCashRegLog",iconClass:'dijitCheckBoxIcon'},"btnCashRegLog");
+                functionalButtons.push(btnCashRegLog);
+                var btnGetSales = new ToggleButton({id:"btnGetSales",iconClass:'dijitCheckBoxIcon'},"btnGetSales");
+                functionalButtons.push(btnGetSales);
+                var btnExportProds = new ToggleButton({id:"btnExportProds",iconClass:'dijitCheckBoxIcon'},"btnExportProds");
+                functionalButtons.push(btnExportProds);
+                var btnGetPrices = new ToggleButton({id:"btnGetPrices",iconClass:'dijitCheckBoxIcon'},"btnGetPrices");
+                functionalButtons.push(btnGetPrices);
 
                 var sysadmin_ContentContainer = APP.instanceForID("sysadmin_ContentContainer",
                         StackContainer, {region: "center", tabPosition: "top", class: "sysadmin_Content"});
@@ -138,25 +146,42 @@
                     sysadmin_ContentContainer.selectChild(owner.pageContentPane);
                 };
 
+                var checkButton= function(button){
+                    button.set("checked", true);
+                    for(var i in functionalButtons){
+                        var anotherBtn=functionalButtons[i];
+                        if(anotherBtn!=button){
+                            anotherBtn.set("checked", false);
+                        }
+                    }
+                };
+
                 startupBtn.onClick=function() {
                    sysadmin_MainContainer.runSysadminContentPage(startupBtn, "startup_parameters", "Startup parameters", false, "/sysadmin/startup_parameters");
+                    checkButton(this);
                 };
                 importSalesBtn.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(importSalesBtn, "import_sales", "Import sales", false, "/sysadmin/import_sales");
+                    checkButton(this);
                 };
                 btnCashRegLog.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(btnCashRegLog, "btnCashRegLog", "Cash reg log", false, "/sysadmin/cashRegLogs");
+                    checkButton(this);
                 };
                 btnGetSales.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(btnGetSales, "btnGetSales", "Sales", false, "/sysadmin/sales");
+                    checkButton(this);
                 };
                 btnExportProds.onClick=function(){
                     sysadmin_MainContainer.runSysadminContentPage(btnExportProds, "btnExportProds", "Export Prods", false, "/sysadmin/exportProds");
+                    checkButton(this);
                 };
                 btnGetPrices.onClick=function(){
-                    sysadmin_MainContainer.runSysadminContentPage(btnGetPrices, "btnGetPrices", "Get Prices", false, "/sysadmin/get_prices");
+                    sysadmin_MainContainer.runSysadminContentPage(btnGetPrices, "btnGetPrices", "Price List", false, "/sysadmin/get_prices");
+                    checkButton(this);
                 };
                 sysadmin_MainContainer.getAppState();
+                importSalesBtn.onClick();
             });
 </script>
 </html>

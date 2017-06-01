@@ -37,7 +37,7 @@ module.exports.databaseConnection=function(callback){
 
 module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
-    var query_str='SELECT * FROM r_Crs WHERE CRID>0 AND CashType=8 ';
+    var query_str='SELECT * FROM r_Crs WHERE CashType=30 ';
     reqSql.query(query_str,
         function (err, recordset) {
             if (err) {
@@ -221,8 +221,9 @@ function addToSale(data, callback){
         callback(e);
         return;
     }
+    var DocDate=date.substring(0,10)+" 00:00:00";
     reqSql.input('DocID', sql.NVarChar, data.checkNumber);
-    reqSql.input('DocDate', sql.NVarChar, date);
+    reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('CROperID', sql.NVarChar, data.operatorID);
     reqSql.input('DocTime', sql.NVarChar, date);
     reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum/100);
@@ -379,11 +380,13 @@ module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, c
     });
 };
 
-module.exports.logToDB = function(Msg,FacID, callback) {
+module.exports.logToDB = function(Note,Msg,FacID, callback) {
     var reqSql = new sql.Request(conn);
     var CRID;
+    if(!Msg)Msg="";
     if(!FacID){
         CRID=0;
+        reqSql.input('Notes', sql.NVarChar, Note);
         reqSql.input('CRID', sql.NVarChar, CRID);
         reqSql.input('Msg', sql.NVarChar, Msg);
         var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
@@ -397,6 +400,7 @@ module.exports.logToDB = function(Msg,FacID, callback) {
             })
     }else{
         var FacIDFormatted=FacID.replace("ПБ","");
+        reqSql.input('Notes', sql.NVarChar, Note);
         reqSql.input('FacID', sql.NVarChar, FacIDFormatted);
         reqSql.query('select  CRID from r_Crs WHERE FacID=@FacID;',
             function (err, recordset) {
@@ -408,6 +412,7 @@ module.exports.logToDB = function(Msg,FacID, callback) {
                     callback("Не удалось определить ID кассового аппарата");
                 }
                 CRID=recordset[0].CRID;
+                reqSql.input('Notes', sql.NVarChar, Note);
                 reqSql.input('CRID', sql.NVarChar, CRID);
                 reqSql.input('Msg', sql.NVarChar, Msg);
                 var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
@@ -427,13 +432,15 @@ module.exports.logToDB = function(Msg,FacID, callback) {
 module.exports.addToMonIntRec = function(innerDoc, callback) {
 
     var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
-    var DocDate = formatDate(innerDoc.docDate);
+    var DocTime = formatDate(innerDoc.docDate);
+    var DocDate = DocTime.substring(0,10)+" 00:00:00";
     var SumCC=innerDoc.paymentSum/100;
     var CROperID=innerDoc.operatorID?innerDoc.operatorID:0;   // if no operatorID, operatorID=0;
     var reqSql = new sql.Request(conn);
 
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
+    reqSql.input('DocTime', sql.NVarChar, DocTime);
     reqSql.input('SumCC', sql.NVarChar, SumCC);
     reqSql.input('CROperID', sql.NVarChar, CROperID);
 
@@ -465,12 +472,14 @@ module.exports.addToMonIntRec = function(innerDoc, callback) {
 module.exports.addToMonIntExp = function(innerDoc, callback) {
 
     var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
-    var DocDate = formatDate(innerDoc.docDate);
+    var DocTime = formatDate(innerDoc.docDate);
+    var DocDate = DocTime.substring(0,10)+" 00:00:00";
     var SumCC=innerDoc.paymentSum/100;
     var CROperID=innerDoc.operatorID;   // if no operatorID, operatorID=0;
 
     var reqSql = new sql.Request(conn);
     reqSql.input('FacID', sql.NVarChar, FacID);
+    reqSql.input('DocTime', sql.NVarChar, DocTime);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('SumCC', sql.NVarChar, SumCC);
     reqSql.input('CROperID', sql.NVarChar, CROperID);
@@ -504,7 +513,8 @@ module.exports.addToMonIntExp = function(innerDoc, callback) {
 module.exports.addToZrep = function(rep, callback) {
 
     var FacID=rep.cashBoxFabricNum.replace("ПБ","");
-    var DocDate = formatDate(rep.dataFormDate);
+    var DocTime = formatDate(rep.dataFormDate);
+    var DocDate = DocTime.substring(0,10)+" 00:00:00";
     var SumCard=rep.totalCardPaymentIncomeSum?rep.totalCardPaymentIncomeSum:0;
 
     //var SumCC=innerDoc.paymentSum/100;
@@ -514,6 +524,7 @@ module.exports.addToZrep = function(rep, callback) {
     var reqSql = new sql.Request(conn);
     reqSql.input('FacID', sql.NVarChar, FacID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
+    reqSql.input('DocTime', sql.NVarChar, DocTime);
     reqSql.input('FinID', sql.NVarChar, rep.FinID);
     reqSql.input('ZRepNum', sql.NVarChar, rep.reportNum);
     reqSql.input('SumMonRec', sql.NVarChar, rep.totalMoneyRec/100);
@@ -594,10 +605,17 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
 
     var reqSql = new sql.Request(conn);
    if(crId==-1){
-       reqStr="SELECT * FROM  z_LogCashReg WHERE DocTime BETWEEN @BDATE AND @EDATE order by LogID";
+       reqStr="select log.LogID, cr.FacID AS CashBoxID, CONVERT(date,log.DocTime,104) AS DocDate, log.DocTime, log.Msg, log.Notes "+
+           "FROM z_LogCashReg log "+
+           "INNER JOIN r_CRs cr on cr.CRID=log.CRID "+
+           "WHERE DocTime BETWEEN @BDATE AND @EDATE order by LogID";
    }else{
        reqSql.input("CRID", sql.NVarChar,crId);
-       reqStr="SELECT * FROM  z_LogCashReg WHERE DocTime BETWEEN @BDATE AND @EDATE AND CRID = @CRID order by LogID";
+       reqStr="select log.LogID, cr.FacID AS CashBoxID, CONVERT(date,log.DocTime,104) AS DocDate, log.DocTime, log.Msg, log.Notes "+
+           "FROM z_LogCashReg log "+
+           "INNER JOIN r_CRs cr on cr.CRID=log.CRID "+
+           "WHERE DocTime BETWEEN @BDATE AND @EDATE "+
+           "AND cr.CRID = @CRID order by LogID";
    }
 
     reqSql.input("BDATE", sql.NVarChar,bdate);
@@ -616,15 +634,12 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
 
 module.exports.getSales = function(bdate,edate, crId, callback) {                     console.log("getSales");
     var reqStr=fs.readFileSync('./scripts/get_sales.sql', 'utf8');
-
     var reqSql = new sql.Request(conn);
-
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
     reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales crId=",crId);
-
     reqSql.query(reqStr,
-        function (error,recordset) {                console.log("getSales error=",error);
+        function (error,recordset) {                 console.log("getSales error=",error);
             if (error){
                 callback(error);
                 return;

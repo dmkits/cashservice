@@ -9,7 +9,7 @@
 <body id="body">
 <div id="export_prods_PageContent" style="width:100%;height:100%;">
     <div id="export_prods_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
-        <div style="color:dimgrey;text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Загрузка наименований товара в кассовый аппарат </div>
+        <div style="/*color:dimgrey;*/text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Выгрузка номенклатур в ЭККА с ценами</div>
         <table width="100%" style="margin-top:5px; margin-bottom: 5px" >
             <tr>
                 <td>
@@ -28,17 +28,17 @@
             </tr>
         </table>
     </div>
-    <div id="export_prods_LeftContent" style="width:200px;height:100%; margin:0;padding:0; ">
-        <div id="export_prods_header" style="height:15px; color: dimgray; font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты</div>
-        <table align="center" width="100%" style="margin-top: 10px">
+    <div id="export_prods_LeftContent" style="width:190px;height:100%; margin:0;padding:0; ">
+        <div id="export_prods_header" style="height:28px; /*color: dimgray;*/ font-weight: bold; text-align: center; font-size:11px; /*padding-bottom: 5px; *//*padding-top: 5px;*/ border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты<br/>(тип ЭККА MINI-T)</div>
+        <table align="center" width="100%" style="margin-top: 0px">
             <!--<tr><th style="height:15px;color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9;">Кассовые аппараты</th></tr>-->
             <tr><td id="export_prods_cash_boxes_buttons">
             </td></tr>
         </table>
     </div>
     <div id="export_prods_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
-        <div id="export_prods_display_content_header" style="height:15px; color: dimgray;font-weight: bold; text-align: center; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
-        <div id="export_prods_display_content" style="border:none;/*width:100%*/;height: calc(100% - 42px); overflow-y: scroll"></div>
+        <div id="export_prods_display_content_header" style="height:23px; color: dimgray;font-weight: bold; text-align: center; /*padding-bottom: 5px;*/ padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
+        <div id="export_prods_display_content" style="border:none;/*width:100%*/;height: calc(100% - 45px); overflow-y: scroll"></div>
     
     </div>
     <div id="export_prods_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
@@ -58,21 +58,6 @@
 
  console.log("start");
 
-                var socket = io.connect(/*'http://localhost:8080'*/);
-
-                socket.on('new_event', function(data){
-                    var listItem=document.createElement('ul');
-                    btnExportProds.list.appendChild(listItem);
-                    listItem.innerText=data;
-
-                });
-
-                console.log("after socket");
-
-//                socket.on('new_event', function(data){
-//                    document.getElementById("sql_display_content").innerText=
-//                            document.getElementById("sql_display_content").innerText+" * "+data+"\n";
-//                });
 
 
                 var borderContainer = APP.instanceForID("export_prods_PageContent", BorderContainer, {});
@@ -116,7 +101,7 @@
                 var cashBoxesList=[];
 
                 var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"export_prods-1"});//
-                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:150px; margin-top:15px;");
+                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:170px; margin-top:10px;");
                 allCashBoxesBtn.watch("checked",function() {
                     if (allCashBoxesBtn.get('checked') == true) {
                         for (var i in cashBoxesList) {
@@ -130,9 +115,9 @@
 
                 detailContentexportProds.setToggleCashBoxID=function(data){
                     for(var i in data){
-                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:false,label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
+                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:false,label:data[i].CRName+" "+data[i].FacID, crid:data[i].CRID});//
                         cashBoxesList.push(toggleBtn);
-                        toggleBtn.domNode.firstChild.setAttribute("style", "width:150px;");
+                        toggleBtn.domNode.firstChild.setAttribute("style", "width:170px;");
                         toggleBtn.startup();
                         export_prods_cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentexportProds.startup();
@@ -150,6 +135,7 @@
                 };
 
                 btnExportProds.onClick=function(){
+                    document.getElementById('export_prods_display_content').innerText=" XML формируется.... ";
                     btnExportProds.set('disabled','true');
                     btnExportProds.list= document.createElement('ul');
                     document.getElementById("export_prods_display_content").appendChild(btnExportProds.list);
@@ -181,6 +167,14 @@
                                     console.log("Error:" + JSON.stringify(result.error));
                                     return;
                                 }
+                                var XMLFileContent='';
+                                var XMLData=result.items;
+                                for (var i in XMLData){
+                                    var XMLLine=XMLData[i].XMLText;
+                                    XMLFileContent=XMLFileContent+XMLLine+'\n';
+                                }
+                                document.getElementById('export_prods_display_content').innerText=XMLFileContent;
+
                             });
                 };
 

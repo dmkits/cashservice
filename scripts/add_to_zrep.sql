@@ -23,7 +23,7 @@ INSERT INTO t_zRep  (ChID, DocDate,	DocTime,	CRID,	OperID,
                     Tax_C,	Tax_D,	Tax_E,	Tax_F, 	RetTax_A,	RetTax_B,	RetTax_C,
                     RetTax_D,	RetTax_E,	RetTax_F)
 
-          VALUES   (@NewChID, @DocDate,	@DocDate,	@CRID,	@OperID,
+          VALUES   (@NewChID, @DocDate,	@DocTime,	@CRID,	@OperID,
                     @OurID,	@DocID,	@FacID,	@FinID,	@ZRepNum,
                     @SumCC_wt,	@Sum_A,	@Sum_B,	@Sum_C,	@Sum_D,
                     0,	0, 0,	0,	@SumCash,

@@ -50,6 +50,9 @@ define(["dijit/registry"],
             },
             curMonthEDate: function(){
                 return moment().endOf('month').toDate();
+            },
+            yesterday:function(){
+                return moment().subtract(1,'day').toDate();
             }
         }
     });

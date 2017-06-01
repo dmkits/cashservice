@@ -6,9 +6,9 @@
 </head>
 <body>
 <div id="sysadmin_Sales_PageContainer" style="width:100%;height:100%;">
-    <div id="sysadmin_Sales_ContentPaneLeft" style="width:165px;height:100%; margin:0;padding:0;">
+    <div id="sysadmin_Sales_ContentPaneLeft" style="width:170px;height:100%; margin:0;padding:0;">
         <table>
-            <tr><th>Кассовые аппараты</th></tr>
+            <tr><th>Кассовые аппараты<br/>(тип ЭККА MINI-T)</th></tr>
             <tr><td id="sysadmin_Sales_CrsButtons">
             </td></tr>
         </table>
@@ -40,7 +40,7 @@
                                 }
                                 for (var i in data.items) {
                                     var item=data.items[i];
-                                    sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales"+item.CRID, "Касса ID "+item.FacID);
+                                    sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales"+item.CRID,item.CRName+" "+item.FacID);
                                 }
                             });
                 };
@@ -53,8 +53,8 @@
                         if (!button.document){
                             button.document =
                                     APP.childFor(sysadmin_Sales_ContentPaneDetailContainer, "sysadmin_Sales_TableSales"+instance.id,
-                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/Sales/get_sales_for_crid/'+instance.id})
-                                            .addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE")
+                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/Sales/get_sales_for_crid/'+instance.id, buttonPrint:false})
+                                            .addBeginDateBox("с","BDATE",APP.yesterday()).addEndDateBox("по","EDATE",APP.yesterday())
                                             .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:40px;"})
 //                                            .addTotalSumNumberTextBox("ИТОГО кол-во:",260, "TotalQty", {style:"font-weight:bold;",inputStyle:"width:60px;"})
 //                                            .addTotalSumNumberTextBox("ИТОГО сумма:",200, "TotalSum", {style:"font-weight:bold;",inputStyle:"width:80px;",

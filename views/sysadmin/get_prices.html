@@ -6,9 +6,9 @@
 </head>
 <body>
 <div id="sysadmin_GetPrices_PageContainer" style="width:100%;height:100%;">
-    <div id="sysadmin_GetPrices_ContentPaneLeft" style="width:165px;height:100%; margin:0;padding:0;">
+    <div id="sysadmin_GetPrices_ContentPaneLeft" style="width:170px;height:100%; margin:0;padding:0;">
         <table>
-            <tr><th>Кассовые аппараты</th></tr>
+            <tr><th>Кассовые аппараты<br/>(тип ЭККА MINI-T)</th></tr>
             <tr><td id="sysadmin_GetPrices_CrsButtons">
             </td></tr>
         </table>
@@ -40,7 +40,7 @@
                                 }
                                 for (var i in data.items) {
                                     var item=data.items[i];
-                                    sysadmin_GetPrices_PageContainer.addButtonTo(sysadmin_GetPrices_CrsButtons, "GetPrices"+item.CRID, "Касса ID "+item.FacID);
+                                    sysadmin_GetPrices_PageContainer.addButtonTo(sysadmin_GetPrices_CrsButtons, "GetPrices"+item.CRID,  item.CRName+" "+item.FacID);
                                 }
                             });
                 };
@@ -53,7 +53,7 @@
                         if (!button.document){
                             button.document =
                                     APP.childFor(sysadmin_GetPrices_ContentPaneDetailContainer, "sysadmin_GetPrices_TableGetPrices"+instance.id,
-                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/GetPrices/get_prices_for_crid/'+instance.id})
+                                            TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/GetPrices/get_prices_for_crid/'+instance.id, buttonPrint:false})
                                            // .addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE")
                                             .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:40px;"})
 //                                            .addTotalSumNumberTextBox("ИТОГО кол-во:",260, "TotalQty", {style:"font-weight:bold;",inputStyle:"width:60px;"})
