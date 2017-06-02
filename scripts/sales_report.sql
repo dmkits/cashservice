@@ -14,8 +14,8 @@
 	declare Rows1 cursor fast_forward FOR
 	SELECT FacID 
 	FROM r_Crs
---	WHERE ','+@CRIDLIST+',' like '%,'+CAST(CRID as varchar(200))+',%'
-WHERE CRID in(@CRID)
+	WHERE ','+@CRIDLIST+',' like '%,'+CAST(CRID as varchar(200))+',%'
+--WHERE CRID in (@CRID)
 
 
 	open Rows1

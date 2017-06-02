@@ -39,12 +39,16 @@ module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
     var query_str='SELECT * FROM r_Crs WHERE CashType=30 ';
     reqSql.query(query_str,
-        function (err, recordset) {
+        function (err, recordset) {                            console.log("getAllCashBoxes dataBAse recordset=",recordset);
             if (err) {
                 callback(err);
-            } else {
+                return;
+            }
+            if(recordset.length<1){
+                callback("Не удалось найти кассовый аппарт в БД");
+                return;
+            }
                callback(null,recordset);
-        }
         }
     );
 };
@@ -54,9 +58,9 @@ module.exports.getXMLForUniCashServerRequest = function (bdate, edate, cashBoxes
     var query_str = fs.readFileSync('./scripts/sales_report.sql', 'utf8');
     reqSql.input('BDATE', sql.NVarChar, bdate);
     reqSql.input('EDATE', sql.NVarChar, edate);
-    reqSql.input('CRID', sql.NVarChar, cashBoxesID);
+    reqSql.input('CRIDLIST', sql.NVarChar, ","+cashBoxesID+",");
     reqSql.query(query_str,
-        function (err, recordset) {
+        function (err, recordset) {                console.log("getXMLForUniCashServerRequest=",recordset);
             if (err) {
                 callback(err);
             } else {
@@ -210,38 +214,52 @@ function isSaleExists(chequeData,callback){
         })
 }
 
-function addToSale(data, callback){
+function addToSale(data, callback) {
     try {
         var FacID = data.cashBoxFabricNum;
         var FacIDNum = FacID.replace("ПБ", "");
         var date = formatDate(data.checkDate);
         var reqSql = new sql.Request(conn);
-        var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
-    }catch(e){
+    } catch (e) {
         callback(e);
         return;
     }
-    var DocDate=date.substring(0,10)+" 00:00:00";
+
+    var DocDate = date.substring(0, 10) + " 00:00:00";
     reqSql.input('DocID', sql.NVarChar, data.checkNumber);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     reqSql.input('CROperID', sql.NVarChar, data.operatorID);
     reqSql.input('DocTime', sql.NVarChar, date);
-    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum/100);
-    reqSql.input('FacID', sql.NVarChar,FacIDNum);
+    reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum / 100);
+    reqSql.input('FacID', sql.NVarChar, FacIDNum);
     reqSql.input('DocCreateTime', sql.NVarChar, date);
-    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-'+data.change/100);
+    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-' + data.change / 100);
     else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
 
-    reqSql.query(queryString,
-        function (err,recordset) {
-            var outData={};
+    var isOperatorExistsStr = fs.readFileSync('./scripts/isOperIDExists.sql', 'utf8');
+    reqSql.query(isOperatorExistsStr,
+        function (err, recordset) {
             if (err) {
-                callback(err, null);
+                callback(err);
                 return;
             }
-            outData.ChID=recordset[0].ChID;
-            outData.created=true;
-            callback(null, outData);
+            if(recordset.length<1){
+                callback("Не удалось найти оператора для кода '" + data.operatorID+"' полученного от кассового аппарата");
+                return;
+            }
+            reqSql.input('OperID', sql.NVarChar, recordset[0].OperID);
+            var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
+            reqSql.query(queryString,
+                function (err, recordset) {
+                    var outData = {};
+                    if (err) {
+                        callback(err, null);
+                        return;
+                    }
+                    outData.ChID = recordset[0].ChID;
+                    outData.created = true;
+                    callback(null, outData);
+                });
         });
 }
 
@@ -276,7 +294,7 @@ function isPosExists(ChID, posNum, callback){   console.log("ChID isPosExists=",
     reqSql.query(queryString,
         function (err, recordset) {          console.log("recordset isPosExists=",recordset);
             var outData={};
-            if (err) {
+            if (err) {                       console.log("err isPosExists=",err);
                 callback(err);
                 return;
             }
@@ -384,6 +402,12 @@ module.exports.logToDB = function(Note,Msg,FacID, callback) {
     var reqSql = new sql.Request(conn);
     var CRID;
     if(!Msg)Msg="";
+    if(Note.length>250){
+        Note=Note.substring(0,248)+"...";
+    }
+    if(Msg.length>2000){
+        Msg=Msg.substring(0,1998)+"...";
+    }
     if(!FacID){
         CRID=0;
         reqSql.input('Notes', sql.NVarChar, Note);

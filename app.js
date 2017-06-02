@@ -170,7 +170,7 @@ app.get("/sysadmin/import_sales", function (req, res) {
 app.get("/sysadmin/get_all_cashboxes", function (req, res) {
     database.getAllCashBoxes(function (err, result) {
         var outData = {};
-        if (err) outData.error = err.message;
+        if (err) outData.error = err;
         outData.items = result;
         outData.success = "ok";
         res.send(outData);
@@ -595,6 +595,9 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                       return;
                   }
 
+                 //getCashBoxesList(clientReq); //test
+                 //return;
+
                  emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
                 database.getXMLForUniCashServerRequest(bdate, edate, CRID, function (error, xml) {
                 if (error){
@@ -779,6 +782,7 @@ function getCashBoxesList(req) {
             sCashBoxesList = sCashBoxesList + "," + req.query[itemName] + ",";
         }
     }
+    console.log("sCashBoxesList=",sCashBoxesList);
     return sCashBoxesList;
 }
 
@@ -975,7 +979,7 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
         ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"});
     var CRID;
     if(initialCRID==-1){
-        database.getAllCashBoxes(function (err, result) {
+        database.getAllCashBoxes(function (err, result)  {               console.log("result=",result);
             if (err) {                                                  console.log("err =", err);
                 outData.error = err.message;
                 return;
@@ -984,9 +988,9 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
             for(var i in result) {
                 CRID = CRID + result[i].CRID + ",";
             }
-            CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
+            CRID=CRID.substring(0,CRID.length-1)/*+")"*/;                   console.log("CRID 987=",CRID);
             database.getPrices(CRID,
-                function (error,recordset) {
+                function (error,recordset) {                                console.log("getPrices recordset =",recordset);
                     if (error){                                             console.log("error =", error);
                         outData.error=error;
                         res.send(outData);
@@ -998,7 +1002,6 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
                     }
                 });
         });
-//тип экка:MINI-T
     }
     else{
         CRID = initialCRID;

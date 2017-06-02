@@ -28,6 +28,6 @@ INSERT INTO t_MonIntExp (ChID,	OurID,	CRID,	DocDate,	SumCC,
                         IntDocID)
 
                VALUES  (@NewChID,@OurID,@CRID, @DocDate,@SumCC,
-                        '',@OperID,@DocDate, 0,0,
+                        '',@OperID,@DocTime, 0,0,
                         0,0,0,0,@DocID,
                         @DocID)

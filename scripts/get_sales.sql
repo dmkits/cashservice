@@ -5,6 +5,9 @@ FROM t_Sale s
   INNER JOIN r_Prods p on p.ProdID=sd.ProdID
   INNER JOIN r_CRs cr on cr.CRID=s.CRID
 WHERE s.DocDate BETWEEN  CONVERT(SMALLDATETIME,@BDATE,101)   AND CONVERT(SMALLDATETIME,@EDATE,101)
-      AND s.CRID IN (@CRID)
+     -- AND s.CRID IN (@CRID)
+
+      AND ','+@CRID+',' like '%,'+CAST(s.CRID as varchar(200))+',%'
+
 group by cr.FacID,s.DocDate,s.DocTime, s.DocID,sd.SrcPosID, p.Article2,p.Article1, sd.UM,sd.PriceCC_wt
 ORDER BY s.DocDate,s.DocTime, s.DocID,sd.SrcPosID
