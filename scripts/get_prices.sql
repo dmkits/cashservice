@@ -5,5 +5,7 @@ FROM  r_Crs cr
   INNER JOIN r_ProdMP mp on mp.PLID=st.PLID
   INNER JOIN r_Prods p on p.ProdID= mp.ProdID
   INNER JOIN r_PLs pl on pl.PLID=mp.PLID
-WHERE cr.CRID IN (@CRID)  AND  p.Article2 IS NOT NULL AND LTRIM(RTRIM(p.Article2))<>''
+--WHERE cr.CRID IN (@CRID)
+WHERE ','+@CRIDLIST+',' like '%,'+CAST(cr.CRID as varchar(200))+',%'
+AND  p.Article2 IS NOT NULL AND LTRIM(RTRIM(p.Article2))<>''
 GROUP BY cr.FacID,p.Article2,p.Article1,pl.PLName, p.UM, mp.PriceMC ;

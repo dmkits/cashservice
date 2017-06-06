@@ -14,8 +14,8 @@
 	declare RowsDevices cursor fast_forward FOR
 	SELECT FacID
 	FROM r_Crs
---	WHERE ','+@CRIDLIST+',' like '%,'+CAST(CRID as varchar(200))+',%'
- WHERE CRID in (@CRID);
+	WHERE ','+@CRIDLIST+',' like '%,'+CAST(CRID as varchar(200))+',%'
+ --WHERE CRID in (@CRID);
 
 	open RowsDevices
 	fetch next from RowsDevices INTO @FacID
@@ -40,8 +40,8 @@ insert into @UT(XMLText)
 	INNER JOIN r_ProdMP mp on mp.PLID=st.PLID
 	INNER JOIN r_Prods p on p.ProdID=mp.ProdID
 	INNER JOIN r_ProdMQ mq on mq.ProdID=p.ProdID
-	WHERE cr.CRID IN (@CRID)
-
+	--WHERE cr.CRID IN (@CRID)
+WHERE ','+@CRIDLIST+',' like '%,'+CAST(cr.CRID  as varchar(200))+',%'
 	open RowsItems
 	fetch next from RowsItems INTO @ProdID,@ProdPrice,@BarCode,@ProdName
 

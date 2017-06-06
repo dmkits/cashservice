@@ -520,7 +520,7 @@ function fillCheques(chequesData, ind, finishedcallback) {
         emitAndLogEvent(msg,chequeData.xmlHeading, chequeData.cashBoxFabricNum,  function(){
             var saleChID = chequeData.saleChID;
             var chequeProds = chequeData.productsInCheck;//!!!
-            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {console.log("fillChequeTitle=,chequeData.checkNum=",chequeData.checkNumber,"saleChID=",saleChID);
+            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {//console.log("fillChequeTitle=,chequeData.checkNum=",chequeData.checkNumber,"saleChID=",saleChID);
                 if(err){
                     finishedcallback("Position not added to cheque! Reason:"+err);
                     return;

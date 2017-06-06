@@ -351,27 +351,27 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     }
 
     reqSql.query('select ProdID from r_Prods where Article2=@Article2',
-        function (err, recordset) {
+        function (err, recordset) {                             console.log("prodID recordset= ",recordset);
             var outData={};
-            if (err) {
+            if (err) {                        console.log("prodID err= ",err);
                 callback(err, null);
                 return;
             }
-            if (!recordset[0]) {
-                outData.notFoundProd="Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе";
-                callback(null, outData);
-                return;
-            }
-            var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
-            reqSql.query(queryString,
-                function (err) {
-                    if (err) {
-                        callback(err, null);
+            if(recordset[0]) {
+                var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
+                reqSql.query(queryString,
+                    function (err) {
+                        if (err) {
+                            callback(err, null);
+                            return;
+                        }
+                        outData.ChID = ChID;
+                        callback(null, outData);
                         return;
-                    }
-                    outData.ChID=ChID
-                    callback(null,outData);
-                });
+                    });
+            }
+            callback("Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе");
+            return;
         });
 }
 
@@ -588,16 +588,17 @@ module.exports.addToZrep = function(rep, callback) {
 
             var getOperIdStr=fs.readFileSync('./scripts/get_operid.sql', 'utf8');
             reqSql.query(getOperIdStr ,
-                function (err, recordset) {
+                function (err, recordset) {    console.log("getOperIdStr recordset=",recordset );
                     if (err) {
                         callback(err);
                         return;
                     }
-                    var OperID = recordset[0].OperID;
-                    if(!OperID){
-                        callback("Не удалось определить OperID для Z-Отчета № "+rep.reportNum+"! Отчет не сохранен!");
+
+                    if(recordset.length<1){
+                        callback("Не удалось определить оператора (администратора ЭККА) для Z-Отчета № "+rep.reportNum+"! Отчет не сохранен!");
                         return;
                     }
+                    var OperID = recordset[0].OperID;
 
                     reqSql.input('OperID', sql.NVarChar, OperID);
                     reqSql.query(query_str,
@@ -641,7 +642,6 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
            "WHERE DocTime BETWEEN @BDATE AND @EDATE "+
            "AND cr.CRID = @CRID order by LogID";
    }
-
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
 
@@ -654,7 +654,6 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
                 callback(null,recordset);
             });
 };
-
 
 module.exports.getSales = function(bdate,edate, crId, callback) {                     console.log("getSales");
     var reqStr=fs.readFileSync('./scripts/get_sales.sql', 'utf8');
@@ -676,7 +675,8 @@ module.exports.getSales = function(bdate,edate, crId, callback) {               
 module.exports.exportProds = function(crId, callback) {
     var reqStr=fs.readFileSync('./scripts/export_products.sql', 'utf8');
     var reqSql = new sql.Request(conn);
-    reqSql.input("CRID", sql.NVarChar,crId);
+    var CRIDLIST=','+crId+',';
+    reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
 
     reqSql.query(reqStr,
         function (error,recordset) {
@@ -693,8 +693,9 @@ module.exports.getPrices = function(crId, callback) {                     consol
     var reqStr=fs.readFileSync('./scripts/get_prices.sql', 'utf8');
 
     var reqSql = new sql.Request(conn);
-
-    reqSql.input("CRID", sql.NVarChar,crId);
+    var CRIDLIST=','+crId+',';
+   // reqSql.input("CRID", sql.NVarChar,crId);
+    reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
 
     reqSql.query(reqStr,function (error,recordset) {           console.log("getPrices recordset=",recordset);
             if (error){                                      console.log("getPrices error=",error);
