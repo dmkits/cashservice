@@ -98,18 +98,40 @@
 
                 var cashBoxesList=[];
 
-                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"export_prods-1"});//
+                var allCashBoxesBtn=new Button({label:"Все кассы", crid:"export_prods-1"});
                 allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:170px; margin-top:10px;");
-                allCashBoxesBtn.watch("checked",function() {
-                    if (allCashBoxesBtn.get('checked') == true) {
-                        for (var i in cashBoxesList) {
-                            if(cashBoxesList[i]!=allCashBoxesBtn) {
-                                cashBoxesList[i].set('checked', false);
-                            }
+
+                allCashBoxesBtn.onClick=function() {
+                    var count = 0;
+                    for(var j in cashBoxesList) {
+                        if (cashBoxesList[j].get('checked') == true) {
+                            count++;
                         }
                     }
-                });
-                allCashBoxesBtn.startup();
+                    if(count<cashBoxesList.length){
+                        for (var i in cashBoxesList) {
+                            cashBoxesList[i].set('checked', true);
+                        }
+                        return;
+                    }
+                    for (var i in cashBoxesList) {
+                        cashBoxesList[i].set('checked', false);
+                    }
+                };
+
+
+//                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"export_prods-1"});//
+//                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:170px; margin-top:10px;");
+//                allCashBoxesBtn.watch("checked",function() {
+//                    if (allCashBoxesBtn.get('checked') == true) {
+//                        for (var i in cashBoxesList) {
+//                            if(cashBoxesList[i]!=allCashBoxesBtn) {
+//                                cashBoxesList[i].set('checked', false);
+//                            }
+//                        }
+//                    }
+//                });
+//                allCashBoxesBtn.startup();
 
                 detailContentexportProds.setToggleCashBoxID=function(data){
                     for(var i in data){
@@ -119,16 +141,16 @@
                         toggleBtn.startup();
                         export_prods_cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentexportProds.startup();
-                        toggleBtn.watch("checked",function() {
-                            if (this.checked == true) {
-                                if(allCashBoxesBtn.get("checked")==true){
-                                    allCashBoxesBtn.set('checked', false);
-                                }
-                            }
-                        });
+//                        toggleBtn.watch("checked",function() {
+//                            if (this.checked == true) {
+//                                if(allCashBoxesBtn.get("checked")==true){
+//                                    allCashBoxesBtn.set('checked', false);
+//                                }
+//                            }
+//                        });
                     }
                     cashBoxesList[0].set('checked', true);
-                    cashBoxesList.push(allCashBoxesBtn);
+                  //  cashBoxesList.push(allCashBoxesBtn);
                     export_prods_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
                 };
 
@@ -172,7 +194,6 @@
                                     XMLFileContent=XMLFileContent+XMLLine+'\n';
                                 }
                                 document.getElementById('export_prods_display_content').innerText=XMLFileContent;
-
                             });
                 };
 

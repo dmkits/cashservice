@@ -30,21 +30,6 @@
                 var sysadmin_Sales_CrsButtons=document.getElementById("sysadmin_Sales_CrsButtons");
                 var btnAllCRs;
 
-                sysadmin_Sales_PageContainer.createReportButtons=function(){
-
-                    Request.getJSONData({url: "/sysadmin/get_all_cashboxes",consoleLog: true},
-                            function (success, data) {          console.log("createReportButtons data=",data);
-                                if (!success) {
-                                    sysadmin_Sales_PageContainer.innerHTML = "<div><b style='color:red'>No connection!</b></div>";
-                                    return;
-                                }
-                                for (var i in data.items) {
-                                    var item=data.items[i];
-                                    sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales"+item.CRID,item.CRName+" "+item.FacID);
-                                }
-                            });
-                };
-
                 sysadmin_Sales_PageContainer.addButtonTo = function (parent, id, name) {
                     // var button = new Button({id:id, label:name});
                     var button = new Button({id:id, label:name});
@@ -68,10 +53,25 @@
                     sysadmin_Sales_CrsButtons.appendChild(button.domNode);
                     return button;
                 };
-                btnAllCRs= sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales-1", "Все кассы");
+                sysadmin_Sales_PageContainer.createReportButtons=function(){
+                    Request.getJSONData({url: "/sysadmin/get_all_cashboxes",consoleLog: true},
+                            function (success, data) {          console.log("createReportButtons data=",data);
+                                if (!success) {
+                                    sysadmin_Sales_PageContainer.innerHTML = "<div><b style='color:red'>No connection!</b></div>";
+                                    return;
+                                }
+                                for (var i in data.items) {
+                                    var item=data.items[i];
+                                    sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales"+item.CRID,item.CRName+" "+item.FacID);
+                                }
+                                btnAllCRs= sysadmin_Sales_PageContainer.addButtonTo(sysadmin_Sales_CrsButtons, "Sales-1", "Все кассы");
+                                btnAllCRs.domNode.firstChild.setAttribute("style", "margin-top:10px;width:150px;");
+                                btnAllCRs.onClick();
+                            });
+
+                };
                 sysadmin_Sales_PageContainer.createReportButtons();
                 sysadmin_Sales_PageContainer.layout();
-                btnAllCRs.onClick();
             });
 </script>
 </html>

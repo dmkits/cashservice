@@ -31,7 +31,6 @@
                 var btnAllCRs;
 
                 sysadmin_GetPrices_PageContainer.createReportButtons=function(){
-
                     Request.getJSONData({url: "/sysadmin/get_all_cashboxes",consoleLog: true},
                             function (success, data) {          console.log("createReportButtons data=",data);
                                 if (!success) {
@@ -42,6 +41,9 @@
                                     var item=data.items[i];
                                     sysadmin_GetPrices_PageContainer.addButtonTo(sysadmin_GetPrices_CrsButtons, "GetPrices"+item.CRID,  item.CRName+" "+item.FacID);
                                 }
+                                btnAllCRs= sysadmin_GetPrices_PageContainer.addButtonTo(sysadmin_GetPrices_CrsButtons, "GetPrices-1", "Все кассы");
+                                btnAllCRs.domNode.firstChild.setAttribute("style", "margin-top:10px;width:150px;");
+                                btnAllCRs.onClick();
                             });
                 };
 
@@ -68,10 +70,10 @@
                     sysadmin_GetPrices_CrsButtons.appendChild(button.domNode);
                     return button;
                 };
-                btnAllCRs= sysadmin_GetPrices_PageContainer.addButtonTo(sysadmin_GetPrices_CrsButtons, "GetPrices-1", "Все кассы");
+
                 sysadmin_GetPrices_PageContainer.createReportButtons();
                 sysadmin_GetPrices_PageContainer.layout();
-                btnAllCRs.onClick();
+
             });
 </script>
 </html>

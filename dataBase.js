@@ -39,7 +39,7 @@ module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
     var query_str='SELECT * FROM r_Crs WHERE CashType=30 ';
     reqSql.query(query_str,
-        function (err, recordset) {                            console.log("getAllCashBoxes dataBAse recordset=",recordset);
+        function (err, recordset) {
             if (err) {
                 callback(err);
                 return;
@@ -60,7 +60,7 @@ module.exports.getXMLForUniCashServerRequest = function (bdate, edate, cashBoxes
     reqSql.input('EDATE', sql.NVarChar, edate);
     reqSql.input('CRIDLIST', sql.NVarChar, ","+cashBoxesID+",");
     reqSql.query(query_str,
-        function (err, recordset) {                console.log("getXMLForUniCashServerRequest=",recordset);
+        function (err, recordset) {
             if (err) {
                 callback(err);
             } else {
@@ -286,15 +286,15 @@ module.exports.fillChequeTitle = function(chequeData, callback) {
     });
 };
 
-function isPosExists(ChID, posNum, callback){   console.log("ChID isPosExists=",ChID);
+function isPosExists(ChID, posNum, callback){
     var reqSql = new sql.Request(conn);
     reqSql.input('ChID', sql.NVarChar, ChID);
     reqSql.input('SrcPosID', sql.NVarChar, posNum);
     var queryString = fs.readFileSync('./scripts/is_position_exists.sql', 'utf8');
     reqSql.query(queryString,
-        function (err, recordset) {          console.log("recordset isPosExists=",recordset);
+        function (err, recordset) {
             var outData={};
-            if (err) {                       console.log("err isPosExists=",err);
+            if (err) {
                 callback(err);
                 return;
             }
@@ -351,9 +351,9 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     }
 
     reqSql.query('select ProdID from r_Prods where Article2=@Article2',
-        function (err, recordset) {                             console.log("prodID recordset= ",recordset);
+        function (err, recordset) {
             var outData={};
-            if (err) {                        console.log("prodID err= ",err);
+            if (err) {
                 callback(err, null);
                 return;
             }
@@ -367,11 +367,10 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                         }
                         outData.ChID = ChID;
                         callback(null, outData);
-                        return;
                     });
+            }else {
+                callback("Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе");
             }
-            callback("Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе");
-            return;
         });
 }
 
@@ -588,7 +587,7 @@ module.exports.addToZrep = function(rep, callback) {
 
             var getOperIdStr=fs.readFileSync('./scripts/get_operid.sql', 'utf8');
             reqSql.query(getOperIdStr ,
-                function (err, recordset) {    console.log("getOperIdStr recordset=",recordset );
+                function (err, recordset) {
                     if (err) {
                         callback(err);
                         return;
@@ -630,13 +629,13 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
 
     var reqSql = new sql.Request(conn);
    if(crId==-1){
-       reqStr="select log.LogID, cr.FacID AS CashBoxID, CONVERT(date,log.DocTime,104) AS DocDate, log.DocTime, log.Msg, log.Notes "+
+       reqStr="select log.LogID, cr.FacID AS CashBoxID, CONVERT(varchar,log.DocTime,104) AS DocDate, CONVERT(varchar,log.DocTime,104)+' '+ CONVERT(varchar,log.DocTime,108) AS DocTime, log.Msg, log.Notes "+
            "FROM z_LogCashReg log "+
            "INNER JOIN r_CRs cr on cr.CRID=log.CRID "+
            "WHERE DocTime BETWEEN @BDATE AND @EDATE order by LogID";
    }else{
        reqSql.input("CRID", sql.NVarChar,crId);
-       reqStr="select log.LogID, cr.FacID AS CashBoxID, CONVERT(date,log.DocTime,104) AS DocDate, log.DocTime, log.Msg, log.Notes "+
+       reqStr="select log.LogID, cr.FacID AS CashBoxID, CONVERT(varchar,log.DocTime,104) AS DocDate, CONVERT(varchar,log.DocTime,104)+' '+ CONVERT(varchar,log.DocTime,108) AS DocTime, log.Msg, log.Notes "+
            "FROM z_LogCashReg log "+
            "INNER JOIN r_CRs cr on cr.CRID=log.CRID "+
            "WHERE DocTime BETWEEN @BDATE AND @EDATE "+
@@ -655,14 +654,14 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
             });
 };
 
-module.exports.getSales = function(bdate,edate, crId, callback) {                     console.log("getSales");
+module.exports.getSales = function(bdate,edate, crId, callback) {
     var reqStr=fs.readFileSync('./scripts/get_sales.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
-    reqSql.input("CRID", sql.NVarChar,crId);         console.log("getSales crId=",crId);
+    reqSql.input("CRID", sql.NVarChar,crId);
     reqSql.query(reqStr,
-        function (error,recordset) {                 console.log("getSales error=",error);
+        function (error,recordset) {
             if (error){
                 callback(error);
                 return;
@@ -689,7 +688,7 @@ module.exports.exportProds = function(crId, callback) {
 };
 
 
-module.exports.getPrices = function(crId, callback) {                     console.log("getPrices");
+module.exports.getPrices = function(crId, callback) {
     var reqStr=fs.readFileSync('./scripts/get_prices.sql', 'utf8');
 
     var reqSql = new sql.Request(conn);
@@ -697,8 +696,8 @@ module.exports.getPrices = function(crId, callback) {                     consol
    // reqSql.input("CRID", sql.NVarChar,crId);
     reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
 
-    reqSql.query(reqStr,function (error,recordset) {           console.log("getPrices recordset=",recordset);
-            if (error){                                      console.log("getPrices error=",error);
+    reqSql.query(reqStr,function (error,recordset) {
+            if (error){
                 callback(error);
                 return;
             }

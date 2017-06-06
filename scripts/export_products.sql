@@ -4,10 +4,10 @@
 		XMLText varchar(8000) )
 
 	insert into @UT(XMLText)
-		select '<?xml version="1.0" encoding="UTF-8"?>'
-		union all select '<IMPORT since="20101229173500>'   --20150211140000???
+		select '<?xml version="1.0" encoding="windows-1251"?>'
+		union all select '<IMPORT since="20101229173500">'   --20150211140000???
 		union all select '<LIST>'
-		union all select '</DEVICES>'
+		union all select '<DEVICES>'
 
 
 	declare @FacID varchar(250)
@@ -39,7 +39,7 @@ insert into @UT(XMLText)
 	INNER JOIN r_Stocks st on st.StockID=cr.StockID
 	INNER JOIN r_ProdMP mp on mp.PLID=st.PLID
 	INNER JOIN r_Prods p on p.ProdID=mp.ProdID
-	INNER JOIN r_ProdMQ mq on mq.ProdID=p.ProdID
+	INNER JOIN r_ProdMQ mq on mq.ProdID=p.ProdID AND mq.UM=p.UM
 	--WHERE cr.CRID IN (@CRID)
 WHERE ','+@CRIDLIST+',' like '%,'+CAST(cr.CRID  as varchar(200))+',%'
 	open RowsItems
@@ -55,7 +55,7 @@ WHERE ','+@CRIDLIST+',' like '%,'+CAST(cr.CRID  as varchar(200))+',%'
 	deallocate RowsItems
 
 		insert into @UT(XMLText)
-		  select '/<ITEMS>'
+		  select '</ITEMS>'
 			union all select '</LIST>'
 			union all select '</IMPORT>'
 

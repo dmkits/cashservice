@@ -212,12 +212,47 @@ function getDataFromUniCashServer(xml, callback) {
         return;
     });
 };
+function postProductsToUniCashServer(xml, callback) {
+    var cashserver_url = database.getDBConfig()['cashserver.url'];
+    var cashserver_port = database.getDBConfig()['cashserver.port'];
+    var xmlText = "";
+    for (var i in xml) {
+        var xmlLine = xml[i].XMLText;
+        xmlText = xmlText + xmlLine;
+    }
+    console.log("xmlText=",xmlText);
+    var textLengthStr = xmlText.length + "";
+    request.post({
+        headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
+
+        uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
+        //uri:'http://5.53.113.251:12702/lsoft',//real url
+        // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
+        // uri:'http://5.53.113.251:12702/',//test empty resp.body
+        // uri:'',//test
+        body: xmlText,
+        encoding: 'binary'
+        ,timeout:5000
+    }, function (error, response, body) {
+        var buf = new Buffer(body, 'binary');
+        var str = iconv_lite.decode(buf, 'win1251');
+        body = iconv_lite.encode(str, 'utf8');
+
+        parseString(body, function (err, result) {
+            console.log("error=",error, "response=",response,"body=",result);
+        });
+
+      //  callback(error, response, body);
+
+       // return;
+    });
+};
 function getChequesData(body, callback) {
     var buf = new Buffer(body, 'binary');
     var str = iconv_lite.decode(buf, 'win1251');
     body = iconv_lite.encode(str, 'utf8');
 
-    parseString(body, function (err, result) {     // console.log("result=", JSON.stringify(result));
+    parseString(body, function (err, result) {
 
        //var resultString=fs.readFileSync('./resWithCadr.json', 'utf8');                             ////test
        //result = JSON.parse(resultString);
@@ -279,7 +314,7 @@ function getChequesData(body, callback) {
                         return;
                     }
 
-                    if (listItem.isSale) {                                                          console.log("listItem=",listItem);
+                    if (listItem.isSale) {
                         var cheque = {};
                         var xmlHeading={};
                         xmlHeading.DAT={};
@@ -354,7 +389,6 @@ function getChequesData(body, callback) {
                             .replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',"")
                             .replace("\n  <isInner>true</isInner>",'')
                             .trim();
-                        console.log("inner.xmlInner=",inner.xmlInner);
                         if(listItem.C[0].I){
                             inner.isMoneyIn=true;
                             inner.paymentType = listItem.C[0].I[0].$.T;
@@ -390,7 +424,6 @@ function getChequesData(body, callback) {
                             .replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',"")
                             .replace("\n  <isZReport>true</isZReport>",'')
                             .trim();
-                        console.log("report.xmlZReport=",report.xmlZReport);
                         report.checkDataID = listItem.$.DI;
                         report.ITN = listItem.$.TN;
                         report.FinID = listItem.$.FN;
@@ -413,7 +446,6 @@ function getChequesData(body, callback) {
                            report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
                            report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI:0.00 //Сумма полученных денег в копейках  //может отсутствовать
                            report.totalCardPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
-                           console.log("report.totalCardPaymentIncomeSum=",report.totalCardPaymentIncomeSum)
                        }
                    }
                         //IO[...]   итоговая информация по внесению денег
@@ -512,7 +544,7 @@ function fillCheques(chequesData, ind, finishedcallback) {
             finishedcallback("Sale NOT created! Reason:"+ err);
             return;
         }
-        chequeData.saleChID = res.ChID;             console.log("res NUM=",chequeData.checkNumber,"res CHID=",res.ChID);
+        chequeData.saleChID = res.ChID;
         var msg;
         if (res.exist) msg=  "Чек №" + chequeData.checkNumber + " найден в БД";
         else msg= "Заголовок чека №" + chequeData.checkNumber + " добавлен в БД";
@@ -520,12 +552,12 @@ function fillCheques(chequesData, ind, finishedcallback) {
         emitAndLogEvent(msg,chequeData.xmlHeading, chequeData.cashBoxFabricNum,  function(){
             var saleChID = chequeData.saleChID;
             var chequeProds = chequeData.productsInCheck;//!!!
-            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {//console.log("fillChequeTitle=,chequeData.checkNum=",chequeData.checkNumber,"saleChID=",saleChID);
+            fillChequeProds(saleChID, chequeData, chequeProds, 0, /*finishedCallback*/function (err,saleChID, chequeData) {
                 if(err){
                     finishedcallback("Position not added to cheque! Reason:"+err);
                     return;
                 }
-                fillChequePays(saleChID, chequeData, function (err, res) {              // console.log("fillChequePays saleChID err=",err);
+                fillChequePays(saleChID, chequeData, function (err, res) {
                     if (err){
                         log.error("Не удалось внести оплату по чеку в БД Reason: "+err);
                         finishedcallback("Не удалось внести оплату по чеку в БД Reason: "+err);
@@ -610,7 +642,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                 // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
 
                 emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
-                    getDataFromUniCashServer(xml, function (error, response, body) {          // console.log("getDataFromUniCashServer error=",error ); console.log(" response=",response );console.log(" body=",body );
+                    getDataFromUniCashServer(xml, function (error, response, body) {
                         if(error){
                             log.error(error);
                             var errMsg;
@@ -654,25 +686,35 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                     var chequesData = result.sales;
                                     fillCheques(chequesData, 0, /*finishedcallback*/function(err){
                                         if(err){
-                                            emitAndLogEvent(err, null, null,function() {
                                                 clientRes.send({error:err});
-                                            });
                                             return;
                                         }
-                                        emitAndLogEvent( 'Все чеки успешно обработаны',null, chequesData.cashBoxFabricNum, function(){
+                                        var msg = 'Все чеки успешно обработаны';
+                                        if(chequesData.length<1){
+                                            msg = "";
+                                        }
+                                        emitAndLogEvent( msg,null, chequesData.cashBoxFabricNum, function(){
                                             var innersDocData = result.inners;
                                             insertInnerDoc(innersDocData,0,function(err,res){
                                                 if(err){
                                                     clientRes.send({"error": err});
                                                     return;
                                                 }
-                                                emitAndLogEvent('Все вносы/выносы успешно обработаны',null, chequesData.cashBoxFabricNum,function(){
+                                                var msg='Все вносы/выносы успешно обработаны';
+                                                if(innersDocData.length<1){
+                                                    msg = "";
+                                                }
+                                                emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum,function(){
                                                     addToZrep(result.reports, 0,function(err,res) {
                                                         if (err) {
                                                             clientRes.send({"error": err});
                                                             return;
                                                         }
-                                                        emitAndLogEvent('Все Z-Отчеты успешно обработаны',null, chequesData.cashBoxFabricNum, function () {
+                                                        var msg='Все Z-Отчеты успешно обработаны';
+                                                        if(result.reports.length<1){
+                                                            msg = "";
+                                                        }
+                                                        emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum, function () {
                                                             emitAndLogEvent('Все полученные данные успешно обработаны', null,chequesData.cashBoxFabricNum, function () {
                                                                  clientRes.send({"done": "ok"});
                                                             });
@@ -782,7 +824,6 @@ function getCashBoxesList(req) {
             sCashBoxesList = sCashBoxesList + "," + req.query[itemName] + ",";
         }
     }
-    console.log("sCashBoxesList=",sCashBoxesList);
     return sCashBoxesList;
 }
 
@@ -797,8 +838,8 @@ app.get("/sysadmin/cashRegLogs/get_logs_for_crid/*", function (req, res) {
   //  var fileContentString=fs.readFileSync('./reportsConfig/'+filename+'.json', 'utf8');
     outData.columns= [ { "data":"LogID", "name":"LogID", "width":60, "type":"numeric" }
                       ,{ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric" }
-                      ,{ "data":"DocDate", "name":"DocDate", "width":75, "type":"text", "dateFormat":"DD.MM.YYYY"}
-                      ,{ "data":"DocTime", "name":"DocTime", "width":115, "type":"text", "dateFormat":"DD.MM.YYYY HH:mm:ss"}
+                      ,{ "data":"DocDate", "name":"DocDate", "width":75, "type":"text"}//, "dateFormat":"DD.MM.YYYY"
+                      ,{ "data":"DocTime", "name":"DocTime", "width":115, "type":"text"}//, "dateFormat":"DD.MM.YYYY HH:mm:ss"
                       //,{ "data":"CashRegAction", "name":"CashRegAction", "width":100, "type":"text"}
                       //,{ "data":"Status", "name":"Status", "width":50, "type":"text"}
                       ,{ "data":"Msg", "name":"Msg", "width":480, "type":"text"}
@@ -811,8 +852,8 @@ app.get("/sysadmin/cashRegLogs/get_logs_for_crid/*", function (req, res) {
         return;
     }
     database.getLogs(bdate,edate+" 23:59:59",crId,
-        function (error,recordset) {      console.log("getLogs recordset=",recordset);
-            if (error){                   console.log("getLogs error=",error);
+        function (error,recordset) {
+            if (error){
                 outData.error=error;
                 res.send(outData);
                 return;
@@ -841,7 +882,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
         ,{ "data":"ChequeNumber", "name":"ChequeNum", "width":80, "type":"numeric"}
         ,{ "data":"PosNumber", "name":"PosNumber", "width":80, "type":"numeric"}
         ,{"data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
-        ,{"data":"Article1", "name":"УКТВЭД (Article1)", "width":120, "type":"text"}
+        ,{"data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":120, "type":"text"}
         ,{ "data":"UM", "name":"UM", "width":50, "type":"numeric"}
         ,{ "data":"Qty", "name":"Qty", "width":50, "type":"numeric", format:"#,###,###,##0.[#########]", language:"ru-RU"}
         ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
@@ -857,18 +898,18 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
    // var initialCRID= req.params[0].replace("Sales","");
     if(initialCRID==-1){
         database.getAllCashBoxes(function (err, result) {
-            if (err) {                                                  console.log("err 779=", err);
+            if (err) {
                 outData.error = err.message;
                 return;
             }
             CRID='';
             for(var i in result) {
-                CRID = CRID + result[i].CRID + ",";  console.log("getAllCashBoxes CRID=", CRID);
+                CRID = CRID + result[i].CRID + ",";
             }
             CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
             database.getSales(bdate,edate+" 23:59:59",CRID,
-                function (error,recordset) {                            console.log("getSales recordset=", recordset);
-                    if (error){                                         console.log("error 790=", error);
+                function (error,recordset) {
+                    if (error){
                         outData.error=error;
                         res.send(outData);
                         return;
@@ -883,7 +924,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
         CRID = initialCRID;
         database.getSales(bdate,edate+" 23:59:59",CRID,
             function (error,recordset) {
-                if (error){                                           console.log("error 806=", error);
+                if (error){
                     outData.error=error;
                     res.send(outData);
                     return;
@@ -916,9 +957,18 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                     res.send(outData);
                     return;
                 }
-                outData.items = recordset;                                console.log("outData.items=",outData.items);
-                res.send(outData);
-                return;
+                outData.items = recordset;
+                console.log("outData.items=",outData.items);
+               // res.send(outData);
+              //  return;
+                ////
+                postProductsToUniCashServer(outData.items,function(){
+               console.log("end 955");
+                res.end();
+                });
+
+                ////
+
             });
     });
 });
@@ -973,14 +1023,14 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
         outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
     }
     outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
-        ,{ "data":"Article1", "name":"УКТВЭД (Article1)", "width":100, "type":"text"}
+        ,{ "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":100, "type":"text"}
         ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}
         ,{ "data":"ProdPrice", "name":"ProdPrice", "width":60, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
         ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"});
     var CRID;
     if(initialCRID==-1){
-        database.getAllCashBoxes(function (err, result)  {               console.log("result=",result);
-            if (err) {                                                  console.log("err =", err);
+        database.getAllCashBoxes(function (err, result)  {
+            if (err) {
                 outData.error = err.message;
                 return;
             }
@@ -988,10 +1038,10 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
             for(var i in result) {
                 CRID = CRID + result[i].CRID + ",";
             }
-            CRID=CRID.substring(0,CRID.length-1)/*+")"*/;                   console.log("CRID 987=",CRID);
+            CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
             database.getPrices(CRID,
-                function (error,recordset) {                                console.log("getPrices recordset =",recordset);
-                    if (error){                                             console.log("error =", error);
+                function (error,recordset) {
+                    if (error){
                         outData.error=error;
                         res.send(outData);
                        // return;
@@ -1007,13 +1057,12 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
         CRID = initialCRID;
         database.getPrices(CRID,
             function (error,recordset) {
-                if (error){                                           console.log("error=", error);
+                if (error){
                     outData.error=error;
                     res.send(outData);
                    // return;
                 }else {
                     outData.items = recordset;
-                    console.log("outData.items=", outData.items);
                     res.send(outData);
                 }
             });

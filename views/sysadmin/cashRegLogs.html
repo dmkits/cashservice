@@ -43,36 +43,11 @@
                                     var item=data.items[i];
                                     sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+item.CRID, item.CRName+" "+item.FacID);
                                 }
-                              //  firstButton.onClick();
+                                btnAllCRs= sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+'-1', "Все кассы");
+                                btnAllCRs.domNode.firstChild.setAttribute("style", "margin-top:10px;width:150px;");
+                                btnAllCRs.onClick();
                             });
                 };
-
-//                sysadmin_CashRegLogs_PageContainer.getAllCashBoxes=function() {
-//
-//                    Request.getJSONData({url: "/sysadmin/import_sales/get_all_cashboxes", consoleLog: true},
-//                            function (success, result) {
-//                                if (!success) {
-//                                    alert("No connection to the server! 112");
-//                                    return;
-//                                }
-//                                if (result.error) {
-//                                    alert("Cannot get configuration parameters! Reason:"+result.error);
-//                                    return;
-//                                }
-//                                sysadmin_CashRegLogs_PageContainer.setToggleCashBoxID(result.items);
-//                            });
-//                };
-//                sysadmin_CashRegLogs_PageContainer.getAllCashBoxes();
-//
-//                sysadmin_CashRegLogs_PageContainer.setToggleCashBoxID=function(data){
-//                    for(var i in data){
-//                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:true,label:"Касса ID "+data[i].FacID, crid:data[i].CRID});//
-//                        toggleBtn.domNode.firstChild.setAttribute("style", "width:150px;");
-//                        toggleBtn.startup();
-//                        cash_boxes_buttons.appendChild(toggleBtn.domNode);
-//                        leftContentImportSales.startup();
-//                    }
-//                };
 
                 sysadmin_CashRegLogs_PageContainer.addButtonTo = function (parent, id, name) {
                    // var button = new Button({id:id, label:name});
@@ -97,10 +72,10 @@
                     sysadmin_CashRegLogs_CrsButtons.appendChild(button.domNode);
                     return button;
                 };
-                btnAllCRs= sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+'-1', "Все кассы");
+
                 sysadmin_CashRegLogs_PageContainer.createReportButtons();
                 sysadmin_CashRegLogs_PageContainer.layout();
-                btnAllCRs.onClick();
+
             });
 </script>
 </html>
