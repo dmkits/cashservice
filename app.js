@@ -220,7 +220,6 @@ function postProductsToUniCashServer(xml, callback) {
         var xmlLine = xml[i].XMLText;
         xmlText = xmlText + xmlLine;
     }
-    console.log("xmlText=",xmlText);
     var textLengthStr = xmlText.length + "";
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
@@ -948,7 +947,6 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                     return;
                 }
                 outData.items = recordset;
-                console.log("outData.items=", outData.items);
                 postProductsToUniCashServer(outData.items, function (err, response, body) {
                     if (err) {
                         log.error(error);

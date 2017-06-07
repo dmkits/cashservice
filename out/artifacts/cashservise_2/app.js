@@ -220,7 +220,6 @@ function postProductsToUniCashServer(xml, callback) {
         var xmlLine = xml[i].XMLText;
         xmlText = xmlText + xmlLine;
     }
-    console.log("xmlText=",xmlText);
     var textLengthStr = xmlText.length + "";
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
@@ -948,7 +947,6 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                     return;
                 }
                 outData.items = recordset;
-                console.log("outData.items=", outData.items);
                 postProductsToUniCashServer(outData.items, function (err, response, body) {
                     if (err) {
                         log.error(error);
@@ -1035,6 +1033,7 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
     }
     outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
         ,{ "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":100, "type":"text"}
+        ,{ "data":"Qty", "name":"Qty", "width":80, "type":"numeric"}
         ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}
         ,{ "data":"ProdPrice", "name":"ProdPrice", "width":60, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
         ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"});
