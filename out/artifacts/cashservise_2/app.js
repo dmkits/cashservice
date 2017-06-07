@@ -212,6 +212,31 @@ function getDataFromUniCashServer(xml, callback) {
         return;
     });
 };
+function postProductsToUniCashServer(xml, callback) {
+    var cashserver_url = database.getDBConfig()['cashserver.url'];
+    var cashserver_port = database.getDBConfig()['cashserver.port'];
+    var xmlText = "";
+    for (var i in xml) {
+        var xmlLine = xml[i].XMLText;
+        xmlText = xmlText + xmlLine;
+    }
+    console.log("xmlText=",xmlText);
+    var textLengthStr = xmlText.length + "";
+    request.post({
+        headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
+
+        uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
+        //uri:'http://5.53.113.251:12702/lsoft',//real url
+        // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
+        // uri:'http://5.53.113.251:12702/',//test empty resp.body
+        // uri:'',//test
+        body: xmlText,
+        encoding: 'binary'
+        ,timeout:5000
+    }, function (error, response, body) {
+       callback(error, response, body);
+    });
+};
 function getChequesData(body, callback) {
     var buf = new Buffer(body, 'binary');
     var str = iconv_lite.decode(buf, 'win1251');
@@ -923,11 +948,41 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                     return;
                 }
                 outData.items = recordset;
-                res.send(outData);
-                return;
+                console.log("outData.items=", outData.items);
+                postProductsToUniCashServer(outData.items, function (err, response, body) {
+                    if (err) {
+                        log.error(error);
+                        var errMsg;
+                        try {
+                            errMsg = JSON.parse(error)
+                        } catch (e) {
+                            errMsg = error;
+                        }
+                        log.error(errMsg);
+                        res.send(outData.error = errMsg);
+                        return;
+                    }
+                    if (!response) {
+                        log.error("Кассовый сервер не отвечает!");
+                        res.send(outData.serverError = "Кассовый сервер не отвечает!");
+                        return;
+                    }
+                    if (!body) {
+                        log.error("Кассовый сервер не прислал данные!");
+                        res.send(outData.serverError = "Кассовый сервер не прислал данные!");
+                        return;
+                    }
+
+                    var buf = new Buffer(body, 'binary');
+                    var str = iconv_lite.decode(buf, 'win1251');
+
+                        outData.serverResp = str;
+                        res.send(outData);
+                });
             });
     });
 });
+
 
 app.get("/sysadmin/get_prices", function (req, res) {
     log.info('URL: "/sysadmin/get_prices"');

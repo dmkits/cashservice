@@ -52,9 +52,9 @@
 <script type="text/javascript">
     require(["app", "dijit/layout/BorderContainer", "dijit/layout/LayoutContainer", "dijit/layout/ContentPane", "dojo/data/ItemFileReadStore",
                 "dijit/form/TextBox", "dijit/form/DateTextBox", "dijit/form/Button", "dijit/ConfirmDialog","dijit/form/ToggleButton",
-                "dijit/form/DateTextBox","request"],
+                "dijit/form/DateTextBox","dialogs","request"],
             function (APP, BorderContainer, LayoutContainer, ContentPane, ItemFileReadStore, TextBox, DateTextBox, Button, ConfirmDialog,
-                      ToggleButton,DateTextBox,Request) {
+                      ToggleButton,DateTextBox,Dialogs,Request) {
                 moment.locale("uk");
 
 
@@ -101,12 +101,12 @@
                     Request.getJSONData({url: "/sysadmin/get_all_cashboxes", consoleLog: true},
                             function (success, result) {
                                 if (!success) {
-                                    alert("No connection to the server! 112");
-                                      return;
+                                    Dialogs.doRequestErrorDialog();
+                                    return;
                                 }
                                 if (result.error) {
-                                    alert("Cannot get configuration parameters! Reason:"+result.error);
-                                     return;
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Cannot get configuration parameters! Reason:"+result.error});
+                                    return;
                                 }
                                 detailContentImportSales.setToggleCashBoxID(result.items);
                             });
@@ -176,13 +176,11 @@
                             function (success,result) {        console.log("btnImportSales.onClick Request.getJSONData result=",result);
                                 btnImportSales.set('disabled',false);
                                 if (!success) {
-                                    alert("No connection to the server! 156");
+                                    Dialogs.doRequestErrorDialog();
                                     return;
                                 }if (result.error) {
-                                    console.log("Error:" + JSON.stringify(result.error));
-                                    return;
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+result.error});
                                 }
-                              
                             });
                 };
 
@@ -192,7 +190,6 @@
                     while (displayResult.firstChild) {
                         displayResult.removeChild(displayResult.firstChild);
                     }
-                 //   displayResult.removeChild(displayResult.childNodes[0]);
                 };
             });
 </script>
