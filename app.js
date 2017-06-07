@@ -1035,6 +1035,7 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
     }
     outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
         ,{ "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":100, "type":"text"}
+        ,{ "data":"Qty", "name":"Qty", "width":40, "type":"numeric"}
         ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}
         ,{ "data":"ProdPrice", "name":"ProdPrice", "width":60, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
         ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"});
