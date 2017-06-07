@@ -1,6 +1,6 @@
 
 select cr.FacID AS CashBoxID, LTRIM(RTRIM(p.Article2)) AS ProdName,p.CstProdCode AS CstProdCode, pl.PLName AS PriceName,
- Qty= rem.Qty, p.UM AS UM,  mp.PriceMC AS ProdPrice
+ Qty= ISNULL(rem.Qty,0), p.UM AS UM,  mp.PriceMC AS ProdPrice
 FROM  r_Crs cr
   INNER JOIN r_Stocks st on cr.StockID=st.StockID
   INNER JOIN r_ProdMP mp on mp.PLID=st.PLID

@@ -179,7 +179,7 @@
                                     Dialogs.doRequestErrorDialog();
                                     return;
                                 }if (result.error) {
-                                    Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+result.error});
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+JSON.stringify(result.error)});
                                 }
                             });
                 };

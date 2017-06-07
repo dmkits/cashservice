@@ -32,7 +32,7 @@ insert into @UT(XMLText)
 		  union all select '<ITEMS>'
 
 
-	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice INT, @Qty INT
+	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice INT, @Qty NUMERIC
 	declare RowsItems cursor fast_forward FOR
 	SELECT p.ProdID,mp.PriceMC,  ISNULL(rem.Qty,0) , mq.BarCode, p.ProdName
 	FROM r_CRs cr
