@@ -234,17 +234,7 @@ function postProductsToUniCashServer(xml, callback) {
         encoding: 'binary'
         ,timeout:5000
     }, function (error, response, body) {
-        var buf = new Buffer(body, 'binary');
-        var str = iconv_lite.decode(buf, 'win1251');
-        body = iconv_lite.encode(str, 'utf8');
-
-        parseString(body, function (err, result) {
-            console.log("error=",error, "response=",response,"body=",result);
-        });
-
-      //  callback(error, response, body);
-
-       // return;
+       callback(error, response, body);
     });
 };
 function getChequesData(body, callback) {
@@ -958,20 +948,41 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                     return;
                 }
                 outData.items = recordset;
-                console.log("outData.items=",outData.items);
-               // res.send(outData);
-              //  return;
-                ////
-                postProductsToUniCashServer(outData.items,function(){
-               console.log("end 955");
-                res.end();
+                console.log("outData.items=", outData.items);
+                postProductsToUniCashServer(outData.items, function (err, response, body) {
+                    if (err) {
+                        log.error(error);
+                        var errMsg;
+                        try {
+                            errMsg = JSON.parse(error)
+                        } catch (e) {
+                            errMsg = error;
+                        }
+                        log.error(errMsg);
+                        res.send(outData.error = errMsg);
+                        return;
+                    }
+                    if (!response) {
+                        log.error("Кассовый сервер не отвечает!");
+                        res.send(outData.serverError = "Кассовый сервер не отвечает!");
+                        return;
+                    }
+                    if (!body) {
+                        log.error("Кассовый сервер не прислал данные!");
+                        res.send(outData.serverError = "Кассовый сервер не прислал данные!");
+                        return;
+                    }
+
+                    var buf = new Buffer(body, 'binary');
+                    var str = iconv_lite.decode(buf, 'win1251');
+
+                        outData.serverResp = str;
+                        res.send(outData);
                 });
-
-                ////
-
             });
     });
 });
+
 
 app.get("/sysadmin/get_prices", function (req, res) {
     log.info('URL: "/sysadmin/get_prices"');

@@ -50,9 +50,9 @@
 <script type="text/javascript">
     require(["app", "dijit/layout/BorderContainer", "dijit/layout/LayoutContainer", "dijit/layout/ContentPane", "dojo/data/ItemFileReadStore",
                 "dijit/form/TextBox", "dijit/form/DateTextBox", "dijit/form/Button", "dijit/ConfirmDialog","dijit/form/ToggleButton",
-                "dijit/form/DateTextBox","request"],
+                "dijit/form/DateTextBox","dialogs","request"],
             function (APP, BorderContainer, LayoutContainer, ContentPane, ItemFileReadStore, TextBox, DateTextBox, Button, ConfirmDialog,
-                      ToggleButton,DateTextBox,Request) {
+                      ToggleButton,DateTextBox,Dialogs,Request) {
                 moment.locale("uk");
 
 
@@ -84,11 +84,11 @@
                     Request.getJSONData({url: "/sysadmin/get_all_cashboxes", consoleLog: true},
                             function (success, result) {
                                 if (!success) {
-                                    alert("No connection to the server! 112");
+                                    Dialogs.doRequestErrorDialog();
                                     return;
                                 }
                                 if (result.error) {
-                                    alert("Cannot get configuration parameters! Reason:"+result.error);
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Cannot get configuration parameters! Reason:"+result.error});
                                     return;
                                 }
                                 detailContentexportProds.setToggleCashBoxID(result.items);
@@ -181,24 +181,31 @@
                             function (success,result) {        console.log("btnExportProds.onClick Request.getJSONData result=",result);
                                 btnExportProds.set('disabled',false);
                                 if (!success) {
-                                    alert("No connection to the server! 156");
+                                    Dialogs.doRequestErrorDialog();
                                     return;
-                                }if (result.error) {
-                                    console.log("Error:" + JSON.stringify(result.error));
+                                }
+                                if (result.error) {
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+result.error});
                                     return;
                                 }
                                 var XMLFileContent='';
-                                var XMLData=result.items;
-                                for (var i in XMLData){
-                                    var XMLLine=XMLData[i].XMLText;
-                                    XMLFileContent=XMLFileContent+XMLLine+'\n';
+                                if(result.items) {
+                                    var XMLData = result.items;
+                                    for (var i in XMLData) {
+                                        var XMLLine = XMLData[i].XMLText;
+                                        XMLFileContent = XMLFileContent + XMLLine + '\n';
+                                    }
+                                }
+                                if(result.serverError){
+                                    XMLFileContent=XMLFileContent+'\n'+ result.serverError;
+                                }
+                                if(result.serverResp){
+                                    XMLFileContent=XMLFileContent+'\n ОТВЕТ КАССОВОГО ШЛЮЗА:\n'+result.serverResp;
                                 }
                                 document.getElementById('export_prods_display_content').innerText=XMLFileContent;
                             });
                 };
-
                 btnCleanUp.onClick = function () {
-
                     var displayResult = document.getElementById("export_prods_display_content");
                     while (displayResult.firstChild) {
                         displayResult.removeChild(displayResult.firstChild);
