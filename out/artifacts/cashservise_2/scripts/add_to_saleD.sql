@@ -33,3 +33,6 @@ VALUES
                   @PriceCC_wt, @SumCC_wt,	@BarCode,	1,	@PurPriceCC_nt,
                   @PurTax,	@PurPriceCC_wt,	0,	0.0,	@EmpID,
                   @CreateTime,	@ModifyTime,	0/*TaxTypeID*/,	@RealPrice,	@RealSum)
+
+
+--SELECT ChID,SrcPosID,ProdID

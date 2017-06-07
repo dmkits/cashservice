@@ -62,10 +62,11 @@
                 var socket = io.connect(/*'http://localhost:8080'*/);
 
                 socket.on('new_event', function(data){
-                 var listItem=document.createElement('ul');
-                    btnImportSales.list.appendChild(listItem);
-                    listItem.innerText=data;
-
+                   // if(data.length>0) {
+                        var listItem = document.createElement('ul');
+                        btnImportSales.list.appendChild(listItem);
+                        listItem.innerText = data;
+                  //  }
                 });
 
 //                socket.on('new_event', function(data){
@@ -114,17 +115,27 @@
 
                 var cashBoxesList=[];
 
-                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"import_sales-1"});//
+                var allCashBoxesBtn=new Button({label:"Все кассы", crid:"import_sales-1"});//
                 allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:170px; margin-top:10px;");
-                allCashBoxesBtn.watch("checked",function() {
-                    if (allCashBoxesBtn.get('checked') == true) {
-                        for (var i in cashBoxesList) {
-                            if(cashBoxesList[i]!=allCashBoxesBtn) {
-                                cashBoxesList[i].set('checked', false);
-                            }
-                        }
+
+                allCashBoxesBtn.onClick=function() {
+                    var count = 0;
+                     for(var j in cashBoxesList) {
+                         if (cashBoxesList[j].get('checked') == true) {
+                             count++;
+                         }
+                     }
+                     if(count<cashBoxesList.length){
+                         for (var i in cashBoxesList) {
+                             cashBoxesList[i].set('checked', true);
+                         }
+                         return;
+                     }
+                    for (var i in cashBoxesList) {
+                             cashBoxesList[i].set('checked', false);
                     }
-                });
+                };
+
                 allCashBoxesBtn.startup();
 
                 detailContentImportSales.setToggleCashBoxID=function(data){
@@ -135,21 +146,10 @@
                         toggleBtn.startup();
                         import_sales_cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentImportSales.startup();
-                        toggleBtn.watch("checked",function() {
-                            if (this.checked == true) {
-                                if(allCashBoxesBtn.get("checked")==true){
-                                    allCashBoxesBtn.set('checked', false);
-                                }
-                            }
-                        });
                     }
                     cashBoxesList[0].set('checked', true);
-                    cashBoxesList.push(allCashBoxesBtn);
                     import_sales_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
                 };
-
-
-
 
                 btnImportSales.onClick=function(){
                     btnImportSales.set('disabled','true');
