@@ -5,7 +5,7 @@ select cr.FacID AS CashBoxID, LTRIM(RTRIM(p.Article2)) AS ProdName, Dep=p.PGrID,
 WHEN LTRIM(RTRIM(mp.Notes))='' THEN p.ProdID
 WHEN CAST (mp.Notes AS INTEGER)IS NOT NULL THEN  CAST (mp.Notes AS INTEGER)
 ELSE  p.ProdID
-END AS Code
+END AS Code,mp.Notes AS Notes
 
 FROM  r_Crs cr
   INNER JOIN r_Stocks st on cr.StockID=st.StockID
