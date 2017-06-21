@@ -151,3 +151,105 @@
 </LIST>
 </IMPORT>
 
+
+---------------
+
+        <?xml version="1.0" encoding="windows-1251"?><IMPORT since="20101229173500">
+<LIST>
+    <DEVICES>
+        <DEVICE id="4101606441"/>
+    </DEVICES>
+    <ITEMS>
+        <ITEM code="1157" price="10400" quantity="0" tax="1" barcode="4820000942300" department="9" divisibility="1"
+              ctrl_qnt="0">К-к Шустов 3* 0,5л
+        </ITEM>
+        <ITEM code="20038" price="0" quantity="0" tax="1" barcode="2310000200385" department="0" divisibility="1"
+              ctrl_qnt="0">ЧЕРНИҐОВСКОЕ СВ 1,2Л
+        </ITEM>
+        <ITEM code="1119" price="7000" quantity="0" tax="1" barcode="4820060250582" department="7" divisibility="1"
+              ctrl_qnt="0">Хортица сриб.0,5л
+        </ITEM>
+        <ITEM code="20040" price="0" quantity="0" tax="1" barcode="2310000200408" department="0" divisibility="1"
+              ctrl_qnt="0">ЛЬВОВСКОЕ 1715 0,5
+        </ITEM>
+        <ITEM code="20042" price="0" quantity="0" tax="1" barcode="2310000200422" department="0" divisibility="1"
+              ctrl_qnt="0">БОНД СИНИЙ
+        </ITEM>
+        <ITEM code="20035" price="0" quantity="0" tax="1" barcode="2310000200354" department="0" divisibility="1"
+              ctrl_qnt="0">ДОВИДОВ ҐОЛД
+        </ITEM>
+        <ITEM code="20037" price="0" quantity="0" tax="1" barcode="2310000200378" department="0" divisibility="1"
+              ctrl_qnt="0">Мороша джерел.1л.
+        </ITEM>
+        <ITEM code="20044" price="0" quantity="0" tax="1" barcode="20044_шт." department="0" divisibility="1"
+              ctrl_qnt="0">СТОЛИЧНИЕ СИН 25
+        </ITEM>
+        <ITEM code="20034" price="0" quantity="0" tax="1" barcode="2310000200347" department="0" divisibility="1"
+              ctrl_qnt="0">ВЕСТ СИНИЙ
+        </ITEM>
+        <ITEM code="20039" price="0" quantity="0" tax="1" barcode="2310000200392" department="0" divisibility="1"
+              ctrl_qnt="0">Хортица сриб.0,2л
+        </ITEM>
+        <ITEM code="20041" price="0" quantity="0" tax="1" barcode="2310000200415" department="0" divisibility="1"
+              ctrl_qnt="0">БАЛТИКА РОЗЛИВНОЕ МЯҐКЕ
+        </ITEM>
+        <ITEM code="20043" price="12300" quantity="0" tax="1" barcode="2310000200439" department="0" divisibility="1"
+              ctrl_qnt="0">ПС СИНИЙ
+        </ITEM>
+        <ITEM code="20036" price="0" quantity="0" tax="1" barcode="2310000200361" department="0" divisibility="1"
+              ctrl_qnt="0">ФИЛИП МОР КР 100
+        </ITEM>
+    </ITEMS>
+</LIST>
+</IMPORT>
+
+
+        <?xml version="1.0" encoding="windows-1251"?><IMPORT since="20101229173500">
+<LIST>
+    <DEVICES>
+        <DEVICE id="4101606441"/>
+    </DEVICES>
+    <ITEMS>
+        <ITEM code="1157" price="10400" quantity="0" tax="1" barcode="4820000942300" department="9" divisibility="1"
+              ctrl_qnt="0">К-к Шустов 3* 0,5л
+        </ITEM>
+        <ITEM code="20038" price="0" quantity="0" tax="1" barcode="2310000200385" department="0" divisibility="1"
+              ctrl_qnt="0">ЧЕРНИҐОВСКОЕ СВ 1,2Л
+        </ITEM>
+        <ITEM code="1119" price="7000" quantity="0" tax="1" barcode="4820060250582" department="7" divisibility="1"
+              ctrl_qnt="0">Хортица сриб.0,5л
+        </ITEM>
+        <ITEM code="2" price="0" quantity="0" tax="1" barcode="2310000200408" department="0" divisibility="1"
+              ctrl_qnt="0">ЛЬВОВСКОЕ 1715 0,5
+        </ITEM>
+        <ITEM code="12" price="0" quantity="0" tax="1" barcode="2310000200422" department="0" divisibility="1"
+              ctrl_qnt="0">БОНД СИНИЙ
+        </ITEM>
+        <ITEM code="20035" price="0" quantity="0" tax="1" barcode="2310000200354" department="0" divisibility="1"
+              ctrl_qnt="0">ДОВИДОВ ҐОЛД
+        </ITEM>
+        <ITEM code="20037" price="0" quantity="0" tax="1" barcode="2310000200378" department="0" divisibility="1"
+              ctrl_qnt="0">Мороша джерел.1л.
+        </ITEM>
+        <ITEM code="123" price="0" quantity="0" tax="1" barcode="20044_шт." department="0" divisibility="1"
+              ctrl_qnt="0">СТОЛИЧНИЕ СИН 25
+        </ITEM>
+        <ITEM code="20034" price="0" quantity="0" tax="1" barcode="2310000200347" department="0" divisibility="1"
+              ctrl_qnt="0">ВЕСТ СИНИЙ
+        </ITEM>
+        <ITEM code="3" price="0" quantity="0" tax="1" barcode="2310000200392" department="0" divisibility="1"
+              ctrl_qnt="0">Хортица сриб.0,2л
+        </ITEM>
+        <ITEM code="1" price="0" quantity="0" tax="1" barcode="2310000200415" department="0" divisibility="1"
+              ctrl_qnt="0">БАЛТИКА РОЗЛИВНОЕ МЯҐКЕ
+        </ITEM>
+        <ITEM code="122" price="12300" quantity="0" tax="1" barcode="2310000200439" department="0" divisibility="1"
+              ctrl_qnt="0">ПС СИНИЙ
+        </ITEM>
+        <ITEM code="20036" price="0" quantity="0" tax="1" barcode="2310000200361" department="0" divisibility="1"
+              ctrl_qnt="0">ФИЛИП МОР КР 100
+        </ITEM>
+    </ITEMS>
+</LIST>
+</IMPORT>
+

@@ -34,7 +34,13 @@ insert into @UT(XMLText)
 
 	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice INT, @Qty NUMERIC, @PGrID INT
 	declare RowsItems cursor fast_forward FOR
-	SELECT p.ProdID,mp.PriceMC,  ISNULL(rem.Qty,0) , mq.BarCode, p.Article2, p.PGrID
+	SELECT
+	   CASE WHEN mp.Notes IS NULL THEN  p.ProdID
+WHEN LTRIM(RTRIM(mp.Notes))='' THEN p.ProdID
+WHEN CAST (mp.Notes AS INTEGER)IS NOT NULL THEN  CAST (mp.Notes AS INTEGER)
+ELSE  p.ProdID
+END
+	,mp.PriceMC,  ISNULL(rem.Qty,0) , mq.BarCode, p.Article2, p.PGrID
 	FROM r_CRs cr
 	INNER JOIN r_Stocks st on st.StockID=cr.StockID
 	INNER JOIN r_ProdMP mp on mp.PLID=st.PLID
