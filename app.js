@@ -221,20 +221,23 @@ function postProductsToUniCashServer(xml, callback) {
         xmlText = xmlText + xmlLine;
     }
     var textLengthStr = xmlText.length + "";
-    request.post({
-        headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
 
-        uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
-        //uri:'http://5.53.113.251:12702/lsoft',//real url
-        // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
-        // uri:'http://5.53.113.251:12702/',//test empty resp.body
-        // uri:'',//test
-        body: xmlText,
-        encoding: 'binary'
-        ,timeout:5000
-    }, function (error, response, body) {
-       callback(error, response, body);
-    });
+    console.log("xmlText=",xmlText);
+    return;
+    //request.post({
+    //    headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
+    //
+    //    uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
+    //    //uri:'http://5.53.113.251:12702/lsoft',//real url
+    //    // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
+    //    // uri:'http://5.53.113.251:12702/',//test empty resp.body
+    //    // uri:'',//test
+    //    body: xmlText,
+    //    encoding: 'binary'
+    //    ,timeout:5000
+    //}, function (error, response, body) {
+    //   callback(error, response, body);
+    //});
 };
 function getChequesData(body, callback) {
     var buf = new Buffer(body, 'binary');
@@ -1032,6 +1035,7 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
         outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
     }
     outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
+        ,{ "data":"Dep", "name":"Dep (PGrID)", "width":50, "type":"numeric"}
         ,{ "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":100, "type":"text"}
         ,{ "data":"Qty", "name":"Qty", "width":80, "type":"numeric"}
         ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}

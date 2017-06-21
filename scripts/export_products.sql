@@ -32,9 +32,9 @@ insert into @UT(XMLText)
 		  union all select '<ITEMS>'
 
 
-	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice INT, @Qty NUMERIC
+	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice INT, @Qty NUMERIC, @PGrID INT
 	declare RowsItems cursor fast_forward FOR
-	SELECT p.ProdID,mp.PriceMC,  ISNULL(rem.Qty,0) , mq.BarCode, p.ProdName
+	SELECT p.ProdID,mp.PriceMC,  ISNULL(rem.Qty,0) , mq.BarCode, p.Article2, p.PGrID
 	FROM r_CRs cr
 	INNER JOIN r_Stocks st on st.StockID=cr.StockID
 	INNER JOIN r_ProdMP mp on mp.PLID=st.PLID
@@ -45,13 +45,15 @@ insert into @UT(XMLText)
 
 WHERE ','+@CRIDLIST+',' like '%,'+CAST(cr.CRID  as varchar(200))+',%'
 	open RowsItems
-	fetch next from RowsItems INTO @ProdID,@ProdPrice,@Qty,@BarCode,@ProdName
+	fetch next from RowsItems INTO @ProdID,@ProdPrice,@Qty,@BarCode,@ProdName,@PGrID
 
 	while @@fetch_status = 0 begin
 		insert into @UT(XMLText)
 			select  --'<ITEM  price="'+ @ProdPrice+'>'+ @ProdName+'</ITEM>'
-			'<ITEM code="'+CAST(@ProdID as varchar)+'" price="'+CAST(@ProdPrice*100 as varchar)+'" quantity="'+CAST(@Qty as varchar)+'" tax="1" barcode="'+@BarCode+'" divisibility="1" ctrl_qnt="0">'+ @ProdName+'</ITEM>'
-			fetch next from RowsItems INTO @ProdID, @ProdPrice,@Qty, @BarCode, @ProdName
+			'<ITEM code="'+CAST(@ProdID as varchar)+'" price="'+CAST(@ProdPrice*100 as varchar)+'" quantity="'
+			+CAST(@Qty as varchar)+'" tax="1" barcode="'+@BarCode+'" department="'+CAST(@PGrID as varchar)+'" divisibility="1" ctrl_qnt="0">'
+			+ @ProdName+'</ITEM>'
+			fetch next from RowsItems INTO @ProdID, @ProdPrice,@Qty, @BarCode, @ProdName,@PGrID
 	end
 	close RowsItems
 	deallocate RowsItems
