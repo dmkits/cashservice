@@ -221,6 +221,8 @@ function postProductsToUniCashServer(xml, callback) {
         xmlText = xmlText + xmlLine;
     }
     var textLengthStr = xmlText.length + "";
+
+    console.log("xmlText=",xmlText);
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
 
@@ -1032,6 +1034,7 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
         outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
     }
     outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
+        ,{ "data":"Dep", "name":"Dep", "width":50, "type":"numeric"}
         ,{ "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":100, "type":"text"}
         ,{ "data":"Qty", "name":"Qty", "width":80, "type":"numeric"}
         ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}
