@@ -222,7 +222,6 @@ function postProductsToUniCashServer(xml, callback) {
     }
     var textLengthStr = xmlText.length + "";
 
-    console.log("xmlText=",xmlText);
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
 
@@ -440,11 +439,12 @@ function getChequesData(body, callback) {
                        }
                    }
                         //IO[...]   итоговая информация по внесению денег
-                           if(listItem.Z[0].IO[0].$.NM) report.cashPaymentTypeName= listItem.Z[0].IO[0].$.NM;    //Название формы оплаты (может не указыватся)
-                           report.totalMoneyRec= listItem.Z[0].IO[0].$.SMI?listItem.Z[0].IO[0].$.SMI:0;    //Сумма полученных денег в копейках
-                           report.totalMoneyExp= listItem.Z[0].IO[0].$.SMO?listItem.Z[0].IO[0].$.SMO:0; //Сумма выданных денег в копейках
-                           // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
-
+                        if(listItem.Z[0].IO) {
+                            if (listItem.Z[0].IO && listItem.Z[0].IO[0].$.NM) report.cashPaymentTypeName = listItem.Z[0].IO[0].$.NM;    //Название формы оплаты (может не указыватся)
+                            report.totalMoneyRec = listItem.Z[0].IO[0].$.SMI ? listItem.Z[0].IO[0].$.SMI : 0;    //Сумма полученных денег в копейках
+                            report.totalMoneyExp = listItem.Z[0].IO[0].$.SMO ? listItem.Z[0].IO[0].$.SMO : 0; //Сумма выданных денег в копейках
+                            // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
+                        }
                         //NC[]  итоговая информация по количеству чеков
                         report.totalSaleCheques =  listItem.Z[0].NC[0].$.NI?listItem.Z[0].NC[0].$.NI:0;
                         report.totalReturnCheques  =listItem.Z[0].NC[0].$.NO?listItem.Z[0].NC[0].$.NO:0;

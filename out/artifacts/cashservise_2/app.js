@@ -222,7 +222,6 @@ function postProductsToUniCashServer(xml, callback) {
     }
     var textLengthStr = xmlText.length + "";
 
-    console.log("xmlText=",xmlText);
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
 
@@ -440,11 +439,12 @@ function getChequesData(body, callback) {
                        }
                    }
                         //IO[...]   итоговая информация по внесению денег
-                           if(listItem.Z[0].IO[0].$.NM) report.cashPaymentTypeName= listItem.Z[0].IO[0].$.NM;    //Название формы оплаты (может не указыватся)
-                           report.totalMoneyRec= listItem.Z[0].IO[0].$.SMI?listItem.Z[0].IO[0].$.SMI:0;    //Сумма полученных денег в копейках
-                           report.totalMoneyExp= listItem.Z[0].IO[0].$.SMO?listItem.Z[0].IO[0].$.SMO:0; //Сумма выданных денег в копейках
-                           // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
-
+                        if(listItem.Z[0].IO) {
+                            if (listItem.Z[0].IO && listItem.Z[0].IO[0].$.NM) report.cashPaymentTypeName = listItem.Z[0].IO[0].$.NM;    //Название формы оплаты (может не указыватся)
+                            report.totalMoneyRec = listItem.Z[0].IO[0].$.SMI ? listItem.Z[0].IO[0].$.SMI : 0;    //Сумма полученных денег в копейках
+                            report.totalMoneyExp = listItem.Z[0].IO[0].$.SMO ? listItem.Z[0].IO[0].$.SMO : 0; //Сумма выданных денег в копейках
+                            // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
+                        }
                         //NC[]  итоговая информация по количеству чеков
                         report.totalSaleCheques =  listItem.Z[0].NC[0].$.NI?listItem.Z[0].NC[0].$.NI:0;
                         report.totalReturnCheques  =listItem.Z[0].NC[0].$.NO?listItem.Z[0].NC[0].$.NO:0;
@@ -1033,13 +1033,15 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
     if(initialCRID==-1){
         outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
     }
-    outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
+    outData.columns.push({ "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}  //Code
         ,{ "data":"Dep", "name":"Dep", "width":50, "type":"numeric"}
+        ,{ "data":"Code", "name":"Code", "width":70, "type":"numeric"}
         ,{ "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":100, "type":"text"}
         ,{ "data":"Qty", "name":"Qty", "width":80, "type":"numeric"}
         ,{ "data":"UM", "name":"UM", "width":40, "type":"numeric"}
         ,{ "data":"ProdPrice", "name":"ProdPrice", "width":60, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
-        ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"});
+        ,{ "data":"PriceName", "name":"PriceName", "width":200, "type":"text"}
+        ,{ "data":"Notes", "name":"Notes", "width":100, "type":"text"});
     var CRID;
     if(initialCRID==-1){
         database.getAllCashBoxes(function (err, result)  {
