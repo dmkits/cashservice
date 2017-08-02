@@ -1,0 +1,164 @@
+{
+  "sales": [
+    {
+      "xmlHeading": "<DAT DI=\"28\" FN=\"0000000000\" TN=\"ПН 000000000000\" V=\"1\" ZN=\"ПБ4101608264\">\n  <C T=\"0\">\n    <E CS=\"1\" FN=\"0000000000\" N=\"5\" NO=\"16\" SM=\"2000\" TS=\"20170801153108\">\n      <TX DTNM=\"\" DTPR=\"0.00\" TX=\"1\" TXPR=\"20.00\" TXSM=\"333\" TXTY=\"0\"/>\n      <TX DTNM=\"\" DTPR=\"0.00\" TX=\"0\" TXPR=\"0.00\" TXSM=\"0\" TXTY=\"0\"/>\n    </E>\n  </C>\n  <TS>20170801153108</TS>\n</DAT>",
+      "xmlPayment": "<M N=\"4\" NM=\"ГОТІВКА\" SM=\"2000\" T=\"0\"/>",
+      "checkDataID": "28",
+      "ITN": "ПН 000000000000",
+      "dataVersion": "1",
+      "cashBoxFabricNum": "ПБ4101608264",
+      "dataFormDate": "20170801153108",
+      "productsInCheck": [
+        {
+          "xmlProduct": "<P C=\"15\" CD=\"4820163120027\" N=\"1\" NM=\"Мороша джерел.0,7л.\" PRC=\"1000\" Q=\"2000\" SM=\"2000\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "1",
+          "name": "Мороша джерел.0,7л.",
+          "qty": "2000",
+          "price": "1000",
+          "code": "15",
+          "taxMark": "1"
+        },
+        {
+          "xmlProduct": "<P C=\"15\" CD=\"4820163120027\" N=\"2\" NM=\"Мороша джерел.0,7л.\" PRC=\"1000\" Q=\"2000\" SM=\"2000\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "2",
+          "name": "Мороша джерел.0,7л.",
+          "qty": "2000",
+          "price": "1000",
+          "code": "15",
+          "taxMark": "1",
+          "canceled": true
+        }
+      ],
+      "checkNumber": "16",
+      "totalCheckSum": "2000",
+      "operatorID": "1",
+      "fixalNumPPO": "0000000000",
+      "checkDate": "20170801153108",
+      "AddTaxRate": "0.00",
+      "taxMark": "1",
+      "taxRate": "20.00",
+      "taxSum": "333",
+      "isTaxIncluded": "0",
+      "buyerPaymentSum": "2000",
+      "paymentName": "ГОТІВКА",
+      "paymentType": "0"
+    },
+    {
+      "xmlHeading": "<DAT DI=\"29\" FN=\"0000000000\" TN=\"ПН 000000000000\" V=\"1\" ZN=\"ПБ4101608264\">\n  <C T=\"0\">\n    <E CS=\"1\" FN=\"0000000000\" N=\"4\" NO=\"17\" SM=\"28400\" TS=\"20170801153200\">\n      <TX DTNM=\"\" DTPR=\"0.00\" TX=\"1\" TXPR=\"20.00\" TXSM=\"4733\" TXTY=\"0\"/>\n      <TX DTNM=\"\" DTPR=\"0.00\" TX=\"0\" TXPR=\"0.00\" TXSM=\"0\" TXTY=\"0\"/>\n    </E>\n  </C>\n  <TS>20170801153200</TS>\n</DAT>",
+      "xmlPayment": "<M N=\"3\" NM=\"ГОТІВКА\" SM=\"28400\" T=\"0\"/>",
+      "checkDataID": "29",
+      "ITN": "ПН 000000000000",
+      "dataVersion": "1",
+      "cashBoxFabricNum": "ПБ4101608264",
+      "dataFormDate": "20170801153200",
+      "productsInCheck": [
+        {
+          "xmlProduct": "<P C=\"17\" CD=\"4820000942201\" N=\"1\" NM=\"К-к Десна 4* 0,5л\" PRC=\"12400\" Q=\"1000\" SM=\"12400\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "1",
+          "name": "К-к Десна 4* 0,5л",
+          "qty": "1000",
+          "price": "12400",
+          "code": "17",
+          "taxMark": "1"
+        },
+        {
+          "xmlProduct": "<P C=\"1\" CD=\"4820000942300\" N=\"2\" NM=\"К-к Шустов 3* 0,5л\" PRC=\"16000\" Q=\"1000\" SM=\"16000\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "2",
+          "name": "К-к Шустов 3* 0,5л",
+          "qty": "1000",
+          "price": "16000",
+          "code": "1",
+          "taxMark": "1"
+        }
+      ],
+      "checkNumber": "17",
+      "totalCheckSum": "28400",
+      "operatorID": "1",
+      "fixalNumPPO": "0000000000",
+      "checkDate": "20170801153200",
+      "AddTaxRate": "0.00",
+      "taxMark": "1",
+      "taxRate": "20.00",
+      "taxSum": "4733",
+      "isTaxIncluded": "0",
+      "buyerPaymentSum": "28400",
+      "paymentName": "ГОТІВКА",
+      "paymentType": "0"
+    },
+    {
+      "xmlHeading": "<DAT DI=\"30\" FN=\"0000000000\" TN=\"ПН 000000000000\" V=\"1\" ZN=\"ПБ4101608264\">\n  <C T=\"0\">\n    <E CS=\"1\" N=\"5\" VD=\"1\"/>\n  </C>\n  <TS>20170801165138</TS>\n</DAT>",
+      "checkDataID": "30",
+      "ITN": "ПН 000000000000",
+      "dataVersion": "1",
+      "cashBoxFabricNum": "ПБ4101608264",
+      "dataFormDate": "20170801165138",
+      "productsInCheck": [
+        {
+          "xmlProduct": "<P C=\"12\" CD=\"4820000942348\" N=\"1\" NM=\"К-к Шустов 5* 0,5л\" PRC=\"19000\" Q=\"1000\" SM=\"19000\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "1",
+          "name": "К-к Шустов 5* 0,5л",
+          "qty": "1000",
+          "price": "19000",
+          "code": "12",
+          "taxMark": "1"
+        },
+        {
+          "xmlProduct": "<P C=\"14\" CD=\"4820163121499\" N=\"2\" NM=\"Хортица клас.0,5л\" PRC=\"24000\" Q=\"1000\" SM=\"24000\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "2",
+          "name": "Хортица клас.0,5л",
+          "qty": "1000",
+          "price": "24000",
+          "code": "14",
+          "taxMark": "1",
+          "canceled": true
+        }
+      ],
+      "operatorID": "1"
+    },
+    {
+      "xmlHeading": "<DAT DI=\"31\" FN=\"0000000000\" TN=\"ПН 000000000000\" V=\"1\" ZN=\"ПБ4101608264\">\n  <C T=\"0\">\n    <E CS=\"1\" FN=\"0000000000\" N=\"5\" NO=\"18\" SM=\"14400\" TS=\"20170801165220\">\n      <TX DTNM=\"\" DTPR=\"0.00\" TX=\"1\" TXPR=\"20.00\" TXSM=\"2400\" TXTY=\"0\"/>\n      <TX DTNM=\"\" DTPR=\"0.00\" TX=\"0\" TXPR=\"0.00\" TXSM=\"0\" TXTY=\"0\"/>\n    </E>\n  </C>\n  <TS>20170801165220</TS>\n</DAT>",
+      "xmlPayment": "<M N=\"4\" NM=\"ГОТІВКА\" SM=\"14400\" T=\"0\"/>",
+      "checkDataID": "31",
+      "ITN": "ПН 000000000000",
+      "dataVersion": "1",
+      "cashBoxFabricNum": "ПБ4101608264",
+      "dataFormDate": "20170801165220",
+      "productsInCheck": [
+        {
+          "xmlProduct": "<P C=\"20\" CD=\"4820060251800\" N=\"1\" NM=\"Медовуха майс.0,2л\" PRC=\"14400\" Q=\"1000\" SM=\"14400\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "1",
+          "name": "Медовуха майс.0,2л",
+          "qty": "1000",
+          "price": "14400",
+          "code": "20",
+          "taxMark": "1"
+        },
+        {
+          "xmlProduct": "<P C=\"19\" CD=\"4820060254252\" N=\"2\" NM=\"ХОРТИЦА АЙС 0.5\" PRC=\"10500\" Q=\"1000\" SM=\"10500\" TX=\"1\" W=\"1\"/>",
+          "posNumber": "2",
+          "name": "ХОРТИЦА АЙС 0.5",
+          "qty": "1000",
+          "price": "10500",
+          "code": "19",
+          "taxMark": "1",
+          "canceled": true
+        }
+      ],
+      "checkNumber": "18",
+      "totalCheckSum": "14400",
+      "operatorID": "1",
+      "fixalNumPPO": "0000000000",
+      "checkDate": "20170801165220",
+      "AddTaxRate": "0.00",
+      "taxMark": "1",
+      "taxRate": "20.00",
+      "taxSum": "2400",
+      "isTaxIncluded": "0",
+      "buyerPaymentSum": "14400",
+      "paymentName": "ГОТІВКА",
+      "paymentType": "0"
+    }
+  ],
+  "inners": [],
+  "reports": []
+}

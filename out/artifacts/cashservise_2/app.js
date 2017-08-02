@@ -220,7 +220,10 @@ function postProductsToUniCashServer(xml, callback) {
         var xmlLine = xml[i].XMLText;
         xmlText = xmlText + xmlLine;
     }
-    var textLengthStr = xmlText.length + "";
+    var textLengthStr = xmlText.length;
+
+    console.log("xmlText=",xmlText);
+    console.log("textLengthStr=",textLengthStr);
 
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
