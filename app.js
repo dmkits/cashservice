@@ -209,7 +209,6 @@ function getDataFromUniCashServer(xml, callback) {
         ,timeout:5000
     }, function (error, response, body) {
         callback(error, response, body);
-        return;
     });
 };
 function postProductsToUniCashServer(xml, callback) {
@@ -221,10 +220,8 @@ function postProductsToUniCashServer(xml, callback) {
         xmlText = xmlText + xmlLine;
     }
     var textLengthStr = xmlText.length;
-
    // console.log("xmlText=",xmlText);
   //  console.log("textLengthStr=",textLengthStr);
-
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
 
@@ -245,10 +242,7 @@ function getChequesData(body, callback) {
     var str = iconv_lite.decode(buf, 'win1251');
     body = iconv_lite.encode(str, 'utf8');
 
-    parseString(body, function (err, result) {               //  console.log("result=",JSON.stringify(result));
-
-       //var resultString=fs.readFileSync('./resWithCadr.json', 'utf8');                             ////test
-       //result = JSON.parse(resultString);
+    parseString(body, function (err, result) {
 
         var outData = {};
         outData.sales = [];
@@ -391,9 +385,9 @@ function getChequesData(body, callback) {
                             product.taxMark = goodsList[pos].$.TX;
                             cheque.productsInCheck.push(product);
                         }
-                        if(listItem.C[0].VD){    console.log("если были аннуляции в чеке"); ////если были аннуляции в чеке
+                        if(listItem.C[0].VD){     ////если были аннуляции в чеке
                             var cancelPositionNum;
-                            if(listItem.C[0].VD[0].$.NI)  {  console.log("отменена одной позиции в чеке")  // отменена одной позиции в чеке  (номер операции продажи)
+                            if(listItem.C[0].VD[0].$.NI)  {   // отменена одной позиции в чеке  (номер операции продажи)
                                 cancelPositionNum=listItem.C[0].VD[0].$.NI;
                                 for(var pos in cheque.productsInCheck){
                                     var product=cheque.productsInCheck[pos];
@@ -401,7 +395,7 @@ function getChequesData(body, callback) {
                                         product.canceled=true;
                                     }
                                 }
-                            }else if (listItem.C[0].VD[0].NI){                 console.log("отменена нескольких позиций в чекt");  // отменена нескольких позиций в чеке  (массив номеров операций продаж)
+                            }else if (listItem.C[0].VD[0].NI){                   // отменена нескольких позиций в чеке  (массив номеров операций продаж)
                                 for(var j in listItem.C[0].VD[0].NI){
                                     cancelPositionNum=listItem.C[0].VD[0].NI[j].$.NI;
                                     for(var posNum in cheque.productsInCheck){
@@ -546,15 +540,13 @@ function getChequesData(body, callback) {
                         outData.reports.push(report);
                     }
                 }
-
-              //  console.log("outData=",JSON.stringify(outData));
                 callback(null, outData);
             }
         }catch (e){
             log.warn("Не удалось обработать данные полученные от кассового сервера! Причина:",e);
             callback(e, outData);
         }
-    });   //parseString
+    });
 };
 function formatDate(date){
     var dch = date.split("");
@@ -576,18 +568,6 @@ function fillCheques(chequesData, ind, finishedcallback) {
     }
 
     database.fillChequeTitle(chequeData, function (err, res) {
-
-       /* var xml=chequeData.xml;
-        //xml= xml.replace(/"/g,"");
-        xml= xml.replace('{"$":{',"<DAT ");xml= xml.replace("},",">");
-        xml= xml.replace('"C":[{"$":{',"<C ");xml= xml.replace("},",">");
-        xml= xml.replace('"P":[{"$":{',"<P ");xml= xml.replace("}}]","/>");
-        xml= xml.replace('"M":[{"$":{',"<M ");xml= xml.replace("}}]","/>");
-        xml= xml.replace('"E":[{"$":{',"<E ");xml= xml.replace("},",">");
-        xml= xml.replace('"TX":[{"$":{',"<TX ");xml= xml.replace("}}]","/>");xml= xml.replace("}]","</E>");xml= xml.replace("}]","</C>");
-        xml= xml.replace('"TS":[',"<TS>");xml= xml.replace("],","</TS>");xml= xml.replace("}","</DAT>");
-        xml= xml.replace(/ "/g," ");xml= xml.replace(/,"/g," ");xml= xml.replace(/":/g,"=");
-           */
         if (err) {
             log.error("APP database.fillChequeTitle: Sale NOT created! Reason:"+ err);
             finishedcallback("Sale NOT created! Reason:"+ err);
@@ -626,7 +606,7 @@ function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCal
         finishedCallback(null, saleChID, chequeData);
         return;
     }
-    database.fillChequeProds(saleChID, chequeData, chequeProdData, function (err, res) {    console.log("fillChequeProds res=",JSON.stringify(res));
+    database.fillChequeProds(saleChID, chequeData, chequeProdData, function (err, res) {
         var msg;
         if (err) {
             log.error("APP database.fillChequeProds: Position in cheque NOT created! Reason:"+ err);
@@ -636,7 +616,6 @@ function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCal
             });
             return;
         }
-       // if (res.notFoundProd) msg=res.notFoundProd;
         if (res.exist && res.exist=="SaleD") msg=" * Найдена позиция №" + chequeProdData.posNumber +  " в чеке №" + chequeData.checkNumber;
         if (res.exist && res.exist=="SaleC") msg=" * Найдена аннулированная позиция "+chequeProdData.name;
         if(res.addedSaleC)msg="* Аннулировання позиция "+chequeProdData.name+" добавлена в БД";
@@ -676,10 +655,8 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                       });
                       return;
                   }
-
                  //getCashBoxesList(clientReq); //test
                  //return;
-
                  emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
                 database.getXMLForUniCashServerRequest(bdate, edate, CRID, function (error, xml) {
                 if (error){
@@ -688,9 +665,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                     });
                     return;
                 }
-
                 // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
-
                 emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
                     getDataFromUniCashServer(xml, function (error, response, body) {
                         if(error){
@@ -721,13 +696,8 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                             return;
                         }
                         emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
-
                             // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
                             //  body="kjhbkljh"; //test
-
-                            //body =fs.readFileSync("./VD.xml","utf-8");
-
-                          //  console.log("body=",body);
                             getChequesData(body, function (err, result) {
                                 if (err) {
                                     emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null,null, function(){
@@ -785,10 +755,8 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                 });
             });
         });
-
     });
 });
-//});
 
 function addToZrep(reports, ind, callback) {
     if (!reports[ind]) {
@@ -1121,27 +1089,25 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
                     if (error){
                         outData.error=error;
                         res.send(outData);
-                       // return;
-                    }else {
+                        return;
+                    }
                         outData.items = recordset;
                         res.send(outData);
-                      //  return;
-                    }
+
                 });
         });
     }
-    else{
+    else {
         CRID = initialCRID;
         database.getPrices(CRID,
-            function (error,recordset) {
-                if (error){
-                    outData.error=error;
+            function (error, recordset) {
+                if (error) {
+                    outData.error = error;
                     res.send(outData);
-                   // return;
-                }else {
-                    outData.items = recordset;
-                    res.send(outData);
+                    return;
                 }
+                outData.items = recordset;
+                res.send(outData);
             });
     }
 });

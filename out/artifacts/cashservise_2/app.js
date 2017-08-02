@@ -209,7 +209,6 @@ function getDataFromUniCashServer(xml, callback) {
         ,timeout:5000
     }, function (error, response, body) {
         callback(error, response, body);
-        return;
     });
 };
 function postProductsToUniCashServer(xml, callback) {
@@ -221,10 +220,8 @@ function postProductsToUniCashServer(xml, callback) {
         xmlText = xmlText + xmlLine;
     }
     var textLengthStr = xmlText.length;
-
-    console.log("xmlText=",xmlText);
-    console.log("textLengthStr=",textLengthStr);
-
+   // console.log("xmlText=",xmlText);
+  //  console.log("textLengthStr=",textLengthStr);
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
 
@@ -246,9 +243,6 @@ function getChequesData(body, callback) {
     body = iconv_lite.encode(str, 'utf8');
 
     parseString(body, function (err, result) {
-
-       //var resultString=fs.readFileSync('./resWithCadr.json', 'utf8');                             ////test
-       //result = JSON.parse(resultString);
 
         var outData = {};
         outData.sales = [];
@@ -321,10 +315,12 @@ function getChequesData(body, callback) {
                             .replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',"")
                             .trim();
 
-                        var xmlPayment={};
-                        xmlPayment.M=listItem.C[0].M[0];
-                        cheque.xmlPayment = builder.buildObject(xmlPayment).replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',"").trim();
 
+                        var xmlPayment={};
+                        if(listItem.C[0].M) {
+                            xmlPayment.M = listItem.C[0].M[0];
+                            cheque.xmlPayment = builder.buildObject(xmlPayment).replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', "").trim();
+                        }
 
                         cheque.checkDataID = listItem.$.DI;                    //DAT ID  не исп
                         cheque.ITN = listItem.$.TN;                            //ИНН не исп
@@ -351,14 +347,33 @@ function getChequesData(body, callback) {
                             if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
                         }
 
-                        var payment = listItem.C[0].M[0].$;
-                        cheque.buyerPaymentSum = payment.SM;
-                        if (payment.NM)cheque.paymentName = payment.NM;
-                        cheque.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
-                        if (payment.RM) cheque.change = payment.RM;
+                        if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
+                            var taxInfo = listItem.C[0].E[0].TX[0].$;
+                            if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
+                            if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
+                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //не исп
+                            if (taxInfo.TX) cheque.taxMark = taxInfo.TX;     //не исп
+                            if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;  //не исп
+                            if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;   //не исп
+                            if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
+                        }
+                        if (listItem.C[0].E[0].$ && listItem.C[0].E[0].$.VD) {   //если чек аннулирован
+                         if(listItem.C[0].E[0].$.VD !=0){
+                             cheque.canceled=true;
+                         }
+                        }
+
+                        if(listItem.C[0].M) {
+                            var payment = listItem.C[0].M[0].$;
+                            cheque.buyerPaymentSum = payment.SM;
+                            if (payment.NM)cheque.paymentName = payment.NM;
+                            cheque.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
+                            if (payment.RM) cheque.change = payment.RM;
+                        }
+
                         for (var pos in goodsList) {
                             var product = {};
-                            var xmlProduct={}
+                            var xmlProduct={};
                             xmlProduct.P=goodsList[pos];
                             product.xmlProduct = builder.buildObject(xmlProduct).replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', "").trim();
 
@@ -370,6 +385,29 @@ function getChequesData(body, callback) {
                             product.taxMark = goodsList[pos].$.TX;
                             cheque.productsInCheck.push(product);
                         }
+                        if(listItem.C[0].VD){     ////если были аннуляции в чеке
+                            var cancelPositionNum;
+                            if(listItem.C[0].VD[0].$.NI)  {   // отменена одной позиции в чеке  (номер операции продажи)
+                                cancelPositionNum=listItem.C[0].VD[0].$.NI;
+                                for(var pos in cheque.productsInCheck){
+                                    var product=cheque.productsInCheck[pos];
+                                    if(product.posNumber==cancelPositionNum){
+                                        product.canceled=true;
+                                    }
+                                }
+                            }else if (listItem.C[0].VD[0].NI){                   // отменена нескольких позиций в чеке  (массив номеров операций продаж)
+                                for(var j in listItem.C[0].VD[0].NI){
+                                    cancelPositionNum=listItem.C[0].VD[0].NI[j].$.NI;
+                                    for(var posNum in cheque.productsInCheck){
+                                        var product=cheque.productsInCheck[posNum];
+                                        if(product.posNumber==cancelPositionNum){
+                                            product.canceled=true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         outData.sales.push(cheque);
                     }
                     if(listItem.isInner){
@@ -393,7 +431,6 @@ function getChequesData(body, callback) {
                             inner.paymentType = listItem.C[0].O[0].$.T;
                             inner.paymentTypeName = listItem.C[0].O[0].$.NM;
                             inner.paymentSum = listItem.C[0].O[0].$.SM;
-
                         }
 
                         inner.docDate = listItem.TS[0];
@@ -437,7 +474,7 @@ function getChequesData(body, callback) {
                          // SMO -Сума выданных денег в копейках  //может отсутствовать
                        }else{
                            report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
-                           report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI:0.00 //Сумма полученных денег в копейках  //может отсутствовать
+                           report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI:0.00; //Сумма полученных денег в копейках  //может отсутствовать
                            report.totalCardPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
                        }
                    }
@@ -503,16 +540,19 @@ function getChequesData(body, callback) {
                         outData.reports.push(report);
                     }
                 }
-
                 callback(null, outData);
             }
         }catch (e){
             log.warn("Не удалось обработать данные полученные от кассового сервера! Причина:",e);
             callback(e, outData);
         }
-    });   //parseString
+    });
 };
-
+function formatDate(date){
+    var dch = date.split("");
+    var newDateFormat = dch[0] + dch[1] + dch[2] + dch[3] + "-" + dch[4] + dch[5] + "-" + dch[6] + dch[7] + " " + dch[8] + dch[9] + ":" + dch[10] + dch[11] + ":" + dch[12] + dch[13];
+    return newDateFormat;
+}
 function fillCheques(chequesData, ind, finishedcallback) {
     var chequeData = chequesData[ind];
     if (!chequeData) {
@@ -520,19 +560,14 @@ function fillCheques(chequesData, ind, finishedcallback) {
         return;
     }
 
-    database.fillChequeTitle(chequeData, function (err, res) {
+    if(chequeData.canceled){
+        emitAndLogEvent("Аннулированный чек от " + formatDate(chequeData.dataFormDate) +" не добавлен в БД",chequeData.xmlHeading, chequeData.cashBoxFabricNum,  function() {
+            fillCheques(chequesData, ind + 1, finishedcallback);
+        });
+        return;
+    }
 
-       /* var xml=chequeData.xml;
-        //xml= xml.replace(/"/g,"");
-        xml= xml.replace('{"$":{',"<DAT ");xml= xml.replace("},",">");
-        xml= xml.replace('"C":[{"$":{',"<C ");xml= xml.replace("},",">");
-        xml= xml.replace('"P":[{"$":{',"<P ");xml= xml.replace("}}]","/>");
-        xml= xml.replace('"M":[{"$":{',"<M ");xml= xml.replace("}}]","/>");
-        xml= xml.replace('"E":[{"$":{',"<E ");xml= xml.replace("},",">");
-        xml= xml.replace('"TX":[{"$":{',"<TX ");xml= xml.replace("}}]","/>");xml= xml.replace("}]","</E>");xml= xml.replace("}]","</C>");
-        xml= xml.replace('"TS":[',"<TS>");xml= xml.replace("],","</TS>");xml= xml.replace("}","</DAT>");
-        xml= xml.replace(/ "/g," ");xml= xml.replace(/,"/g," ");xml= xml.replace(/":/g,"=");
-           */
+    database.fillChequeTitle(chequeData, function (err, res) {
         if (err) {
             log.error("APP database.fillChequeTitle: Sale NOT created! Reason:"+ err);
             finishedcallback("Sale NOT created! Reason:"+ err);
@@ -557,7 +592,6 @@ function fillCheques(chequesData, ind, finishedcallback) {
                         finishedcallback("Не удалось внести оплату по чеку в БД Reason: "+err);
                         return;
                     }
-
                     fillCheques(chequesData, ind + 1,finishedcallback);
                 });
             });
@@ -582,9 +616,10 @@ function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCal
             });
             return;
         }
-        if (res.notFoundProd) msg=res.notFoundProd;
-        if (res.exist) msg=" * Найдена позиция №" + chequeProdData.posNumber +  " в чеке №" + chequeData.checkNumber;
-        else msg=" * Добавлена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чек №" + chequeData.checkNumber;
+        if (res.exist && res.exist=="SaleD") msg=" * Найдена позиция №" + chequeProdData.posNumber +  " в чеке №" + chequeData.checkNumber;
+        if (res.exist && res.exist=="SaleC") msg=" * Найдена аннулированная позиция "+chequeProdData.name;
+        if(res.addedSaleC)msg="* Аннулировання позиция "+chequeProdData.name+" добавлена в БД";
+        if(res.addedSaleD)  msg=" * Добавлена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чек №" + chequeData.checkNumber;
         emitAndLogEvent(msg,chequeProdData.xmlProduct,chequeData.cashBoxFabricNum, function(){
                 fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
         });
@@ -620,10 +655,8 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                       });
                       return;
                   }
-
                  //getCashBoxesList(clientReq); //test
                  //return;
-
                  emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
                 database.getXMLForUniCashServerRequest(bdate, edate, CRID, function (error, xml) {
                 if (error){
@@ -632,9 +665,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                     });
                     return;
                 }
-
                 // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
-
                 emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
                     getDataFromUniCashServer(xml, function (error, response, body) {
                         if(error){
@@ -665,10 +696,8 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                             return;
                         }
                         emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
-
                             // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
                             //  body="kjhbkljh"; //test
-
                             getChequesData(body, function (err, result) {
                                 if (err) {
                                     emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null,null, function(){
@@ -726,10 +755,8 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                 });
             });
         });
-
     });
 });
-//});
 
 function addToZrep(reports, ind, callback) {
     if (!reports[ind]) {
@@ -1062,27 +1089,25 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
                     if (error){
                         outData.error=error;
                         res.send(outData);
-                       // return;
-                    }else {
+                        return;
+                    }
                         outData.items = recordset;
                         res.send(outData);
-                      //  return;
-                    }
+
                 });
         });
     }
-    else{
+    else {
         CRID = initialCRID;
         database.getPrices(CRID,
-            function (error,recordset) {
-                if (error){
-                    outData.error=error;
+            function (error, recordset) {
+                if (error) {
+                    outData.error = error;
                     res.send(outData);
-                   // return;
-                }else {
-                    outData.items = recordset;
-                    res.send(outData);
+                    return;
                 }
+                outData.items = recordset;
+                res.send(outData);
             });
     }
 });
