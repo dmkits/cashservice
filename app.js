@@ -196,25 +196,16 @@ function getDataFromUniCashServer(xml, callback) {
         xmlText = xmlText + xmlLine;
     }
     var textLengthStr = xmlText.length + "";
-    console.log("textLengthStr=",textLengthStr);
-    console.log("xmlText=",xmlText);
 
-    /*
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
-
         uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
-        //uri:'http://5.53.113.251:12702/lsoft',//real url
-        // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
-        // uri:'http://5.53.113.251:12702/',//test empty resp.body
-        // uri:'',//test
         body: xmlText,
         encoding: 'binary'
         ,timeout:5000
     }, function (error, response, body) {
         callback(error, response, body);
     });
-    */
 };
 function postProductsToUniCashServer(xml, callback) {
     var cashserver_url = database.getDBConfig()['cashserver.url'];
@@ -227,12 +218,7 @@ function postProductsToUniCashServer(xml, callback) {
     var byteLength =Buffer.byteLength(xmlText, 'windows-1251');
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': byteLength},
-
         uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
-        //uri:'http://5.53.113.251:12702/lsoft',//real url
-        // uri:'http://5.53.113.217:12702/lsoft', //test wrong url no resp
-        // uri:'http://5.53.113.251:12702/',//test empty resp.body
-        // uri:'',//test
         body: xmlText,
         encoding: 'binary'
         ,timeout:5000
