@@ -2,7 +2,7 @@ declare @NewChID INT
 --select @NewChID =ISNULL(MAX(ChID),0)+1 from t_zRep
 exec dbo.z_NewChID 't_zRep', @NewChID OUTPUT
 
-declare  @CRID SMALLINT, @OurID INT
+declare  @CRID INT, @OurID INT
 select  @CRID=c.CRID, @OurID = r.OurID
 from r_Crs c
 INNER JOIN r_CRSrvs r ON r.SrvID =c.SrvID

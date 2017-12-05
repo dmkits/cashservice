@@ -1,4 +1,4 @@
-declare  @CRID SMALLINT
+declare  @CRID INT
 select  @CRID=c.CRID
 from r_Crs c
 INNER JOIN r_CRSrvs r ON r.SrvID =c.SrvID

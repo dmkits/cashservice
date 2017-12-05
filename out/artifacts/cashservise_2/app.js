@@ -204,6 +204,9 @@ function getDataFromUniCashServer(xml, callback) {
         encoding: 'binary'
         ,timeout:5000
     }, function (error, response, body) {
+
+
+
         callback(error, response, body);
     });
 };
@@ -374,17 +377,20 @@ function getChequesData(body, callback) {
                             product.taxMark = goodsList[pos].$.TX;
                             cheque.productsInCheck.push(product);
                         }
-                        if(listItem.C[0].VD){     ////если были аннуляции в чеке
+                        if(listItem.C[0].VD){
                             var cancelPositionNum;
-                            if(listItem.C[0].VD[0].$.NI)  {   // отменена одной позиции в чеке  (номер операции продажи)
-                                cancelPositionNum=listItem.C[0].VD[0].$.NI;
-                                for(var pos in cheque.productsInCheck){
-                                    var product=cheque.productsInCheck[pos];
-                                    if(product.posNumber==cancelPositionNum){
-                                        product.canceled=true;
+                            var canceledProdList=listItem.C[0].VD;
+                            if(listItem.C[0].VD[0].$)  {  				             // отменена  позиций в чеке  (номер операции продажи)
+                                for(var j in canceledProdList){
+                                    cancelPositionNum=canceledProdList[j].$.NI;
+                                    for(var posNum in cheque.productsInCheck){
+                                        var product=cheque.productsInCheck[posNum];
+                                        if(product.posNumber==cancelPositionNum){
+                                            product.canceled=true;
+                                        }
                                     }
                                 }
-                            }else if (listItem.C[0].VD[0].NI){                   // отменена нескольких позиций в чеке  (массив номеров операций продаж)
+                            }else if (listItem.C[0].VD[0].NI){                   // отменена позиций в чеке  (массив номеров операций продаж)
                                 for(var j in listItem.C[0].VD[0].NI){
                                     cancelPositionNum=listItem.C[0].VD[0].NI[j].$.NI;
                                     for(var posNum in cheque.productsInCheck){
@@ -396,7 +402,6 @@ function getChequesData(body, callback) {
                                 }
                             }
                         }
-
                         outData.sales.push(cheque);
                     }
                     if(listItem.isInner){
@@ -951,8 +956,7 @@ app.get("/sysadmin/exportProds", function (req, res) {
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'exportProds.html'));
 });
 
-app.get("/sysadmin/export_prods/export_prods", function (req, res) {
-    log.info("/sysadmin/export_prods/export_prods  params=", req.query);
+app.get("/sysadmin/export_prods/export_prods", function (req, res) {       log.info("/sysadmin/export_prods/export_prods  params=", req.query);
     var outData = {};
     getCRIDList(req, function (err, CRID) {
         if (err) {
@@ -991,10 +995,8 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                         res.send(outData.serverError = "Кассовый сервер не прислал данные!");
                         return;
                     }
-
                     var buf = new Buffer(body, 'binary');
                     var str = iconv_lite.decode(buf, 'win1251');
-
                         outData.serverResp = str;
                         res.send(outData);
                 });

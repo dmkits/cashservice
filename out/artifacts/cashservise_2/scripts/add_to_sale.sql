@@ -4,7 +4,7 @@
 declare @NewChID INT
 exec dbo.z_NewChID 't_sale', @NewChID OUTPUT
 
-declare @StockID INT, @CRID SMALLINT, /*@OperID INT,*/ @EmpID INT, @OurID INT
+declare @StockID INT, @CRID INT, /*@OperID INT,*/ @EmpID INT, @OurID INT
 
 select @StockID=c.StockID, @CRID=c.CRID, @OurID = r.OurID
 from r_Crs c

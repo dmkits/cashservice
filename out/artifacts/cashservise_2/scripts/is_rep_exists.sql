@@ -1,4 +1,4 @@
-declare  @CRID SMALLINT, @OurID INT
+declare  @CRID INT, @OurID INT
 
 select  @CRID=c.CRID, @OurID = r.OurID
 from r_Crs c
