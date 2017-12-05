@@ -8,7 +8,7 @@ exec dbo.z_NewChID 't_MonIntRec', @NewChID OUTPUT
 -- declare @DocID INT
 -- select @DocID =ISNULL(MAX(DocID),0)+1 from t_MonIntRec
 
-declare  @CRID SMALLINT, @OurID INT
+declare  @CRID INT, @OurID INT
 
 select  @CRID=c.CRID, @OurID = r.OurID
 from r_Crs c

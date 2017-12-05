@@ -956,8 +956,7 @@ app.get("/sysadmin/exportProds", function (req, res) {
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'exportProds.html'));
 });
 
-app.get("/sysadmin/export_prods/export_prods", function (req, res) {
-    log.info("/sysadmin/export_prods/export_prods  params=", req.query);
+app.get("/sysadmin/export_prods/export_prods", function (req, res) {       log.info("/sysadmin/export_prods/export_prods  params=", req.query);
     var outData = {};
     getCRIDList(req, function (err, CRID) {
         if (err) {
@@ -996,10 +995,8 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {
                         res.send(outData.serverError = "Кассовый сервер не прислал данные!");
                         return;
                     }
-
                     var buf = new Buffer(body, 'binary');
                     var str = iconv_lite.decode(buf, 'win1251');
-
                         outData.serverResp = str;
                         res.send(outData);
                 });

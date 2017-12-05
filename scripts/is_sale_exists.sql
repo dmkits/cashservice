@@ -1,5 +1,5 @@
 
-declare  @CRID SMALLINT, @OurID INT, @StockID INT
+declare  @CRID INT, @OurID INT, @StockID INT
 
 -- select  @CRID=c.CRID, @OurID = r.OurID
 -- from r_Crs c

@@ -105,7 +105,7 @@
                                     return;
                                 }
                                 if (result.error) {
-                                    Dialogs.doDialogMsg({title:'Failed!',content:"Cannot get configuration parameters! Reason:"+result.error});
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Cannot get configuration parameters! Reason:"+result.error.message});
                                     return;
                                 }
                                 detailContentImportSales.setToggleCashBoxID(result.items);

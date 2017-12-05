@@ -5,7 +5,7 @@
 
 	insert into @UT(XMLText)
 		select '<?xml version="1.0" encoding="windows-1251"?>'
-		union all select '<IMPORT since="20101229173500">'   --20150211140000???
+		union all select '<IMPORT since="'+@CurrentDateTime+'">'   --20150211140000??? 20101229173500
 		union all select '<LIST>'
 		union all select '<DEVICES>'
 
@@ -30,7 +30,7 @@ insert into @UT(XMLText)
 			select '</DEVICES>'
 		  union all select '<ITEMS>'
 
-	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice INT, @Qty NUMERIC, @PGrID INT
+	declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice NUMERIC(21,9), @Qty NUMERIC(21,9), @PGrID INT
 	declare RowsItems cursor fast_forward FOR
 	SELECT
 	   	CASE WHEN mp.Notes IS NULL THEN  p.ProdID
