@@ -157,7 +157,7 @@
                                     return;
                                 }
                                 if (data.error) {
-                                    sa_startup_params_appLocalConfig.innerHTML = "<div><b style='color:red'>Failed store configuration! Reason:" + data["error"] + "</b></div>";
+                                    sa_startup_params_appLocalConfig.innerHTML = "<div><b style='color:red'>Failed store configuration! Reason:" + JSON.stringify(data.error) + "</b></div>";
                                 } else {
                                     sa_startup_params_appLocalConfig.innerHTML = "<div><b>Configuration saved.</b></div>";
                                 }
