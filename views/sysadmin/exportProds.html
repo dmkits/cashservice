@@ -182,15 +182,18 @@
                                 btnExportProds.set('disabled',false);
                                 if (!success) {
                                     Dialogs.doRequestErrorDialog();
+                                    document.getElementById('export_prods_display_content').innerText=" ";
                                     return;
                                 }
                                 if (result.error) {
                                     Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+JSON.stringify(result.error)});
+                                    document.getElementById('export_prods_display_content').innerText=" ";
                                     return;
                                 }
                                 if(result.nullLineCounter){
                                     Dialogs.doDialogMsg({title:'Failed!',content:"Невозможно выполнить операцию<br>"+
                                     "Найдены товары без наименования.<br> Всего: "+result.nullLineCounter +" товара"});
+                                    document.getElementById('export_prods_display_content').innerText=" ";
                                     return;
                                 }
                                 var XMLFileContent='';
