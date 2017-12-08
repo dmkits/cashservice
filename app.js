@@ -207,16 +207,20 @@ function getDataFromUniCashServer(xml, callback) {
         callback(error, response, body);
     });
 };
-function postProductsToUniCashServer(xml, callback) {
+function postProductsToUniCashServer(xmlData, callback) {
     var cashserver_url = database.getDBConfig()['cashserver.url'];
     var cashserver_port = database.getDBConfig()['cashserver.port'];
     var xmlText = "";
     var nullLineCounter=0;
-    for (var i in xml) {
-        var xmlLine = xml[i].XMLText;
-        if(xmlLine==null) nullLineCounter+=1;
+    for (var i in xmlData) {
+        var xmlLine = xmlData[i].XMLText;
+        var noProdName = xmlData[i].noProdName;
+        if(xmlLine==null || noProdName==true) {
+            nullLineCounter=nullLineCounter+1;
+        }
         xmlText = xmlText + xmlLine;
     }
+
     if(nullLineCounter>0){
         callback({nullLineCounter:nullLineCounter});
         return;
@@ -970,7 +974,7 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {       log.i
             return;
         }
         database.exportProds(CRID,
-            function (error, recordset) {  console.log("recordsetexport Prods",recordset);
+            function (error, recordset) {
                 if (error) {
                     outData.error = error;
                     res.send(outData);
