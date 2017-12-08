@@ -1,6 +1,6 @@
 
 select cr.FacID AS CashBoxID, LTRIM(RTRIM(p.Article2)) AS ProdName, Dep=p.PGrID, p.CstProdCode AS CstProdCode, pl.PLName AS PriceName,
-       Qty= ISNULL(rem.Qty,0), p.UM AS UM,  mp.PriceMC AS ProdPrice,
+       sum(ISNULL(rem.Qty,0)), p.UM AS UM,  mp.PriceMC AS ProdPrice,
    CASE WHEN mp.Notes IS NULL THEN  p.ProdID
 WHEN LTRIM(RTRIM(mp.Notes))='' THEN p.ProdID
 WHEN CAST (mp.Notes AS INTEGER)IS NOT NULL THEN  CAST (mp.Notes AS INTEGER)
@@ -15,8 +15,9 @@ FROM  r_Crs cr
   INNER JOIN r_CRSrvs c on c.SrvID =cr.SrvID
   LEFT JOIN t_Rem rem on rem.StockID=cr.StockID AND rem.ProdID=p.ProdID AND rem.OurID=c.OurID
   WHERE ','+@CRIDLIST+',' like '%,'+CAST(cr.CRID as varchar(200))+',%'
-      AND  p.Article2 IS NOT NULL AND LTRIM(RTRIM(p.Article2))<>''
-GROUP BY cr.FacID,p.Article2,p.PGrID,p.CstProdCode,pl.PLName,rem.Qty, p.UM, mp.PriceMC,p.ProdID,mp.Notes
+      /*AND  p.Article2 IS NOT NULL AND LTRIM(RTRIM(p.Article2))<>''*/
+	AND mp.PriceMC>0
+GROUP BY cr.FacID,p.Article2,p.PGrID,p.CstProdCode,pl.PLName,p.UM, mp.PriceMC,p.ProdID,mp.Notes
 
 ORDER BY
 CASE

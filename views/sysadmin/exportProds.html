@@ -39,7 +39,7 @@
     <div id="export_prods_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
         <div id="export_prods_display_content_header" style="height:23px; color: dimgray;font-weight: bold; text-align: center; /*padding-bottom: 5px;*/ padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
         <div id="export_prods_display_content" style="border:none;/*width:100%*/;height: calc(100% - 45px); overflow-y: scroll"></div>
-    
+
     </div>
     <div id="export_prods_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
         <div id="export_prods_display_result">
@@ -56,7 +56,7 @@
                 moment.locale("uk");
 
 
- console.log("start");
+                console.log("start");
 
                 var borderContainer = APP.instanceForID("export_prods_PageContent", BorderContainer, {});
                 var topContentSQL = APP.instanceForID("export_prods_TopContent", ContentPane, {region: "top"});
@@ -71,7 +71,7 @@
                 console.log("after var");
 
                 //var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
-               // var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
+                // var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
                 var export_prods_cash_boxes_buttons=document.getElementById('export_prods_cash_boxes_buttons');
                 var btnExportProds = APP.instanceForID("export_prods_btn", Button, {});
                 var btnSendexportProds = APP.instanceForID("export_prods_sendBtn", Button, {});
@@ -150,7 +150,7 @@
 //                        });
                     }
                     cashBoxesList[0].set('checked', true);
-                  //  cashBoxesList.push(allCashBoxesBtn);
+                    //  cashBoxesList.push(allCashBoxesBtn);
                     export_prods_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
                 };
 
@@ -165,7 +165,7 @@
 //                    var edateValue=eDateTextBox.get("value");
 //                    edate= moment(edateValue).format('YYYYMMDD')+"2359";
 
-                  //  var cashBoxesList=leftContentexportProds.getChildren();
+                    //  var cashBoxesList=leftContentexportProds.getChildren();
 
                     var cashbox_params;
                     for (var i in cashBoxesList) {
@@ -176,7 +176,7 @@
                     }                                                                                           console.log("btnExportProds.onClick start request");
                     Request.getJSONData({url: "/sysadmin/export_prods/export_prods",
                                 condition: /*"bdate=" + bdate+ "&edate=" + edate + "&" + */cashbox_params,
-                               // timeout:"5000",
+                                // timeout:"5000",
                                 consoleLog: true},
                             function (success,result) {        console.log("btnExportProds.onClick Request.getJSONData result=",result);
                                 btnExportProds.set('disabled',false);
@@ -186,6 +186,11 @@
                                 }
                                 if (result.error) {
                                     Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+JSON.stringify(result.error)});
+                                    return;
+                                }
+                                if(result.nullLineCounter){
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Невозможно выполнить операцию<br>"+
+                                    "Найдены товары без наименования.<br> Всего: "+result.nullLineCounter +" товара"});
                                     return;
                                 }
                                 var XMLFileContent='';
