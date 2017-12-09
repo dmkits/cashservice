@@ -28,14 +28,19 @@ insert into @UT(XMLText)
 	select '</DEVICES>'
 	union all select '<ITEMS>'
 
-declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice NUMERIC(21,9), @Qty NUMERIC(21,9), @PGrID INT, @noProdName bit
+declare @ProdID INT, @ProdName varchar(250),@BarCode varchar(250), @ProdPrice NUMERIC(21,9), @Qty NUMERIC(21,9),@divValue bit, @PGrID INT, @noProdName bit
 declare RowsItems cursor fast_forward FOR
 SELECT
    	CASE WHEN mp.Notes IS NULL THEN  p.ProdID
 		WHEN LTRIM(RTRIM(mp.Notes))='' THEN p.ProdID
 		WHEN CAST (mp.Notes AS INTEGER)IS NOT NULL THEN  CAST (mp.Notes AS INTEGER)
 		ELSE  p.ProdID END
-	,mp.PriceMC,  SUM(ISNULL(rem.Qty,0)), mq.BarCode, p.Article2, p.PGrID
+	,mp.PriceMC,  SUM(ISNULL(rem.Qty,0)),
+	 divValue=
+	 CASE WHEN LOWER(LTRIM(p.UM)) like 'л%' THEN 1
+	     WHEN LOWER(LTRIM(p.UM)) like 'кг%' THEN 1
+	     ELSE 0 END
+	 ,mq.BarCode, p.Article2, p.PGrID
 	,noProdName= CASE When p.Article2 IS NULL OR LTRIM(p.Article2)='' Then 1 Else 0 END
 FROM r_CRs cr
 INNER JOIN r_Stocks st on st.StockID=cr.StockID
@@ -51,7 +56,7 @@ GROUP BY
 		WHEN LTRIM(RTRIM(mp.Notes))='' THEN p.ProdID
 		WHEN CAST (mp.Notes AS INTEGER)IS NOT NULL THEN  CAST (mp.Notes AS INTEGER)
 		ELSE  p.ProdID END
-	,mp.PriceMC,  mq.BarCode, p.Article2, p.PGrID
+	,mp.PriceMC,  mq.BarCode, p.Article2, p.PGrID, p.UM
 ORDER BY
 	CASE
 		WHEN mp.Notes IS NULL THEN  p.ProdID
@@ -60,14 +65,14 @@ ORDER BY
 	ELSE  p.ProdID END asc;
 
 open RowsItems
-fetch next from RowsItems INTO @ProdID,@ProdPrice,@Qty,@BarCode,@ProdName,@PGrID, @noProdName
+fetch next from RowsItems INTO @ProdID,@ProdPrice,@Qty,@divValue,@BarCode,@ProdName,@PGrID, @noProdName
 while @@fetch_status = 0 begin
 	insert into @UT(XMLText, noProdName)
 	select  --'<ITEM  price="'+ @ProdPrice+'>'+ @ProdName+'</ITEM>'
-		'<ITEM code="'+CAST(@ProdID as varchar)+'" price="'+CAST(@ProdPrice*100 as varchar)+'" quantity="'
-		+CAST(@Qty as varchar)+'" tax="1" barcode="'+@BarCode+'" department="'+CAST(@PGrID as varchar)+'" divisibility="1" ctrl_qnt="0">'
+		'<ITEM code="'+CAST(@ProdID as varchar)+'" price="'+CAST(CAST(@ProdPrice*100 as int)as varchar)+'" quantity="'
+		+CAST(CAST(@Qty*1000 as int) as varchar)+'" tax="1" barcode="'+@BarCode+'" department="'+CAST(@PGrID as varchar)+'" divisibility="'+CAST(@divValue as varchar)+'" ctrl_qnt="0">'
 		+ @ProdName+'</ITEM>', @noProdName
-	fetch next from RowsItems INTO @ProdID, @ProdPrice,@Qty, @BarCode, @ProdName,@PGrID, @noProdName
+	fetch next from RowsItems INTO @ProdID, @ProdPrice,@Qty,@divValue, @BarCode, @ProdName,@PGrID, @noProdName
 end
 close RowsItems
 deallocate RowsItems
