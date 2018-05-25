@@ -104,7 +104,6 @@ function tryDBConnect(postaction) {
     });
 }
 
-
 app.get("/sysadmin", function (req, res) {
     log.info('URL: /sysadmin');
     res.sendFile(path.join(__dirname, '/views', 'sysadmin.html'));
@@ -339,23 +338,13 @@ function getChequesData(body, callback) {
                             var taxInfo = listItem.C[0].E[0].TX[0].$;
                             if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
                             if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
-                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //не исп
+                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //сумма дополнительного сбора
                             if (taxInfo.TX) cheque.taxMark = taxInfo.TX;     //не исп
                             if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;  //не исп
                             if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;   //не исп
                             if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
                         }
 
-                        if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
-                            var taxInfo = listItem.C[0].E[0].TX[0].$;
-                            if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
-                            if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
-                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //не исп
-                            if (taxInfo.TX) cheque.taxMark = taxInfo.TX;     //не исп
-                            if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;  //не исп
-                            if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;   //не исп
-                            if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
-                        }
                         if (listItem.C[0].E[0].$ && listItem.C[0].E[0].$.VD) {   //если чек аннулирован
                             if(listItem.C[0].E[0].$.VD !=0){
                                 cheque.canceled=true;
@@ -382,6 +371,7 @@ function getChequesData(body, callback) {
                             product.price = goodsList[pos].$.PRC;
                             product.code = goodsList[pos].$.C;
                             product.taxMark = goodsList[pos].$.TX;
+                            product.posSum = goodsList[pos].$.SM;
                             cheque.productsInCheck.push(product);
                         }
                         if(listItem.C[0].VD){
@@ -599,7 +589,6 @@ function fillCheques(chequesData, ind, finishedcallback) {
                 });
             });
         });
-
     });
 };
 function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCallback) {

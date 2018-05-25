@@ -28,11 +28,11 @@ INSERT INTO t_SaleD
                   PurTax,	PurPriceCC_wt,	PLID,	Discount,	EmpID,
                   CreateTime,	ModifyTime,	TaxTypeID,	RealPrice,	RealSum)
 VALUES
-                ( @ChID,	@SrcPosID,	@ProdID,	0/*@PPID*/,	@UM,
+                ( @ChID,	@SrcPosID,	@ProdID,	@PPID,	@UM,
                   @Qty,	@PriceCC_nt,	@SumCC_nt,	@Tax,	@TaxSum,
-                  @PriceCC_wt, @SumCC_wt,	@BarCode,	1,	@PurPriceCC_nt,
-                  @PurTax,	@PurPriceCC_wt,	0,	0.0,	@EmpID,
-                  @CreateTime,	@ModifyTime,	0/*TaxTypeID*/,	@RealPrice,	@RealSum)
+                  @PriceCC_wt, @SumCC_wt,	@BarCode,	@SecID,	@PurPriceCC_nt,
+                  @PurTax,	@PurPriceCC_wt,	@PLID,	@Discount,	@EmpID,
+                  @CreateTime,	@ModifyTime,	@TaxTypeID,	@RealPrice,	@RealSum)
 
 
 --SELECT ChID,SrcPosID,ProdID

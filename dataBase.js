@@ -170,11 +170,9 @@ module.exports.fillToSalePays = function (CHID, cheque, callback) {
 };
 
 function updateSaleStatus (CHID, callback){
-
     var reqSql = new sql.Request(conn);
     var query_str = fs.readFileSync('./scripts/update_sale_status.sql', 'utf8');
     reqSql.input('CHID', sql.NVarChar, CHID);
-
     reqSql.query(query_str,
         function (err, recordset) {
             if (err) {
@@ -219,7 +217,6 @@ function addToSale(data, callback) {
         callback(e);
         return;
     }
-
     var DocDate = date.substring(0, 10) + " 00:00:00";
     reqSql.input('DocID', sql.NVarChar, data.checkNumber);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
@@ -228,6 +225,31 @@ function addToSale(data, callback) {
     reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum / 100);
     reqSql.input('FacID', sql.NVarChar, FacIDNum);
     reqSql.input('DocCreateTime', sql.NVarChar, date);
+    //----------------------------------------------------------------
+    reqSql.input('KursMC', sql.NVarChar, 1.0);
+    reqSql.input('CompID', sql.NVarChar, 1);
+    reqSql.input('CodeID1', sql.NVarChar, 0);
+    reqSql.input('CodeID2', sql.NVarChar, 0);
+    reqSql.input('CodeID3', sql.NVarChar, 0);
+    reqSql.input('CodeID4', sql.NVarChar, 0);
+    reqSql.input('CodeID5', sql.NVarChar, 0);
+    reqSql.input('Discount', sql.NVarChar, 1.0);
+    reqSql.input('Notes', sql.NVarChar, null);
+    reqSql.input('CreditID', sql.NVarChar, null);
+    //reqSql.input('DCardID', sql.NVarChar, "'<Нет дисконтной карты>'");  -- data in script
+    reqSql.input('CurrID', sql.NVarChar, 980);
+    reqSql.input('TSumCC_nt', sql.NVarChar, 0);
+    reqSql.input('TTaxSum', sql.NVarChar, 0);
+    reqSql.input('TSumCC_wt', sql.NVarChar, 0);
+    reqSql.input('StateCode', sql.NVarChar, 0);
+    reqSql.input('DeskCode', sql.NVarChar, 0);
+    reqSql.input('Visitors', sql.NVarChar, 0);
+    reqSql.input('TPurSumCC_nt', sql.NVarChar, 0);
+    reqSql.input('TPurTaxSum', sql.NVarChar, 0);
+    reqSql.input('TPurSumCC_wt', sql.NVarChar, 0);
+    reqSql.input('TRealSum', sql.NVarChar, 0);
+    reqSql.input('TLevySum', sql.NVarChar, 0);
+
     if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-' + data.change / 100);
     else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
 
@@ -258,7 +280,7 @@ function addToSale(data, callback) {
         });
 }
 
-module.exports.fillChequeTitle = function(chequeData, callback) {
+module.exports.fillChequeTitle = function(chequeData, callback) {                       console.log('database fillChequeTitle=', chequeData);
     //  var chequeNum = chequeData.checkNumber;
     isSaleExists(chequeData, function (err, res) {
         if (err) {
@@ -303,45 +325,74 @@ function isPosExists(tablename,ChID, posNum, callback){
 }
 
 function addToSaleD(ChID, chequeData, chequeProdData, callback) {
+    //var addByProdID=true;
     try {
         var date = formatDate(chequeData.checkDate);
         var Qty = chequeProdData.qty/1000;
         var FacID = chequeData.cashBoxFabricNum;
         var FacIDNum = FacID.replace("ПБ", "");
-        // var PriceCC_nt = chequeProdData.price / 1.2/100;
-        //  var SumCC_nt = PriceCC_nt * Qty;
-        //  var Tax = chequeProdData.price/100 - PriceCC_nt;
-        //  var TaxSum = Tax * Qty;
+        var ProdTaxTypeID =chequeProdData.taxMark==1 ? 1 : 0;
+        var posSum=chequeProdData.posSum/100;
 
-        var PriceCC_nt = 0;
-        var SumCC_nt = 0;
-        var Tax = 0;
-        var TaxSum = 0;
+        var excisePosSum;
+        var TaxSum;
+
+      //  var isExciseProd=chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1;
+        if(chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1){
+            excisePosSum = parseFloat((posSum*5/105).toFixed(2));                       //расчет акциза
+            TaxSum= parseFloat((posSum*100/630).toFixed(2));                               //расчет НДС от суммы с акцизо
+        }else{
+            TaxSum=posSum/6;
+            excisePosSum=0.00;
+        }
+
+        var Tax = TaxSum/Qty;
+
+        var SumCC_wt = posSum-excisePosSum;
+        var PriceCC_wt = SumCC_wt/Qty;
+
+        var SumCC_nt=posSum-excisePosSum-TaxSum;
+        var PriceCC_nt=SumCC_nt/Qty;
 
         var reqSql = new sql.Request(conn);
         reqSql.input('ChID', sql.NVarChar, ChID);
         reqSql.input('SrcPosID', sql.NVarChar, chequeProdData.posNumber);
         reqSql.input('Article2', sql.NVarChar, chequeProdData.name);
+        //reqSql.input('ProdID', sql.NVarChar, chequeProdData.code);
         reqSql.input('Qty', sql.NVarChar, Qty);
         reqSql.input('PriceCC_nt', sql.NVarChar, PriceCC_nt);
         reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
+
         reqSql.input('Tax', sql.NVarChar, Tax);
         reqSql.input('TaxSum', sql.NVarChar, TaxSum);
-        reqSql.input('PriceCC_wt', sql.NVarChar, chequeProdData.price/100);
-        reqSql.input('SumCC_wt', sql.NVarChar, chequeProdData.price/100 * Qty);
+
+        reqSql.input('PriceCC_wt', sql.NVarChar, PriceCC_wt);
+        reqSql.input('SumCC_wt', sql.NVarChar, SumCC_wt);
+
         reqSql.input('PurPriceCC_nt', sql.NVarChar, PriceCC_nt);
         reqSql.input('PurTax', sql.NVarChar, Tax);
-        reqSql.input('PurPriceCC_wt', sql.NVarChar, chequeProdData.price/100);
+        reqSql.input('PurPriceCC_wt', sql.NVarChar, PriceCC_wt);
+
         reqSql.input('CreateTime', sql.NVarChar, date);
         reqSql.input('ModifyTime', sql.NVarChar, date);
-        reqSql.input('RealPrice', sql.NVarChar, chequeProdData.price/100);
-        reqSql.input('RealSum', sql.NVarChar, chequeProdData.price/100 * Qty);
+
+        reqSql.input('RealPrice', sql.NVarChar, posSum/Qty);
+        reqSql.input('RealSum', sql.NVarChar, posSum);
         reqSql.input('FacID', sql.NVarChar,FacIDNum);
         reqSql.input('CROperID', sql.NVarChar, chequeData.operatorID);
+
+        reqSql.input('PPID', sql.NVarChar, 0);
+        reqSql.input('SecID', sql.NVarChar, 1);
+        reqSql.input('PLID', 0);
+        reqSql.input('Discount', 0.0);
+        reqSql.input('TaxTypeID', ProdTaxTypeID);
+
     }catch(e){
         callback(e);
         return;
     }
+
+    //var prodExistSrt=addByProdID ? 'select ProdID from r_Prods where ProdID=@ProdID':'select ProdID from r_Prods where Article2=@Article2';
     reqSql.query('select ProdID from r_Prods where Article2=@Article2',
         function (err, recordset) {
             var outData={};
@@ -350,11 +401,29 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                 return;
             }
             if(recordset[0]) {
+            //    var queryFile=addByProdID ? './scripts/add_to_saleD_byProdID.sql' : './scripts/add_to_saleD.sql';
+
                 var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
                 reqSql.query(queryString,
                     function (err) {
                         if (err) {
                             callback(err, null);
+                            return;
+                        }
+                        if(chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1){
+                            var LevySum=excisePosSum;                        //TODO округление
+                            reqSql.input('LevySum', sql.NVarChar, LevySum);
+                            reqSql.input('LevyID', sql.NVarChar, 1);
+                            reqSql.query('INSERT INTO t_SaleDLV (ChID, SrcPosID, LevyID, LevySum) ' +
+                                'VALUES (@ChID,	@SrcPosID, @LevyID, @LevySum)', function(err){
+                                if (err) {
+                                    callback(err, null);
+                                    return;
+                                }
+                                outData.ChID = ChID;
+                                outData.addedSaleD="Позиция записана в БД";
+                                callback(null, outData);
+                            });
                             return;
                         }
                         outData.ChID = ChID;

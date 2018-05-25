@@ -104,7 +104,6 @@ function tryDBConnect(postaction) {
     });
 }
 
-
 app.get("/sysadmin", function (req, res) {
     log.info('URL: /sysadmin');
     res.sendFile(path.join(__dirname, '/views', 'sysadmin.html'));
@@ -204,19 +203,26 @@ function getDataFromUniCashServer(xml, callback) {
         encoding: 'binary'
         ,timeout:5000
     }, function (error, response, body) {
-
-
-
         callback(error, response, body);
     });
 };
-function postProductsToUniCashServer(xml, callback) {
+function postProductsToUniCashServer(xmlData, callback) {
     var cashserver_url = database.getDBConfig()['cashserver.url'];
     var cashserver_port = database.getDBConfig()['cashserver.port'];
     var xmlText = "";
-    for (var i in xml) {
-        var xmlLine = xml[i].XMLText;
+    var nullLineCounter=0;
+    for (var i in xmlData) {
+        var xmlLine = xmlData[i].XMLText;
+        var noProdName = xmlData[i].noProdName;
+        if(xmlLine==null || noProdName==true) {
+            nullLineCounter=nullLineCounter+1;
+        }
         xmlText = xmlText + xmlLine;
+    }
+
+    if(nullLineCounter>0){
+        callback({nullLineCounter:nullLineCounter});
+        return;
     }
     var byteLength =Buffer.byteLength(xmlText, 'windows-1251');
     request.post({
@@ -226,7 +232,7 @@ function postProductsToUniCashServer(xml, callback) {
         encoding: 'binary'
         ,timeout:5000
     }, function (error, response, body) {
-       callback(error, response, body);
+        callback(error, response, body);
     });
 };
 function getChequesData(body, callback) {
@@ -332,27 +338,17 @@ function getChequesData(body, callback) {
                             var taxInfo = listItem.C[0].E[0].TX[0].$;
                             if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
                             if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
-                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //не исп
+                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //сумма дополнительного сбора
                             if (taxInfo.TX) cheque.taxMark = taxInfo.TX;     //не исп
                             if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;  //не исп
                             if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;   //не исп
                             if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
                         }
 
-                        if (listItem.C[0].E[0].TX) {                                       //если налогов несколько может не использоваться
-                            var taxInfo = listItem.C[0].E[0].TX[0].$;
-                            if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
-                            if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
-                            if (taxInfo.DTSM) cheque.AddTaxSum = taxInfo.DTSM;  //не исп
-                            if (taxInfo.TX) cheque.taxMark = taxInfo.TX;     //не исп
-                            if (taxInfo.TXPR) cheque.taxRate = taxInfo.TXPR;  //не исп
-                            if (taxInfo.TXSM) cheque.taxSum = taxInfo.TXSM;   //не исп
-                            if (taxInfo.TXTY) cheque.isTaxIncluded = taxInfo.TXTY;    //не исп    //"0"-включ в стоимость, "1" - не включ.
-                        }
                         if (listItem.C[0].E[0].$ && listItem.C[0].E[0].$.VD) {   //если чек аннулирован
-                         if(listItem.C[0].E[0].$.VD !=0){
-                             cheque.canceled=true;
-                         }
+                            if(listItem.C[0].E[0].$.VD !=0){
+                                cheque.canceled=true;
+                            }
                         }
 
                         if(listItem.C[0].M) {
@@ -375,6 +371,7 @@ function getChequesData(body, callback) {
                             product.price = goodsList[pos].$.PRC;
                             product.code = goodsList[pos].$.C;
                             product.taxMark = goodsList[pos].$.TX;
+                            product.posSum = goodsList[pos].$.SM;
                             cheque.productsInCheck.push(product);
                         }
                         if(listItem.C[0].VD){
@@ -405,7 +402,7 @@ function getChequesData(body, callback) {
                         outData.sales.push(cheque);
                     }
                     if(listItem.isInner){
-                    var inner={};
+                        var inner={};
 
                         var xmlInner={};
                         xmlInner.DAT={};
@@ -457,27 +454,29 @@ function getChequesData(body, callback) {
 
                         report.reportNum=listItem.Z[0].$.NO;
 
-                   for(var j in listItem.Z[0].M) {
-                       if (listItem.Z[0].M[j].$.T=="0") {
-                           //M[...]  итоговая информация по оборотам по типам оплаты
-                           report.totalCashPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
-                           report.totalCashPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI/100:0; //Сумма полученных денег в копейках  //может отсутствовать
-                           report.totalCashPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO/100:0;
+                        for(var j in listItem.Z[0].M) {
+                            if (listItem.Z[0].M[j].$.T=="0") {
+                                //M[...]  итоговая информация по оборотам по типам оплаты
+                                report.totalCashPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
+                                report.totalCashPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI/100:0; //Сумма полученных денег в копейках  //может отсутствовать
+                                report.totalCashPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO/100:0;
 
-                         //  report.totalCashIncome = listItem.Z[0].M[0].$.T;  //Тип оплаты: 0 – наличными
-                         // SMO -Сума выданных денег в копейках  //может отсутствовать
-                       }else{
-                           report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
-                           report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI:0.00; //Сумма полученных денег в копейках  //может отсутствовать
-                           report.totalCardPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
-                       }
-                   }
+                                //  report.totalCashIncome = listItem.Z[0].M[0].$.T;  //Тип оплаты: 0 – наличными
+                                // SMO -Сума выданных денег в копейках  //может отсутствовать
+                            }else{
+                                report.totalCardPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
+                                report.totalCardPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI:0.00; //Сумма полученных денег в копейках  //может отсутствовать
+                                report.totalCardPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
+                            }
+                        }
                         //IO[...]   итоговая информация по внесению денег
                         if(listItem.Z[0].IO) {
-                            if (listItem.Z[0].IO && listItem.Z[0].IO[0].$.NM) report.cashPaymentTypeName = listItem.Z[0].IO[0].$.NM;    //Название формы оплаты (может не указыватся)
-                            report.totalMoneyRec = listItem.Z[0].IO[0].$.SMI ? listItem.Z[0].IO[0].$.SMI : 0;    //Сумма полученных денег в копейках
-                            report.totalMoneyExp = listItem.Z[0].IO[0].$.SMO ? listItem.Z[0].IO[0].$.SMO : 0; //Сумма выданных денег в копейках
-                            // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
+                            if (listItem.Z[0].IO[0] && listItem.Z[0].IO[0].$ && listItem.Z[0].IO[0].$) {
+                                report.cashPaymentTypeName = listItem.Z[0].IO[0].$.NM?listItem.Z[0].IO[0].$.NM :"";    //Название формы оплаты (может не указыватся)
+                                report.totalMoneyRec = listItem.Z[0].IO[0].$.SMI ? listItem.Z[0].IO[0].$.SMI : 0;    //Сумма полученных денег в копейках
+                                report.totalMoneyExp = listItem.Z[0].IO[0].$.SMO ? listItem.Z[0].IO[0].$.SMO : 0; //Сумма выданных денег в копейках
+                                // listItem.Z[0].IO[0].$.T;  // Тип оплаты: 0 – наличными
+                            }
                         }
                         //NC[]  итоговая информация по количеству чеков
                         report.totalSaleCheques =  listItem.Z[0].NC[0].$.NI?listItem.Z[0].NC[0].$.NI:0;
@@ -493,12 +492,12 @@ function getChequesData(body, callback) {
                             if(taxItemReport.$.TX=="0"){
                                 report.TaxATotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                                 report.TaxATotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
-                               // report.TaxATaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                // report.TaxATaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                             }
                             if(taxItemReport.$.TX=="1"){
                                 report.TaxBTotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                                 report.TaxBTotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
-                               // report.TaxBTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                // report.TaxBTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                             }
                             if(taxItemReport.$.TX=="2"){
                                 report.TaxCTotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
@@ -508,7 +507,7 @@ function getChequesData(body, callback) {
                             if(taxItemReport.$.TX=="3"){
                                 report.TaxDTotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                                 report.TaxDTotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
-                               // report.TaxDTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                                // report.TaxDTaxRate = taxItemReport.$.TXPR?taxItemReport.$.TXPR/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                             }
                             if(taxItemReport.$.TX=="4"){
                                 report.TaxETotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
@@ -517,20 +516,20 @@ function getChequesData(body, callback) {
                             }
                         }
                         //TXS[...]  отчетную информацию по конкретному налогу.
-                       // listItem.Z[0].TXS[0].$[0].DTI;   //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
+                        // listItem.Z[0].TXS[0].$[0].DTI;   //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                         //listItem.Z[0].TXS[0].$[0].DTNM; //Наименование дополнительного сбора
-                       // listItem.Z[0].TXS[0].$[0].DTPR; //Ставка налогового сбора в процентах в копейках
+                        // listItem.Z[0].TXS[0].$[0].DTPR; //Ставка налогового сбора в процентах в копейках
                         //listItem.Z[0].TXS[0].$[0].SMI;  //Итог операций по полученным деньгам в копейках        //может отсутствовать
-                       // listItem.Z[0].TXS[0].$[0].TS;   //Дата установки налога ----
+                        // listItem.Z[0].TXS[0].$[0].TS;   //Дата установки налога ----
                         //listItem.Z[0].TXS[0].$[0].TX;    //Обозначение налога
-                       // listItem.Z[0].TXS[0].$[0].TXAL; //Алгоритм вычисления налога ---
-                       // listItem.Z[0].TXS[0].$[0].TXI; //Налог по полученным деньгам в копейках  //может отсутствовать
-                       // listItem.Z[0].TXS[0].$[0].TXPR; //Процент налога
-                      //  listItem.Z[0].TXS[0].$[0].TXTY; //Признак налога, не включенного в стоимость:---
+                        // listItem.Z[0].TXS[0].$[0].TXAL; //Алгоритм вычисления налога ---
+                        // listItem.Z[0].TXS[0].$[0].TXI; //Налог по полученным деньгам в копейках  //может отсутствовать
+                        // listItem.Z[0].TXS[0].$[0].TXPR; //Процент налога
+                        //  listItem.Z[0].TXS[0].$[0].TXTY; //Признак налога, не включенного в стоимость:---
 
-                       // TXO - Налог по выданным деньгам в копейках
-                       // DTO - Дополнительный сбор по выданным деньгам  d копейках
-                       // SMO -Итог операций по выданным деньгам в копейках
+                        // TXO - Налог по выданным деньгам в копейках
+                        // DTO - Дополнительный сбор по выданным деньгам  d копейках
+                        // SMO -Итог операций по выданным деньгам в копейках
                         outData.reports.push(report);
                     }
                 }
@@ -615,7 +614,7 @@ function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCal
         if(res.addedSaleC)msg="* Аннулировання позиция "+chequeProdData.name+" добавлена в БД";
         if(res.addedSaleD)  msg=" * Добавлена позиция №" + chequeProdData.posNumber + " " + chequeProdData.name + " в чек №" + chequeData.checkNumber;
         emitAndLogEvent(msg,chequeProdData.xmlProduct,chequeData.cashBoxFabricNum, function(){
-                fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
+            fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
         });
     });
 };
@@ -641,101 +640,101 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
 
     emitAndLogEvent('Поиск кассовых аппаратов',null,null, function(){
 
-             getCRIDList(clientReq, function (err, CRID) {
-                  if (err) {
-                      log.error(err);
-                      emitAndLogEvent(err,null,null,function(){
-                          clientRes.send({error: err});
-                      });
-                      return;
-                  }
-                 //getCashBoxesList(clientReq); //test
-                 //return;
-                 emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
+        getCRIDList(clientReq, function (err, CRID) {
+            if (err) {
+                log.error(err);
+                emitAndLogEvent(err,null,null,function(){
+                    clientRes.send({error: err});
+                });
+                return;
+            }
+            //getCashBoxesList(clientReq); //test
+            //return;
+            emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
                 database.getXMLForUniCashServerRequest(bdate, edate, CRID, function (error, xml) {
-                if (error){
-                    emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null,null, function() {
-                        clientRes.send({error: error});
-                    });
-                    return;
-                }
-                // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
-                emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
-                    getDataFromUniCashServer(xml, function (error, response, body) {
-                        if(error){
-                            log.error(error);
-                            var errMsg;
-                            try{
-                                errMsg= JSON.parse(error)
-                            }catch(e){
-                                errMsg=error;
-                            }
-                            emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,null,function(){
-                                clientRes.send({error:error});
-                            });
-                            return;
-                        }
-                        if(!response){
-                            log.error("Кассовый сервер не отвечает!");
-                            emitAndLogEvent("Кассовый сервер не отвечает!",null,null, function(){
-                                clientRes.send({error: "Кассовый сервер не отвечает!"});
-                            });
-                            return;
-                        }
-                        if(!body){
-                            log.error("Кассовый сервер не прислал данные!");
-                            emitAndLogEvent("Кассовый сервер не прислал данные!",null,null,function(){
-                                clientRes.send({error: "Кассовый сервер не прислал данные!"});
-                            });
-                            return;
-                        }
-                        emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
-                            // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
-                            //  body="kjhbkljh"; //test
-                            getChequesData(body, function (err, result) {
-                                if (err) {
-                                    emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null,null, function(){
-                                        clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
-                                    });
-                                    return;
+                    if (error){
+                        emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null,null, function() {
+                            clientRes.send({error: error});
+                        });
+                        return;
+                    }
+                    // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
+                    emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
+                        getDataFromUniCashServer(xml, function (error, response, body) {
+                            if(error){
+                                log.error(error);
+                                var errMsg;
+                                try{
+                                    errMsg= JSON.parse(error)
+                                }catch(e){
+                                    errMsg=error;
                                 }
-                                emitAndLogEvent('Данные кассового сервера обработаны успешно', null,null, function(){
-                                    var chequesData = result.sales;
-                                    fillCheques(chequesData, 0, /*finishedcallback*/function(err){
-                                        if(err){
+                                emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,null,function(){
+                                    clientRes.send({error:error});
+                                });
+                                return;
+                            }
+                            if(!response){
+                                log.error("Кассовый сервер не отвечает!");
+                                emitAndLogEvent("Кассовый сервер не отвечает!",null,null, function(){
+                                    clientRes.send({error: "Кассовый сервер не отвечает!"});
+                                });
+                                return;
+                            }
+                            if(!body){
+                                log.error("Кассовый сервер не прислал данные!");
+                                emitAndLogEvent("Кассовый сервер не прислал данные!",null,null,function(){
+                                    clientRes.send({error: "Кассовый сервер не прислал данные!"});
+                                });
+                                return;
+                            }
+                            emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
+                                // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
+                                //  body="kjhbkljh"; //test
+                                getChequesData(body, function (err, result) {
+                                    if (err) {
+                                        emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null,null, function(){
+                                            clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
+                                        });
+                                        return;
+                                    }
+                                    emitAndLogEvent('Данные кассового сервера обработаны успешно', null,null, function(){
+                                        var chequesData = result.sales;
+                                        fillCheques(chequesData, 0, /*finishedcallback*/function(err){
+                                            if(err){
                                                 clientRes.send({error:err});
-                                            return;
-                                        }
-                                        var msg = 'Все чеки успешно обработаны';
-                                        if(chequesData.length<1){
-                                            msg = "";
-                                        }
-                                        emitAndLogEvent( msg,null, chequesData.cashBoxFabricNum, function(){
-                                            var innersDocData = result.inners;
-                                            insertInnerDoc(innersDocData,0,function(err,res){
-                                                if(err){
-                                                    clientRes.send({"error": err});
-                                                    return;
-                                                }
-                                                var msg='Все вносы/выносы успешно обработаны';
-                                                if(innersDocData.length<1){
-                                                    msg = "";
-                                                }
-                                                emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum,function(){
-                                                    addToZrep(result.reports, 0,function(err,res) {
-                                                        if (err) {
-                                                            clientRes.send({"error": err});
-                                                            return;
-                                                        }
-                                                        var msg='Все Z-Отчеты успешно обработаны';
-                                                        if(result.reports.length<1){
-                                                            msg = "";
-                                                        }
-                                                        emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum, function () {
-                                                            emitAndLogEvent('Все полученные данные успешно обработаны', null,chequesData.cashBoxFabricNum, function () {
-                                                                 clientRes.send({"done": "ok"});
+                                                return;
+                                            }
+                                            var msg = 'Все чеки успешно обработаны';
+                                            if(chequesData.length<1){
+                                                msg = "";
+                                            }
+                                            emitAndLogEvent( msg,null, chequesData.cashBoxFabricNum, function(){
+                                                var innersDocData = result.inners;
+                                                insertInnerDoc(innersDocData,0,function(err,res){
+                                                    if(err){
+                                                        clientRes.send({"error": err});
+                                                        return;
+                                                    }
+                                                    var msg='Все вносы/выносы успешно обработаны';
+                                                    if(innersDocData.length<1){
+                                                        msg = "";
+                                                    }
+                                                    emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum,function(){
+                                                        addToZrep(result.reports, 0,function(err,res) {
+                                                            if (err) {
+                                                                clientRes.send({"error": err});
+                                                                return;
+                                                            }
+                                                            var msg='Все Z-Отчеты успешно обработаны';
+                                                            if(result.reports.length<1){
+                                                                msg = "";
+                                                            }
+                                                            emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum, function () {
+                                                                emitAndLogEvent('Все полученные данные успешно обработаны', null,chequesData.cashBoxFabricNum, function () {
+                                                                    clientRes.send({"done": "ok"});
+                                                                });
                                                             });
-                                                        });
                                                         });
                                                     });
                                                 });
@@ -850,16 +849,16 @@ app.get("/sysadmin/cashRegLogs/get_logs_for_crid/*", function (req, res) {
     log.info("/sysadmin/cashRegLogs/get_logs_for_crid/* params=",req.params," ", JSON.stringify(req.query));
     //var filename = req.params[0];
     var outData={};
-  //  var fileContentString=fs.readFileSync('./reportsConfig/'+filename+'.json', 'utf8');
+    //  var fileContentString=fs.readFileSync('./reportsConfig/'+filename+'.json', 'utf8');
     outData.columns= [ { "data":"LogID", "name":"LogID", "width":60, "type":"numeric" }
-                      ,{ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric" }
-                      ,{ "data":"DocDate", "name":"DocDate", "width":75, "type":"text"}//, "dateFormat":"DD.MM.YYYY"
-                      ,{ "data":"DocTime", "name":"DocTime", "width":115, "type":"text"}//, "dateFormat":"DD.MM.YYYY HH:mm:ss"
-                      //,{ "data":"CashRegAction", "name":"CashRegAction", "width":100, "type":"text"}
-                      //,{ "data":"Status", "name":"Status", "width":50, "type":"text"}
-                      ,{ "data":"Msg", "name":"Msg", "width":480, "type":"text"}
-                      ,{ "data":"Notes", "name":"Notes", "width":285, "type":"text"}
-                      ]; //JSON.parse(getJSONWithoutComments(fileContentString));
+        ,{ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric" }
+        ,{ "data":"DocDate", "name":"DocDate", "width":75, "type":"text"}//, "dateFormat":"DD.MM.YYYY"
+        ,{ "data":"DocTime", "name":"DocTime", "width":115, "type":"text"}//, "dateFormat":"DD.MM.YYYY HH:mm:ss"
+        //,{ "data":"CashRegAction", "name":"CashRegAction", "width":100, "type":"text"}
+        //,{ "data":"Status", "name":"Status", "width":50, "type":"text"}
+        ,{ "data":"Msg", "name":"Msg", "width":480, "type":"text"}
+        ,{ "data":"Notes", "name":"Notes", "width":285, "type":"text"}
+    ]; //JSON.parse(getJSONWithoutComments(fileContentString));
     var bdate = req.query.BDATE, edate = req.query.EDATE;
     var crId=req.params[0].replace("CashRegLogs","");
     if (!bdate&&!edate) {
@@ -892,7 +891,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
         outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
     }
     outData.columns.push(
-         { "data":"DocDate", "name":"DocDate", "width":120, "type":"text"},//,"dateFormat":"DD.MM.YYYY HH:mm:ss"
+        { "data":"DocDate", "name":"DocDate", "width":120, "type":"text"},//,"dateFormat":"DD.MM.YYYY HH:mm:ss"
         { "data":"DocTime", "name":"DocTime", "width":120, "type":"text"}//,"dateFormat":"DD.MM.YYYY HH:mm:ss"
         ,{ "data":"ChequeNumber", "name":"ChequeNum", "width":80, "type":"numeric"}
         ,{ "data":"PosNumber", "name":"PosNumber", "width":80, "type":"numeric"}
@@ -910,7 +909,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
         return;
     }
     var CRID;
-   // var initialCRID= req.params[0].replace("Sales","");
+    // var initialCRID= req.params[0].replace("Sales","");
     if(initialCRID==-1){
         database.getAllCashBoxes(function (err, result) {
             if (err) {
@@ -935,7 +934,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                 });
         });
     }
-   else{
+    else{
         CRID = initialCRID;
         database.getSales(bdate,edate+" 23:59:59",CRID,
             function (error,recordset) {
@@ -946,7 +945,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                 }
                 outData.items=recordset;
                 res.send(outData);
-              //  return;
+                //  return;
             });
     }
 });
@@ -973,8 +972,12 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {       log.i
                 }
                 outData.items = recordset;
                 postProductsToUniCashServer(outData.items, function (err, response, body) {
+                    if(err && err.nullLineCounter){
+                        res.send({nullLineCounter:err.nullLineCounter});
+                        return;
+                    }
                     if (err) {
-                        log.error(error);
+                        log.error(err);
                         var errMsg;
                         try {
                             errMsg = JSON.parse(error)
@@ -997,8 +1000,8 @@ app.get("/sysadmin/export_prods/export_prods", function (req, res) {       log.i
                     }
                     var buf = new Buffer(body, 'binary');
                     var str = iconv_lite.decode(buf, 'win1251');
-                        outData.serverResp = str;
-                        res.send(outData);
+                    outData.serverResp = str;
+                    res.send(outData);
                 });
             });
     });
@@ -1082,8 +1085,8 @@ app.get("/sysadmin/GetPrices/get_prices_for_crid/*", function (req, res) {
                         res.send(outData);
                         return;
                     }
-                        outData.items = recordset;
-                        res.send(outData);
+                    outData.items = recordset;
+                    res.send(outData);
 
                 });
         });
