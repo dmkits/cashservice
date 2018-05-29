@@ -2,11 +2,11 @@
 -- select @ProdID = ProdID from r_Prods where Article2 = @Article2
 -- select @UM = UM from r_Prods where Article2 = @Article2
 
-declare  @Article2 varchar(42) ,/*@PPID,*/	@UM varchar(10),@BarCode varchar(42), @EmpID INT,@OperID INT,@CRID  INT
-select @Article2=p.Article2, @UM=p.UM, @Barcode=mq.Barcode
+declare  @ProdID INT,/*@PPID,*/	@UM varchar(10),@Article2 varchar(42), @EmpID INT,@OperID INT,@CRID  INT
+select @ProdID=p.ProdID, @UM=p.UM, @Article2=p.Article2
     from r_Prods p
     INNER JOIN r_ProdMQ mq ON mq.ProdID=p.ProdID
-where p.ProdID = @ProdID
+where mq.Barcode = @Barcode
 
 select  @CRID=c.CRID
 from r_Crs c

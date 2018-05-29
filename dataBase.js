@@ -225,7 +225,7 @@ function addToSale(data, callback) {
     reqSql.input('CashSumCC', sql.NVarChar, data.buyerPaymentSum / 100);
     reqSql.input('FacID', sql.NVarChar, FacIDNum);
     reqSql.input('DocCreateTime', sql.NVarChar, date);
-    //----------------------------------------------------------------
+
     reqSql.input('KursMC', sql.NVarChar, 1.0);
     reqSql.input('CompID', sql.NVarChar, 1);
     reqSql.input('CodeID1', sql.NVarChar, 0);
@@ -280,8 +280,7 @@ function addToSale(data, callback) {
         });
 }
 
-module.exports.fillChequeTitle = function(chequeData, callback) {                       console.log('database fillChequeTitle=', chequeData);
-    //  var chequeNum = chequeData.checkNumber;
+module.exports.fillChequeTitle = function(chequeData, callback) {
     isSaleExists(chequeData, function (err, res) {
         if (err) {
             callback(err);
@@ -325,7 +324,6 @@ function isPosExists(tablename,ChID, posNum, callback){
 }
 
 function addToSaleD(ChID, chequeData, chequeProdData, callback) {
-    //var addByProdID=true;
     try {
         var date = formatDate(chequeData.checkDate);
         var Qty = chequeProdData.qty/1000;
@@ -337,9 +335,8 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         var excisePosSum;
         var TaxSum;
 
-      //  var isExciseProd=chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1;
         if(chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1){
-            excisePosSum = parseFloat((posSum*5/105).toFixed(2));                       //расчет акциза
+            excisePosSum = parseFloat((posSum*5/105).toFixed(2));                          //расчет акциза
             TaxSum= parseFloat((posSum*100/630).toFixed(2));                               //расчет НДС от суммы с акцизо
         }else{
             TaxSum=posSum/6;
@@ -357,8 +354,9 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         var reqSql = new sql.Request(conn);
         reqSql.input('ChID', sql.NVarChar, ChID);
         reqSql.input('SrcPosID', sql.NVarChar, chequeProdData.posNumber);
-        reqSql.input('Article2', sql.NVarChar, chequeProdData.name);
-        //reqSql.input('ProdID', sql.NVarChar, chequeProdData.code);
+        //reqSql.input('Article2', sql.NVarChar, chequeProdData.name);
+        reqSql.input('Barcode', sql.NVarChar, chequeProdData.barcode);
+
         reqSql.input('Qty', sql.NVarChar, Qty);
         reqSql.input('PriceCC_nt', sql.NVarChar, PriceCC_nt);
         reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
@@ -391,9 +389,10 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         callback(e);
         return;
     }
-
-    //var prodExistSrt=addByProdID ? 'select ProdID from r_Prods where ProdID=@ProdID':'select ProdID from r_Prods where Article2=@Article2';
-    reqSql.query('select ProdID from r_Prods where Article2=@Article2',
+    reqSql.query('select p.ProdID '+
+                 'from r_Prods p '+
+                 'inner join r_ProdMQ mq on mq.ProdID=p.ProdID '+
+                 'where mq.BarCode=BarCode',
         function (err, recordset) {
             var outData={};
             if (err) {
@@ -401,9 +400,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                 return;
             }
             if(recordset[0]) {
-            //    var queryFile=addByProdID ? './scripts/add_to_saleD_byProdID.sql' : './scripts/add_to_saleD.sql';
-
-                var queryString = fs.readFileSync('./scripts/add_to_saleD.sql', 'utf8');
+                var queryString = fs.readFileSync('./scripts/add_to_saleD_byBarcode.sql', 'utf8');
                 reqSql.query(queryString,
                     function (err) {
                         if (err) {
@@ -411,7 +408,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                             return;
                         }
                         if(chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1){
-                            var LevySum=excisePosSum;                        //TODO округление
+                            var LevySum=excisePosSum;
                             reqSql.input('LevySum', sql.NVarChar, LevySum);
                             reqSql.input('LevyID', sql.NVarChar, 1);
                             reqSql.query('INSERT INTO t_SaleDLV (ChID, SrcPosID, LevyID, LevySum) ' +
@@ -443,9 +440,9 @@ function addToSaleC(ChID, chequeData, chequeProdData, callback) {
         var FacID = chequeData.cashBoxFabricNum;
         var FacIDNum = FacID.replace("ПБ", "");
         // var PriceCC_nt = chequeProdData.price / 1.2/100;
-        //  var SumCC_nt = PriceCC_nt * Qty;
-        //  var Tax = chequeProdData.price/100 - PriceCC_nt;
-        //  var TaxSum = Tax * Qty;
+        // var SumCC_nt = PriceCC_nt * Qty;
+        // var Tax = chequeProdData.price/100 - PriceCC_nt;
+        // var TaxSum = Tax * Qty;
 
         var PriceCC_nt = 0;
         var SumCC_nt = 0;

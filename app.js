@@ -370,6 +370,7 @@ function getChequesData(body, callback) {
                             product.qty = goodsList[pos].$.Q;
                             product.price = goodsList[pos].$.PRC;
                             product.code = goodsList[pos].$.C;
+                            product.barcode = goodsList[pos].$.CD;
                             product.taxMark = goodsList[pos].$.TX;
                             product.posSum = goodsList[pos].$.SM;
                             cheque.productsInCheck.push(product);
@@ -1011,8 +1012,6 @@ app.get("/sysadmin/get_prices", function (req, res) {
     log.info('URL: "/sysadmin/get_prices"');
     res.sendFile(path.join(__dirname, '/views/sysadmin', 'get_prices.html'));
 });
-
-
 
 function getCRIDList(req,callback){
     var CRID="";
