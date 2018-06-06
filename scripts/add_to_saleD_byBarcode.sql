@@ -24,13 +24,13 @@ INSERT INTO t_SaleD
                   Qty,	PriceCC_nt,	SumCC_nt,	Tax,	TaxSum,
                   PriceCC_wt, SumCC_wt,	BarCode,	SecID,	PurPriceCC_nt,
                   PurTax,	PurPriceCC_wt,	PLID,	Discount,	EmpID,
-                  CreateTime,	ModifyTime,	TaxTypeID,	RealPrice,	RealSum)
+                  CreateTime,	ModifyTime,	TaxTypeID,	RealPrice,	RealSum, IsFiscal)
 VALUES
                 ( @ChID,	@SrcPosID,	@ProdID,	@PPID,	@UM,
                   @Qty,	@PriceCC_nt,	@SumCC_nt,	@Tax,	@TaxSum,
                   @PriceCC_wt, @SumCC_wt,	@BarCode,	@SecID,	@PurPriceCC_nt,
                   @PurTax,	@PurPriceCC_wt,	@PLID,	@Discount,	@EmpID,
-                  @CreateTime,	@ModifyTime,	@TaxTypeID,	@RealPrice,	@RealSum)
+                  @CreateTime,	@ModifyTime,	@TaxTypeID,	@RealPrice,	@RealSum, @IsFiscal)
 
 
 --SELECT ChID,SrcPosID,ProdID

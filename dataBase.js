@@ -384,6 +384,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         reqSql.input('PLID', 0);
         reqSql.input('Discount', 0.0);
         reqSql.input('TaxTypeID', ProdTaxTypeID);
+        reqSql.input('IsFiscal', 1);
 
     }catch(e){
         callback(e);

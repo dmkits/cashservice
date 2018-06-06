@@ -1,1 +1,1 @@
-node app.js test -p:8082
+node app.js -log:console test -p:8082
