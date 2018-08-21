@@ -63,13 +63,11 @@ var parseString = xml2js.parseString;
 var builder = new xml2js.Builder();
 log.info('xml2js...', new Date().getTime() - startTime);//test
 
-
 var app = express();
 var server = require('http').Server(app);
 log.info('http...', new Date().getTime() - startTime);//test
 var io = require('socket.io')(server);
 log.info('socket.io...', new Date().getTime() - startTime);//test
-
 
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -79,7 +77,6 @@ app.use('/', express.static('public'));
 var database = require('./dataBase');
 log.info('./dataBase...', new Date().getTime() - startTime);//test
 var ConfigurationError, DBConnectError;
-
 
 tryLoadConfiguration();
 function tryLoadConfiguration() {
@@ -184,7 +181,7 @@ function emitAndLogEvent(notes,msg, cashBoxFacID, callback) {
         } else io.emit('new_event', notes);
         if (callback) callback(err, res);
     });
-};
+}
 
 function getDataFromUniCashServer(xml, callback) {
     var cashserver_url = database.getDBConfig()['cashserver.url'];
@@ -195,7 +192,6 @@ function getDataFromUniCashServer(xml, callback) {
         xmlText = xmlText + xmlLine;
     }
     var textLengthStr = xmlText.length + "";
-
     request.post({
         headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': textLengthStr},
         uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
@@ -205,7 +201,7 @@ function getDataFromUniCashServer(xml, callback) {
     }, function (error, response, body) {
         callback(error, response, body);
     });
-};
+}
 function postProductsToUniCashServer(xmlData, callback) {
     var cashserver_url = database.getDBConfig()['cashserver.url'];
     var cashserver_port = database.getDBConfig()['cashserver.port'];
@@ -234,19 +230,14 @@ function postProductsToUniCashServer(xmlData, callback) {
     }, function (error, response, body) {
         callback(error, response, body);
     });
-};
+}
 function getChequesData(body, callback) {
     var buf = new Buffer(body, 'binary');
     var str = iconv_lite.decode(buf, 'win1251');
     body = iconv_lite.encode(str, 'utf8');
 
     parseString(body, function (err, result) {
-
-        var outData = {};
-        outData.sales = [];
-        outData.inners = [];
-        outData.reports = [];
-
+        var outData = {sales:[], inners:[], reports:[]};
         if (err) {
             log.info(err);
             callback(err);
@@ -541,7 +532,7 @@ function getChequesData(body, callback) {
             callback(e, outData);
         }
     });
-};
+}
 function formatDate(date){
     var dch = date.split("");
     var newDateFormat = dch[0] + dch[1] + dch[2] + dch[3] + "-" + dch[4] + dch[5] + "-" + dch[6] + dch[7] + " " + dch[8] + dch[9] + ":" + dch[10] + dch[11] + ":" + dch[12] + dch[13];
@@ -571,7 +562,6 @@ function fillCheques(chequesData, ind, finishedcallback) {
         var msg;
         if (res.exist) msg=  "Чек №" + chequeData.checkNumber + " найден в БД";
         else msg= "Заголовок чека №" + chequeData.checkNumber + " добавлен в БД";
-
         emitAndLogEvent(msg,chequeData.xmlHeading, chequeData.cashBoxFabricNum,  function(){
             var saleChID = chequeData.saleChID;
             var chequeProds = chequeData.productsInCheck;//!!!
@@ -586,14 +576,23 @@ function fillCheques(chequesData, ind, finishedcallback) {
                         finishedcallback("Не удалось внести оплату по чеку в БД Reason: "+err);
                         return;
                     }
-                    fillCheques(chequesData, ind + 1,finishedcallback);
+                    database.updateSaleStatus(saleChID, function (err, res) {
+                        if (err) {
+                            log.error("Не удалось обновить статус документа продажи! Reason: "+err);
+                            finishedcallback("Не удалось обновить статус документа продажи! Reason: "+err);
+                            return;
+                        }
+                        var msg='Статус чека №' + chequeData.checkNumber + " обновлен";
+                        emitAndLogEvent(msg,"", chequeData.cashBoxFabricNum,function(){
+                            fillCheques(chequesData, ind + 1,finishedcallback);
+                        });
+                    });
                 });
             });
         });
     });
-};
+}
 function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCallback) {
-
     var chequeProdData = chequeProdsData[ind];
     if (!chequeProdData) {     //finished!!!
         finishedCallback(null, saleChID, chequeData);
@@ -617,7 +616,7 @@ function fillChequeProds(saleChID, chequeData, chequeProdsData, ind, finishedCal
             fillChequeProds(saleChID, chequeData, chequeProdsData, ind + 1, finishedCallback);
         });
     });
-};
+}
 function fillChequePays(saleChID, cheque, callback) {
     database.fillToSalePays(saleChID, cheque, function (err, res) {
         var msg;
@@ -629,9 +628,9 @@ function fillChequePays(saleChID, cheque, callback) {
         else msg='Оплата по чеку №' + cheque.checkNumber + " добавлена базу";
         emitAndLogEvent(msg,cheque.xmlPayment, cheque.cashBoxFabricNum,function(){
             callback(null, "ok");
-        } );
+        });
     });
-};
+}
 
 app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
     log.info('URL: /sysadmin/import_sales/get_sales  params=',  clientReq.query);
@@ -698,6 +697,11 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                         });
                                         return;
                                     }
+
+                                    fs.writeFile("./chequesData.json", JSON.stringify(result), function (err, success) {
+                                        //callback(err,success);
+                                    });
+
                                     emitAndLogEvent('Данные кассового сервера обработаны успешно', null,null, function(){
                                         var chequesData = result.sales;
                                         fillCheques(chequesData, 0, /*finishedcallback*/function(err){
@@ -706,9 +710,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                                 return;
                                             }
                                             var msg = 'Все чеки успешно обработаны';
-                                            if(chequesData.length<1){
-                                                msg = "";
-                                            }
+                                            if(chequesData.length<1)msg = "";
                                             emitAndLogEvent( msg,null, chequesData.cashBoxFabricNum, function(){
                                                 var innersDocData = result.inners;
                                                 insertInnerDoc(innersDocData,0,function(err,res){
@@ -717,9 +719,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                                         return;
                                                     }
                                                     var msg='Все вносы/выносы успешно обработаны';
-                                                    if(innersDocData.length<1){
-                                                        msg = "";
-                                                    }
+                                                    if(innersDocData.length<1) msg = "";
                                                     emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum,function(){
                                                         addToZrep(result.reports, 0,function(err,res) {
                                                             if (err) {
@@ -727,9 +727,7 @@ app.get("/sysadmin/import_sales/get_sales", function (clientReq, clientRes) {
                                                                 return;
                                                             }
                                                             var msg='Все Z-Отчеты успешно обработаны';
-                                                            if(result.reports.length<1){
-                                                                msg = "";
-                                                            }
+                                                            if(result.reports.length<1) msg = "";
                                                             emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum, function () {
                                                                 emitAndLogEvent('Все полученные данные успешно обработаны', null,chequesData.cashBoxFabricNum, function () {
                                                                     clientRes.send({"done": "ok"});
@@ -780,7 +778,6 @@ function addToZrep(reports, ind, callback) {
 }
 
 function insertInnerDoc(InnerDocList, ind, callback) {
-
     if (!InnerDocList[ind]) {
         callback(null, "done");
         return;
@@ -829,7 +826,7 @@ function insertInnerDoc(InnerDocList, ind, callback) {
             });
         })
     }
-};
+}
 
 function getCashBoxesList(req) {
     var sCashBoxesList = "";
@@ -885,25 +882,22 @@ app.get("/sysadmin/sales", function (req, res) {
 app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
     log.info("/sysadmin/Sales/get_sales_for_crid/* params=",req.params," ", JSON.stringify(req.query));
     var initialCRID= req.params[0].replace("Sales","");
-    var outData={};
-    outData.columns=[];
-    if(initialCRID==-1){
+    var outData={columns:[]};
+    if(initialCRID==-1)
         outData.columns.push({ "data":"CashBoxID", "name":"CashBoxID", "width":80, "type":"numeric"});
-    }
     outData.columns.push(
         { "data":"DocDate", "name":"DocDate", "width":120, "type":"text"},//,"dateFormat":"DD.MM.YYYY HH:mm:ss"
-        { "data":"DocTime", "name":"DocTime", "width":120, "type":"text"}//,"dateFormat":"DD.MM.YYYY HH:mm:ss"
-        ,{ "data":"ChequeNumber", "name":"ChequeNum", "width":80, "type":"numeric"}
-        ,{ "data":"PosNumber", "name":"PosNumber", "width":80, "type":"numeric"}
-        ,{"data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"}
-        ,{"data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":120, "type":"text"}
-        ,{ "data":"UM", "name":"UM", "width":50, "type":"numeric"}
-        ,{ "data":"Qty", "name":"Qty", "width":50, "type":"numeric", format:"#,###,###,##0.[#########]", language:"ru-RU"}
-        ,{ "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
-        ,{ "data":"Sum_wt", "name":"Sum_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
+        { "data":"DocTime", "name":"DocTime", "width":120, "type":"text"},//,"dateFormat":"DD.MM.YYYY HH:mm:ss"
+        { "data":"ChequeNumber", "name":"ChequeNum", "width":80, "type":"numeric"},
+        { "data":"PosNumber", "name":"PosNumber", "width":80, "type":"numeric"},
+        { "data":"ProdName", "name":"ProdName (Article2)", "width":250, "type":"text"},
+        { "data":"CstProdCode", "name":"CstProdCode (УКТВЭД)", "width":120, "type":"text"},
+        { "data":"UM", "name":"UM", "width":50, "type":"numeric"},
+        { "data":"Qty", "name":"Qty", "width":50, "type":"numeric", format:"#,###,###,##0.[#########]", language:"ru-RU"},
+        { "data":"ProdPrice_wt", "name":"ProdPrice_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"},
+        { "data":"Sum_wt", "name":"Sum_wt", "width":80, "type":"numeric", format:"#,###,###,##0.00[#######]", language:"ru-RU"}
     );
     var bdate = req.query.BDATE, edate = req.query.EDATE;
-
     if (!bdate&&!edate) {
         res.send(outData);
         return;
@@ -933,8 +927,7 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                     return;
                 });
         });
-    }
-    else{
+    }else{
         CRID = initialCRID;
         database.getSales(bdate,edate+" 23:59:59",CRID,
             function (error,recordset) {
@@ -945,7 +938,6 @@ app.get("/sysadmin/Sales/get_sales_for_crid/*", function (req, res) {
                 }
                 outData.items=recordset;
                 res.send(outData);
-                //  return;
             });
     }
 });
