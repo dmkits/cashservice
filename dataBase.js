@@ -149,15 +149,15 @@ module.exports.fillToSalePays = function (CHID, cheque, callback) {
                     callback(err);
                     return;
                 }
+                addToSalePays(CHID, cheque, function (err, res) {
+                    if (err) {
+                        callback(err);
+                        return;
+                    }
+                    callback(null,outData);
+                })
             });
         }
-        addToSalePays(CHID, cheque, function (err, res) {
-            if (err) {
-                callback(err);
-                return;
-            }
-            callback(null,outData);
-        })
     })
 };
 
