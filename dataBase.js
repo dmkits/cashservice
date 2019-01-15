@@ -183,11 +183,20 @@ module.exports.updateSaleStatus= function(CHID, callback){
 };
 
 function isSaleExists(chequeData,callback){
-    var reqSql = new sql.Request(conn);
-    var DOCID = chequeData.checkNumber;
-    var FacID=chequeData.cashBoxFabricNum.replace("ПБ","");
-    reqSql.input('DOCID', sql.Int, DOCID);
-    reqSql.input('FacID', sql.NVarChar, FacID);
+    try {
+        var DocID = chequeData.checkNumber;
+        var FacID = chequeData.cashBoxFabricNum;
+        var FacIDNum = FacID.replace("ПБ", "");
+        var date = formatDate(chequeData.checkDate);
+        var DocDate = date.substring(0, 10) + " 00:00:00";
+        var reqSql = new sql.Request(conn);
+    } catch (e) {
+        callback(e);
+        return;
+    }
+    reqSql.input('FacID', sql.NVarChar, FacIDNum);
+    reqSql.input('DocID', sql.Int, DocID);
+    reqSql.input('DocDate', sql.NVarChar, DocDate);
     var queryString = fs.readFileSync('./scripts/is_sale_exists.sql', 'utf8');
     reqSql.query(queryString, function (err, recordset) {
         if (err) {
