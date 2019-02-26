@@ -1,0 +1,163 @@
+<div id="sa_startup_params_PageContent" style="width:510px;height:100%; margin:0;padding:0;">
+    <table width="100%" height="100%">
+        <tr>
+            <td height="20px">
+                <table width="100%">
+                    <tr>
+                        <th height="30px" width="180px"><b>system startup parameters:</b></th>
+                        <th width="200px">
+                            <div id="sa_startup_params_appLocalConfig">default</div>
+                        </th>
+                        <th></th>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td height="1px">
+                <table width="500px">
+                    <tr>
+                        <td><label for="dbHost">database host </label></td>
+                        <td><input id="dbHost" type="text" aria-disabled="false"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="dbPort">database host port </label></td>
+                        <td><input id="dbPort" type="text" aria-disabled="false"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="dbName">database name </label></td>
+                        <td><input id="dbName" type="text" aria-disabled="false"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="dbUser">database user </label></td>
+                        <td><input id="dbUser" type="text" aria-disabled="false"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="dbUserPass">database user password </label></td>
+                        <td><input id="dbUserPass" type="text" aria-disabled="false"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="cashserverUrl">cashserver URL </label></td>
+                        <td><input id="cashserverUrl" type="text" aria-disabled="false"/></td>
+                    </tr>
+                    <tr>
+                        <td><label for="cashserverPort">cashserver port </label></td>
+                        <td><input id="cashserverPort" type="text" aria-disabled="false"/></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td height="30px">
+                <button id="SA_startup_params_BtnAppLocalConfigLoad">Load settings</button>
+                <button id="SA_startup_params_BtnAppLocalConfigSaveAndReconnect">Store settings & reconnect to
+                    database
+                </button>
+            </td>
+        </tr>
+        <tr>
+            <td >
+            </td>
+        </tr>
+    </table>
+</div>
+<script type="text/javascript">
+    require(["app", "dijit/layout/BorderContainer", "dijit/layout/LayoutContainer", "dijit/layout/ContentPane",
+                "dijit/form/TextBox", "dijit/form/Button","app/request"],
+            function (APP, BorderContainer, LayoutContainer, ContentPane, TextBox, Button, Request) {
+                var sa_startup_params_PageContent = APP.instanceForID("sa_startup_params_PageContent", ContentPane, {});
+                var dbHostInput=new TextBox({id:"dbHost", style:"width:400px;"},"dbHost");
+                var dbPortInput=new TextBox({id:"dbPort", style:"width:100px;"},"dbPort");
+                var dbNameInput=new TextBox({id:"dbName", style:"width:300px;"},"dbName");
+                var dbUserInput=new TextBox({id:"dbUser", style:"width:200px;"},"dbUser");
+                var dbUserPassInput=new TextBox({id:"dbUserPass", style:"width:200px;"},"dbUserPass");
+                var cashserverUrlInput=new TextBox({id:"cashserverUrl", style:"width:400px;"},"cashserverUrl");
+                var cashserverPortInput=new TextBox({id:"cashserverPort", style:"width:100px;"},"cashserverPort");
+                var sa_startup_params_appLocalConfig = document.getElementById("sa_startup_params_appLocalConfig");
+                var reloadBtn = new Button({id: "SA_startup_params_BtnAppLocalConfigLoad"}, "SA_startup_params_BtnAppLocalConfigLoad");
+                var saveAndReconnectBtn = new Button({id: "SA_startup_params_BtnAppLocalConfigSaveAndReconnect"}, "SA_startup_params_BtnAppLocalConfigSaveAndReconnect");
+
+                sa_startup_params_PageContent.getAppConfiguration = function(){                            console.log("sa_startup_params_PageContent.getAppConfiguration");
+                    Request.getJSONData({url: "/sysadmin/startup_parameters/get_app_config", consoleLog: true},
+                            function(result,error) {                                                       console.log("getJSONData",result,error);
+                                if(error||!result){
+                                    sa_startup_params_appLocalConfig.innerHTML = "<div><b style='color:red'>No connection to the server!</b></div>";
+                                    return;
+                                }
+                                if(result.error){
+                                    sa_startup_params_appLocalConfig.innerHTML = "<div><b style='color:red'>Cannot get configuration parameters!</b> Reason:"+result.error+"</div>";
+                                    return;
+                                }
+                                sa_startup_params_appLocalConfig.innerHTML = "<div><b>Configuration loaded.</b></div>";
+                                setDBConfigContent(result);
+                            })
+                };
+                reloadBtn.onClick= function() {
+                    sa_startup_params_appLocalConfig.innerHTML = "<div><b>Loading configuration parameters...</b></div>";
+                    Request.getJSONData({url: "/sysadmin/startup_parameters/load_app_config", consoleLog: true},
+                            function(result,error){
+                                if (error||!result) {
+                                    sa_startup_params_appLocalConfig.innerHTML = "<div><b style='color:red'>No connection to the server!</b></div>";
+                                    return;
+                                }
+                                if(result.error){
+                                    sa_startup_params_appLocalConfig.innerHTML = "<div><b style='color:red'>Cannot load configuration parameters!</b> Reason:"+result.error+"</div>";
+                                    return;
+                                }
+                                sa_startup_params_appLocalConfig.innerHTML = "<div><b>Configuration reloaded.</b></div>";
+                                setDBConfigContent(result);
+                                if(sa_startup_params_PageContent.getParent().updateDBState)  sa_startup_params_PageContent.getParent().updateDBState();
+                            }
+                    );
+                };
+                function setDBConfigContent(dbConfigData) {
+                    dbHostInput.set("value",dbConfigData["dbHost"]);
+                    if(dbConfigData["dbPort"]) dbPortInput.set("value",dbConfigData["dbPort"]);
+                    else dbPortInput.set("value","1433");
+                    dbNameInput.set("value",dbConfigData["dbName"] );
+                    dbUserInput.set("value",dbConfigData["dbUser"]);
+                    dbUserPassInput.set("value",dbConfigData["dbUserPass"]);
+                    cashserverUrlInput.set("value",dbConfigData["cashserverUrl"]);
+                    cashserverPortInput.set("value",dbConfigData["cashserverPort"]);
+                }
+                saveAndReconnectBtn.onClick = function () {                                                 console.log("saveAndReconnectBtn.onClick");
+                    var appLocalConfig = document.getElementById("sa_startup_params_appLocalConfig");
+                    appLocalConfig.innerHTML = "<div><b>Configuration saving and reconnected to database...</b></div>";
+                    var newDBConfig={
+                        "dbHost": dbHostInput.get('value'),
+                        "dbPort": dbPortInput.get('value'),
+                        "dbName": dbNameInput.get('value'),
+                        "dbUser": dbUserInput.get('value'),
+                        "dbUserPass": dbUserPassInput.get('value'),
+                        "cashserverUrl":cashserverUrlInput.get('value'),
+                        "cashserverPort":cashserverPortInput.get('value')
+                    };
+                    Request.postJSONData({url:"/sysadmin/startup_parameters/store_app_config_and_reconnect", data:newDBConfig, consoleLog:true},
+                            function(result,error){
+                                if(result&&!error){
+                                    appLocalConfig.innerHTML = "<div><b>Configuration saved.</b></div>";
+                                    var dbConnectMsg=(result.DBConnectError)
+                                            ?"<br><div><b style='color:red'>Failed connect to database ! Reason:" + data["DBConnectError"] + "</b></div>"
+                                            :"<br><div><b>Reconnected to database.</b></div>";
+                                    appLocalConfig.innerHTML = appLocalConfig.innerHTML+dbConnectMsg;
+                                }
+                                if(error){
+                                    var msg="Operation Failed! Reson:"+(error&&error.message)?error.message:"UNKNOWN";
+                                    appLocalConfig.innerHTML = "<div><b style='color:red'>No connection!</b></div>";
+                                    return;
+                                }
+                                if(result.error){
+                                    appLocalConfig.innerHTML = "<div><b style='color:red'>Failed store configuration! Reason:" + JSON.stringify(data.error) + "</b></div>";
+
+                                    appLocalConfig.innerHTML = "<div><b style='color:red'>No connection!</b></div>";
+                                }else{
+
+                                }
+
+                               if(sa_startup_params_PageContent.getParent().updateDBState)  sa_startup_params_PageContent.getParent().updateDBState();
+                            });
+                };
+                /*---initing on load---*/
+                sa_startup_params_PageContent.getAppConfiguration();
+            });
+</script>

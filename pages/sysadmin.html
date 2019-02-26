@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru-ua">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" lang="ru" Accept-Language="ru"/>
+    <link rel="icon" type="image/gif" href="/icons/cashbox16x16.ico"/>
+    <!--[if IE]>
+    <!--<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7">-->
+    <![endif]-->
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="/jslib/dojoApp.js" handsontable="handsontable" htableStyle="/css/htable.css"></script></head>
+    <link rel="stylesheet" type="text/css" href="/css/sysadmin.css" media="screen">
+    <title>CASHSERVISE-US</title>
+</head>
+<body class="claro">
+<page id="sysadmin_page" design="headline">
+    <BorderContainer id="sysadmin_TopContainer" region="top" design="sidebar" class="sysadmin_TopContent" gutters="true">
+        <ContentPane id="sysadmin_TopImg" region="left" class="sysadmin_TopContent"></ContentPane>
+        <ContentPane id="sysadmin_TopStateInfo" region="top" class="sysadmin_TopContent">
+            <div id="sysadmin_appMode" style="display:inline;"></div>
+            <div id="sysadmin_dbName" style="display:inline;;margin-left:20px;"></div>
+            <div id="sysadmin_dbConnectionState" style="display:inline;margin-left:20px;"></div>
+            <div id="sysadmin_dbValidateState" style="display:inline;margin-left:20px;"></div>
+        </ContentPane>
+        <ContentPane id="sysadmin_TopActions" region="bottom" class="sysadmin_TopContent">
+            <StackController style="" containerId="sysadmin_ContentContainer"></StackController>
+            <Button id="sysadmin_btnLogout" style="position:absolute;right:5px;">Logout</Button>
+        </ContentPane>
+    </BorderContainer>
+    <StackContainer id="sysadmin_ContentContainer" region="center" tabPosition="top" class="sysadmin_Content">
+        <InnerPage id="sa_ip_importSales" title="Import sales" iconClass="dijitCheckBoxIcon" href="/sysadmin/import_sales" style="margin:0;padding:0;"></InnerPage>
+        <InnerPage id="sa_ip_exportProds" title="Export Prods" iconClass="dijitCheckBoxIcon" href="/sysadmin/exportProds" style="margin:0;padding:0;"></InnerPage>
+        <InnerPage id="sa_ip_cashRegLog" title="Cash reg log" iconClass="dijitCheckBoxIcon" href="/sysadmin/cashRegLogs" style="margin:0;padding:0;"></InnerPage>
+        <InnerPage id="sa_ip_sales" title="Sales" iconClass="dijitCheckBoxIcon" href="/sysadmin/sales" style="margin:0;padding:0;"></InnerPage>
+        <InnerPage id="sa_ip_prodsPrices" title="Price List" iconClass="dijitCheckBoxIcon" href="/sysadmin/prodsPrices" style="margin:0;padding:0;"></InnerPage>
+        <InnerPage id="sa_ip_sysConfig" title="System config" iconClass="dijitCheckBoxIcon" href="/sysadmin/sysConfig"></InnerPage>
+    </StackContainer>
+</page>
+</body>
+<script type="text/javascript">
+    $app.dev=true;
+    $app.startup("#sysadmin_page",function(){                                                               log("STARTING SYSADMIN PAGE...", $$);//!!!IT'S FOR TESTING!!!
+        moment.locale("uk");
+        $$.sysadmin_TopImg.set("content", '<image src="icons/cashbox40x40.ico" style="position:absolute; margin:0px;">');
+        $$.sysadmin_btnLogout.onClick=function(){                                                           log("sysadmin_btnLogout.onClick");
+            window.location.replace(window.location.href);
+        };
+        $$.sysadmin_page.getAppState = function(){//getting main json data from server and run action parameter function
+            $$.request.getJSONData({url:"/sysadmin/sysState", consoleLog: true},
+                    function (result,error) {
+                        if(result){
+                            $$.sysadmin_page.mainContentData = result;
+                            $$.sysadmin_appMode.innerHTML = "<b>MODE: </b>";
+                            if(result.mode){
+                                if(result.mode.toString().toLocaleLowerCase().indexOf("test")>=0)
+                                    $$.sysadmin_appMode.innerHTML+= "<b style='color:red'>"+result.mode+"</b>";
+                                else
+                                    $$.sysadmin_appMode.innerHTML+= "<b style='color:dimgrey'>"+result.mode+"</b>";
+                            }else
+                                $$.sysadmin_appMode.innerHTML+="<b>UNKNOWN!!!</b>";
+                            if(result.configuration){
+                                $$.sysadmin_dbName.innerHTML =
+                                        "<b>DB NAME: <span style='color:dimgrey'>"+result.configuration.dbName+"</span></b>"
+                            }
+                            var dbConnectionState;
+                            if(result.dbConnection=="Connected"){
+                                dbConnectionState='<span style="color:dimgrey">'+result.dbConnection+'</span>';
+                            }else
+                                dbConnectionState='<span style="color:red">'+((result.dbConnectionError)?result.dbConnectionError.message:'UNKNOWN!')+'</span>';
+                            $$.sysadmin_dbConnectionState.innerHTML ='<b>DB CONNECTION STATE: '+dbConnectionState+'</b>';
+                        }else
+                            $$.sysadmin_page.mainContentData = {error:error};
+                    }
+            )
+        };
+        $$.sysadmin_page.getAppState();
+        $$.sysadmin_ContentContainer.updateSysState=$$.sysadmin_page.getAppState;
+        $$.sysadmin_ContentContainer.selectChild($$.sa_ip_importSales);
+    });
+</script>
+</html>

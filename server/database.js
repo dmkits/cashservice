@@ -1,47 +1,36 @@
-var fs = require('fs');
-var sql = require('mssql');
-var app = require('./app');
-var moment = require('moment');
-var dbConfig;
-var dbConfigFilePath;
-var conn=null;
+var fs = require('fs'),
+    sql = require('mssql'),
+    moment = require('moment');
+var server = require('./server'), log=server.log;
 
-module.exports.getDBConfig=function(){
-    return dbConfig;
-};
-module.exports.setDBConfig=function(newDBConfig){
-    dbConfig= newDBConfig;
-};
-module.exports.loadConfig=function(){
-    dbConfigFilePath='./' + app.startupMode + '.cfg';
-    var stringConfig = fs.readFileSync(dbConfigFilePath);
-    dbConfig = JSON.parse(stringConfig);
-};
-module.exports.saveConfig=function(callback) {
-    fs.writeFile(dbConfigFilePath, JSON.stringify(dbConfig), function (err, success) {
-        callback(err,success);
-    })
-};
-module.exports.databaseConnection=function(callback){
-    if(conn) conn.close();
-    conn = new sql.Connection(dbConfig);
-    conn.connect(function (err) {
-        if (err) {
-            callback(err.message);
+var dbConnectError=null, conn=null;
+
+module.exports.dbConnect=function(callback){
+    var sysConfig=server.getSysConfig();
+    if(conn)conn.close();
+    if(!sysConfig){
+        callback(null,"Failed connect to database! Reason: no system config!");
+        return;
+    }
+    dbConnectError=null;
+    conn = new sql.Connection({server:sysConfig.dbHost,port:sysConfig.dbPort,database:sysConfig.dbName,user:sysConfig.dbUser,password:sysConfig.dbUserPass});
+    conn.connect(function(err){
+        dbConnectError=err;
+        if(err){
+            log.error('database.dbConnect dbConnectError=', dbConnectError);
+            if(callback)callback(err.message);
             return;
         }
-        callback(null,"connected");
+        if(callback)callback(null,"connected");
     });
 };
+module.exports.getDBConnectErr= function(){ return dbConnectError; };
 module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
-    var query_str='SELECT * FROM r_Crs WHERE CashType=30 ';
-    reqSql.query(query_str,
+    var sQuery='SELECT * FROM r_Crs WHERE CashType=30 ';
+    reqSql.query(sQuery,
         function (err, recordset) {
-            if (err) {
-                callback(err);
-                return;
-            }
+            if(err){ callback(err); return; }
             if(recordset.length<1){
                 callback("Не удалось найти кассовый аппарт в БД");
                 return;
@@ -325,15 +314,12 @@ function isPosExists(tablename,ChID, posNum, callback){
 
 function addToSaleD(ChID, chequeData, chequeProdData, callback) {
     try {
-        var date = formatDate(chequeData.checkDate);
-        var Qty = chequeProdData.qty/1000;
-        var FacID = chequeData.cashBoxFabricNum;
-        var FacIDNum = FacID.replace("ПБ", "");
-        var ProdTaxTypeID =chequeProdData.taxMark==1 ? 1 : 0;
-        var posSum=chequeProdData.posSum/100;
-
-        var excisePosSum, TaxSum;
-
+        var date = formatDate(chequeData.checkDate),
+            Qty = chequeProdData.qty/1000,
+            FacID = chequeData.cashBoxFabricNum, FacIDNum = FacID.replace("ПБ", ""),
+            posSum=chequeProdData.posSum/100;;
+        var ProdTaxTypeID =chequeProdData.taxMark==1 ? 1 : 0,
+            excisePosSum, TaxSum;
         if(chequeData.AddTaxSum && chequeData.AddTaxSum>0 && ProdTaxTypeID==1){
             excisePosSum = parseFloat((posSum*5/105).toFixed(2));                          //расчет акциза
             TaxSum= parseFloat((posSum*100/630).toFixed(2));                               //расчет НДС от суммы с акцизо
@@ -341,53 +327,30 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
             TaxSum=posSum/6;
             excisePosSum=0.00;
         }
-
-        var Tax = TaxSum/Qty;
-
-        var SumCC_wt = posSum-excisePosSum;
-        var PriceCC_wt = SumCC_wt/Qty;
-
-        var SumCC_nt=posSum-excisePosSum-TaxSum;
-        var PriceCC_nt=SumCC_nt/Qty;
-
+        var Tax = TaxSum/Qty,
+            SumCC_wt = posSum-excisePosSum, PriceCC_wt = SumCC_wt/Qty,
+            SumCC_nt=posSum-excisePosSum-TaxSum, PriceCC_nt=SumCC_nt/Qty;
         var reqSql = new sql.Request(conn);
-        reqSql.input('ChID', sql.NVarChar, ChID);
-        reqSql.input('SrcPosID', sql.NVarChar, chequeProdData.posNumber);
-        //reqSql.input('Article2', sql.NVarChar, chequeProdData.name);
+        reqSql.input('ChID', sql.NVarChar, ChID); reqSql.input('SrcPosID', sql.NVarChar, chequeProdData.posNumber);
         reqSql.input('Barcode', sql.NVarChar, chequeProdData.barcode);
-
         reqSql.input('Qty', sql.NVarChar, Qty);
-        reqSql.input('PriceCC_nt', sql.NVarChar, PriceCC_nt);
-        reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
-
-        reqSql.input('Tax', sql.NVarChar, Tax);
-        reqSql.input('TaxSum', sql.NVarChar, TaxSum);
-
-        reqSql.input('PriceCC_wt', sql.NVarChar, PriceCC_wt);
-        reqSql.input('SumCC_wt', sql.NVarChar, SumCC_wt);
-
+        reqSql.input('PriceCC_nt', sql.NVarChar, PriceCC_nt); reqSql.input('SumCC_nt', sql.NVarChar, SumCC_nt);
+        reqSql.input('Tax', sql.NVarChar, Tax); reqSql.input('TaxSum', sql.NVarChar, TaxSum);
+        reqSql.input('PriceCC_wt', sql.NVarChar, PriceCC_wt); reqSql.input('SumCC_wt', sql.NVarChar, SumCC_wt);
         reqSql.input('PurPriceCC_nt', sql.NVarChar, PriceCC_nt);
         reqSql.input('PurTax', sql.NVarChar, Tax);
         reqSql.input('PurPriceCC_wt', sql.NVarChar, PriceCC_wt);
-
-        reqSql.input('CreateTime', sql.NVarChar, date);
-        reqSql.input('ModifyTime', sql.NVarChar, date);
-
-        reqSql.input('RealPrice', sql.NVarChar, posSum/Qty);
-        reqSql.input('RealSum', sql.NVarChar, posSum);
-        reqSql.input('FacID', sql.NVarChar,FacIDNum);
-        reqSql.input('CROperID', sql.NVarChar, chequeData.operatorID);
-
+        reqSql.input('RealPrice', sql.NVarChar, posSum/Qty); reqSql.input('RealSum', sql.NVarChar, posSum);
+        reqSql.input('CreateTime', sql.NVarChar, date); reqSql.input('ModifyTime', sql.NVarChar, date);
+        reqSql.input('FacID', sql.NVarChar,FacIDNum); reqSql.input('CROperID', sql.NVarChar, chequeData.operatorID);
         reqSql.input('PPID', sql.NVarChar, 0);
         reqSql.input('SecID', sql.NVarChar, 1);
         reqSql.input('PLID', 0);
         reqSql.input('Discount', 0.0);
         reqSql.input('TaxTypeID', ProdTaxTypeID);
         reqSql.input('IsFiscal', 1);
-
     }catch(e){
-        callback(e);
-        return;
+        callback(e); return;
     }
     reqSql.query('select p.ProdID '+
                  'from r_Prods p '+
@@ -399,7 +362,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                 return;
             }
             if(!recordset||recordset.length==0) {
-                callback("Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе");
+                callback("Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе по штрихкоду.");
                 return;
             }
             var queryString = fs.readFileSync('./scripts/add_to_saleD_byBarcode.sql', 'utf8');

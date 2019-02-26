@@ -1,1 +1,1 @@
-node app.js -log:console test -p:8181
+node server/server.js debug -log:console -p:8181

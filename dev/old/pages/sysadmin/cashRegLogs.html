@@ -1,81 +1,61 @@
-<!DOCTYPE HTML>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body>
 <div id="sysadmin_CashRegLogs_PageContainer" style="width:100%;height:100%;">
-    <div id="sysadmin_CashRegLogs_ContentPaneLeft" style="width:170px;height:100%; margin:0;padding:0;">
+    <div id="sysadmin_CashRegLogs_ContentPaneLeft" style="width:255px;height:100%; margin:0;padding:0;">
         <table>
             <tr><th>Кассовые аппараты<br/>(тип ЭККА MINI-T)</th></tr>
-            <tr><td id="sysadmin_CashRegLogs_CrsButtons">
-            </td></tr>
+            <tr><td id="sysadmin_CashRegLogs_CrsButtons"></td></tr>
         </table>
     </div>
     <div id="sysadmin_CashRegLogs_ContentPaneDetailContainer" style="width:100%;height:100%; margin:0;padding:0;"></div>
 </div>
-</body>
 <script type="text/javascript">
     require(["app", "dojo/dom-style", "dijit/layout/BorderContainer", "dijit/layout/StackContainer", "dijit/layout/ContentPane",
-                "dijit/form/Button", "templateDocumentSimpleTable","request"],
+                "dijit/form/Button", "app/templateDocumentSimpleTable","app/request"],
             function (APP, domStyle, BorderContainer, StackContainer, ContentPane, Button, TDocumentSimpleTable, Request) {
                 var sysadmin_CashRegLogs_PageContainer=
                         APP.instanceForID("sysadmin_CashRegLogs_PageContainer", BorderContainer, {});
                 APP.instanceForID("sysadmin_CashRegLogs_ContentPaneLeft", ContentPane, {region:'left', splitter:true});
-
                 var sysadmin_CashRegLogs_ContentPaneDetailContainer=
                         APP.instanceForID("sysadmin_CashRegLogs_ContentPaneDetailContainer", StackContainer, {region:'center'});
-
                 var sysadmin_CashRegLogs_CrsButtons=document.getElementById("sysadmin_CashRegLogs_CrsButtons");
                 var btnAllCRs;
 
                 sysadmin_CashRegLogs_PageContainer.createReportButtons=function(){
-
                     Request.getJSONData({url: "/sysadmin/get_all_cashboxes",consoleLog: true},
-                            function (success, data) {          console.log("createReportButtons data=",data);
-                                if (!success) {
+                            function (result,error){                                                        console.log("createReportButtons result=",result);
+                                if(error||!result){
                                     sysadmin_CashRegLogs_PageContainer.innerHTML = "<div><b style='color:red'>No connection!</b></div>";
                                     return;
                                 }
-                               // var item = JSON.parse(data.jsonFormattedText);
-                                for (var i in data.items) {
-                                    var item=data.items[i];
+                                // var item = JSON.parse(data.jsonFormattedText);
+                                for(var i in result.items){
+                                    var item=result.items[i];
                                     sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+item.CRID, item.CRName+" "+item.FacID);
                                 }
                                 btnAllCRs= sysadmin_CashRegLogs_PageContainer.addButtonTo(sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+'-1', "Все кассы");
-                                btnAllCRs.domNode.firstChild.setAttribute("style", "margin-top:10px;width:150px;");
                                 btnAllCRs.onClick();
                             });
                 };
-
                 sysadmin_CashRegLogs_PageContainer.addButtonTo = function (parent, id, name) {
-                   // var button = new Button({id:id, label:name});
-                    var button = new Button({id:id, label:name});
+                    var button = new Button({id:id, label:name,style:"margin-left:2px;;margin-right:1px;"});
                     button.onClick= function(){
                         var instance=this;
-                        if (!button.document){
+                        if(!button.document){
                             button.document =
                                     APP.childFor(sysadmin_CashRegLogs_ContentPaneDetailContainer, "sysadmin_CashRegLogs_TableSales"+instance.id,
                                             TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/cashRegLogs/get_logs_for_crid/'+instance.id, buttonPrint:false})
                                             .addBeginDateBox("с","BDATE",APP.today()).addEndDateBox("по","EDATE",APP.today())
-                                            .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:40px;"})
-//                                            .addTotalSumNumberTextBox("ИТОГО кол-во:",260, "TotalQty", {style:"font-weight:bold;",inputStyle:"width:60px;"})
-//                                            .addTotalSumNumberTextBox("ИТОГО сумма:",200, "TotalSum", {style:"font-weight:bold;",inputStyle:"width:80px;",
-//                                             pattern:"###,###,##0.00#######"})
+                                            .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:50px;"})
                                             .startUp();
                         }
                         sysadmin_CashRegLogs_ContentPaneDetailContainer.selectChild(button.document);
                     };
-                    button.domNode.firstChild.setAttribute("style", "width:150px;");
+                    button.domNode.firstChild.setAttribute("style","width:239px");
                     button.startup();
                     sysadmin_CashRegLogs_CrsButtons.appendChild(button.domNode);
                     return button;
                 };
-
                 sysadmin_CashRegLogs_PageContainer.createReportButtons();
                 sysadmin_CashRegLogs_PageContainer.layout();
 
             });
 </script>
-</html>

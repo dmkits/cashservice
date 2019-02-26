@@ -1,7 +1,7 @@
 /**
  * Created by dmkits on 18.12.16.
  */
-define(["dojo/_base/declare", "app", "templateDocumentBase", "hTableSimpleFiltered"],
+define(["dojo/_base/declare", "app", "app/templateDocumentBase", "app/hTableSimpleFiltered"],
     function(declare, APP, DocumentBase, HTable) {
         return declare("TemplateDocumentSimpleTable", [DocumentBase], {
             /*

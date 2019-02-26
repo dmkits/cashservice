@@ -1,0 +1,115 @@
+<BorderContainer id="importSales_PageContent" style="width:100%;height:100%;">
+    <ContentPane id="importSales_TopContent" region="top" style="width:100%; margin:0;padding:0; display: inline-block ">
+        <div style="text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Загрузка продаж с ЭККА</div>
+        <table width="100%" style="margin-top:5px;margin-bottom:5px" >
+            <tr>
+                <td width="250px"></td>
+                <td width="250px" style="text-align:right"><DateTextBox type="date" id="importSales_BDate" label="Начальна дата:" style="width:85px"></DateTextBox></td>
+                <td width="10px"></td>
+                <td width="250px"><DateTextBox type="date" id="importSales_EDate" label="Конечная дата:"style="width:85px"></DateTextBox></td>
+                <td width="90px"><button id="importSales_btnStartImport">Import sales</button></td>
+                <td width="90px"><button id="importSales_btnClean">Clean up</button></td>
+                <td width="20px"></td>
+                <td width="90px"><button id="importSales_btnGetImportXML">get import XML</button></td>
+                <td></td>
+            </tr>
+        </table>
+    </ContentPane>
+    <ContentPane id="importSales_LeftContent" region="left" style="width:252px;height:100%; margin:0;padding:0; ">
+        <div style="height:28px;font-weight:bold;text-align: center;font-size:11px;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">Кассовые аппараты<br/>(тип ЭККА MINI-T)</div>
+        <table align="center" width="100%" style="margin: 0px">
+            <tr><td id="importSales_cashBoxesButtons"></td></tr>
+        </table>
+    </ContentPane>
+    <ContentPane id="importSales_DetailContent" region="center" style="width:100%;height:100%; margin:0;padding:0;overflow:hidden">
+        <ContentPane style="height:23px;color:dimgray;font-weight:bold;text-align:center;padding-top:5px;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">Результат обработки</ContentPane>
+        <ContentPane id="importSales_displayContent" style="border:none;/*width:100%*/;height:calc(100% - 45px);overflow-y:scroll"></ContentPane>
+    </ContentPane>
+    <ContentPane id="importSales_RightContent" region="right" splitter="true" style="width:500px;height:100%; margin:0;padding:0;">
+        <div id="importSales_displayResult">
+        </div>
+    </ContentPane>
+</BorderContainer>
+<script type="text/javascript">                                            log("import_sales",$$);
+    moment.locale("uk");
+    var socket = io.connect(/*'http://localhost:8080'*/);
+    socket.on('new_event', function(data){
+        // if(data.length>0) {
+        var listItem = document.createElement('ul');
+        $$.importSales_btnStartImport.list.appendChild(listItem);
+        listItem.innerText = data;
+        //  }
+    });
+    //                socket.on('new_event', function(data){
+    //                    document.getElementById("import_sales_display_content").innerText=
+    //                            document.getElementById("import_sales_display_content").innerText+" * "+data+"\n";
+    //                });
+    var yesterday = moment().subtract(1,'day').toDate();
+    $$.importSales_BDate.set("value",$$.yesterday());
+    $$.importSales_EDate.set("value",$$.yesterday());
+    //import_sales_cleanBtn
+    var displayXMLResult = document.getElementById("import_sales_display_result");
+
+    var getAllCashBoxes=function(){
+        $$.request.getJSONData({url: "/sysadmin/getCashboxes", consoleLog: true},
+                function (result,error){
+                    if(result)setToggleCashBoxID(result.items);
+                });
+    };
+    getAllCashBoxes();
+    var cashBoxesList=[];
+    var setToggleCashBoxID=function(data){
+        for(var i in data){
+            var id="importSales_btnCRID_"+data[i].CRID;
+            $$.$.addWigetTo($$.importSales_cashBoxesButtons,"ToggleButton",
+                    { id:id, iconClass:'dijitCheckBoxIcon',fStyle:"width:235px;", label:data[i].CRName+" "+data[i].FacID, crid:data[i].CRID });
+            cashBoxesList.push($$[id]);
+        }
+        cashBoxesList[0].set('checked',true);
+        $$.$.addWigetTo($$.importSales_cashBoxesButtons,"Button",
+                {id:"importSales_btnAllCRs",label:"Все кассы", crid:"import_sales-1",style:"margin-top:10px;",fStyle:"width:235px;",
+                    onClick:function(){
+                        var count = 0;
+                        for(var j in cashBoxesList)
+                            if(cashBoxesList[j].get('checked') == true)count++;
+                        if(count<cashBoxesList.length){
+                            for(var i in cashBoxesList)cashBoxesList[i].set('checked', true);
+                            return;
+                        }
+                        for(var i in cashBoxesList)cashBoxesList[i].set('checked', false);
+                    }
+                });
+    };
+    $$.importSales_btnStartImport.onClick=function(){
+        $$.importSales_btnStartImport.set('disabled','true');
+        $$.importSales_btnStartImport.list= document.createElement('ul');
+        document.getElementById("import_sales_display_content").appendChild($$.import_sales_btn.list);
+        var bdateValue=bDateTextBox.get("value"),
+                bdate= moment(bdateValue).format('YYYYMMDD')+"0000",
+                edateValue=eDateTextBox.get("value"),
+                edate= moment(edateValue).format('YYYYMMDD')+"2359";
+        //  var cashBoxesList=leftContentImportSales.getChildren();
+        var cashbox_params;
+        for(var i in cashBoxesList){
+            if(cashBoxesList[i].checked==true){
+                var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
+                cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;   console.log("cashbox_params=",cashbox_params);
+            }
+        }                                                                                                   log("importSales_btnStartImport.onClick start request");
+        $$.request.getJSONData({url:"/sysadmin/import_sales/get_sales",
+                    conditions:"bdate="+bdate+"&edate="+edate+"&"+cashbox_params,
+                    timeout:"5000", consoleLog: true},
+                function (result,error) {                                                                   log("importSales_btnStartImport.onClick Request.getJSONData result=",result);
+                    $$.importSales_btnStartImport.set('disabled',false);
+                });
+    };
+    $$.importSales_btnClean.onClick = function(){
+        var displayResult = document.getElementById("importSales_displayContent");
+        while (displayResult.firstChild) {
+            displayResult.removeChild(displayResult.firstChild);
+        }
+    };
+    $$.importSales_btnGetImportXML.onClick = function () {
+
+    }
+</script>

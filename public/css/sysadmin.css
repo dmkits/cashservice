@@ -59,7 +59,7 @@ input {
     font-family : Tahoma,Arial,Helvetica;
 }
 
-#sysadmin_MainContainer{
+#sysadmin_page{
     position: absolute; left: 0; top: 0; right: 0; bottom: 0;
     margin: 1px; padding: 0;
 }

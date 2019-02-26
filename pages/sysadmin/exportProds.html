@@ -1,63 +1,37 @@
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body id="body">
 <div id="export_prods_PageContent" style="width:100%;height:100%;">
     <div id="export_prods_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
-        <div style="/*color:dimgrey;*/text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Выгрузка номенклатур в ЭККА с ценами</div>
+        <div style="/*color:dimgrey;*/text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Выгрузка номенклатур с ценами в ЭККА</div>
         <table width="100%" style="margin-top:5px; margin-bottom: 5px" >
             <tr>
-                <td>
-                    <!--Начальна дата: <input type="date" id ="bdate">-->
-                </td>
-                <td>
-                    <!--Конечная дата: <input type="date" id ="edate">-->
-                </td>
-                <td width="40px;">
-                    <button id="export_prods_btn">Export prods</button>
-                </td>
-                <td width="40px;">
-                    <button id="export_prods_cleanBtn">Clean up</button>
-                </td>
-                <td width="440px;"></td>
+                <td width="250px"></td>
+                <td width="500px"></td>
+                <td width="90px"><button id="export_prods_btn">Export prods</button></td>
+                <td width="90px"><button id="export_prods_cleanBtn">Clean up</button></td>
+                <td></td>
             </tr>
         </table>
     </div>
-    <div id="export_prods_LeftContent" style="width:190px;height:100%; margin:0;padding:0; ">
+    <div id="export_prods_LeftContent" style="width:252px;height:100%; margin:0;padding:0; ">
         <div id="export_prods_header" style="height:28px; /*color: dimgray;*/ font-weight: bold; text-align: center; font-size:11px; /*padding-bottom: 5px; *//*padding-top: 5px;*/ border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты<br/>(тип ЭККА MINI-T)</div>
         <table align="center" width="100%" style="margin-top: 0px">
-            <!--<tr><th style="height:15px;color: dimgray; padding-bottom: 5px; padding-top: 5px; border-bottom: solid 1px #b7bec9;">Кассовые аппараты</th></tr>-->
-            <tr><td id="export_prods_cash_boxes_buttons">
-            </td></tr>
+            <tr><td id="export_prods_cash_boxes_buttons"></td></tr>
         </table>
     </div>
     <div id="export_prods_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
         <div id="export_prods_display_content_header" style="height:23px; color: dimgray;font-weight: bold; text-align: center; /*padding-bottom: 5px;*/ padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
         <div id="export_prods_display_content" style="border:none;/*width:100%*/;height: calc(100% - 45px); overflow-y: scroll"></div>
-
     </div>
     <div id="export_prods_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
         <div id="export_prods_display_result">
         </div>
     </div>
 </div>
-</body>
 <script type="text/javascript">
-    require(["app", "dijit/layout/BorderContainer", "dijit/layout/LayoutContainer", "dijit/layout/ContentPane", "dojo/data/ItemFileReadStore",
-                "dijit/form/TextBox", "dijit/form/DateTextBox", "dijit/form/Button", "dijit/ConfirmDialog","dijit/form/ToggleButton",
-                "dijit/form/DateTextBox","dialogs","request"],
-            function (APP, BorderContainer, LayoutContainer, ContentPane, ItemFileReadStore, TextBox, DateTextBox, Button, ConfirmDialog,
-                      ToggleButton,DateTextBox,Dialogs,Request) {
+    require(["app", "dijit/layout/BorderContainer", "dijit/layout/ContentPane",
+                "dijit/form/DateTextBox", "dijit/form/Button", "dijit/form/ToggleButton",
+                "app/dialogs","app/request"],
+            function (APP, BorderContainer, ContentPane, DateTextBox, Button,ToggleButton, Dialogs,Request){
                 moment.locale("uk");
-
-
-                console.log("start");
-
                 var borderContainer = APP.instanceForID("export_prods_PageContent", BorderContainer, {});
                 var topContentSQL = APP.instanceForID("export_prods_TopContent", ContentPane, {region: "top"});
                 var leftContentexportProds = APP.instanceForID("export_prods_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
@@ -67,27 +41,20 @@
                 var export_prods_display_content_header=APP.instanceForID("export_prods_display_content", ContentPane, {region: "right",splitter: true});
                 export_prods_display_content.startup();
                 export_prods_display_content_header.startup();
-
-                console.log("after var");
-
-                //var bDateTextBox= new DateTextBox({value:new Date(2017, 3, 13),lang:"ru-ua"},"bdate");
-                // var eDateTextBox= new DateTextBox({value:new Date(2017, 3, 27),lang:"ru-ua"},"edate");
                 var export_prods_cash_boxes_buttons=document.getElementById('export_prods_cash_boxes_buttons');
                 var btnExportProds = APP.instanceForID("export_prods_btn", Button, {});
                 var btnSendexportProds = APP.instanceForID("export_prods_sendBtn", Button, {});
-                //export_prods_cleanBtn
                 var btnCleanUp=APP.instanceForID("export_prods_cleanBtn", Button, {});
                 var displayXMLResult = document.getElementById("export_prods_display_result");
 
                 detailContentexportProds.getAllCashBoxes=function() {
-
-                    Request.getJSONData({url: "/sysadmin/get_all_cashboxes", consoleLog: true},
-                            function (success, result) {
-                                if (!success) {
+                    Request.getJSONData({url: "/sysadmin/getCashboxes", consoleLog: true},
+                            function (result,error){
+                                if (error||!result) {
                                     Dialogs.doRequestErrorDialog();
                                     return;
                                 }
-                                if (result.error) {
+                                if(result.error) {
                                     Dialogs.doDialogMsg({title:'Failed!',content:"Cannot get configuration parameters! Reason:"+result.error.message});
                                     return;
                                 }
@@ -97,9 +64,8 @@
                 detailContentexportProds.getAllCashBoxes();
 
                 var cashBoxesList=[];
-
                 var allCashBoxesBtn=new Button({label:"Все кассы", crid:"export_prods-1"});
-                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:170px; margin-top:10px;");
+                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:235px; margin-top:10px;");
 
                 allCashBoxesBtn.onClick=function() {
                     var count = 0;
@@ -119,38 +85,16 @@
                     }
                 };
 
-
-//                var allCashBoxesBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',label:"Все кассы", crid:"export_prods-1"});//
-//                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:170px; margin-top:10px;");
-//                allCashBoxesBtn.watch("checked",function() {
-//                    if (allCashBoxesBtn.get('checked') == true) {
-//                        for (var i in cashBoxesList) {
-//                            if(cashBoxesList[i]!=allCashBoxesBtn) {
-//                                cashBoxesList[i].set('checked', false);
-//                            }
-//                        }
-//                    }
-//                });
-//                allCashBoxesBtn.startup();
-
                 detailContentexportProds.setToggleCashBoxID=function(data){
                     for(var i in data){
                         var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:false,label:data[i].CRName+" "+data[i].FacID, crid:data[i].CRID});//
                         cashBoxesList.push(toggleBtn);
-                        toggleBtn.domNode.firstChild.setAttribute("style", "width:170px;");
+                        toggleBtn.domNode.firstChild.setAttribute("style", "width:235px;");
                         toggleBtn.startup();
                         export_prods_cash_boxes_buttons.appendChild(toggleBtn.domNode);
                         leftContentexportProds.startup();
-//                        toggleBtn.watch("checked",function() {
-//                            if (this.checked == true) {
-//                                if(allCashBoxesBtn.get("checked")==true){
-//                                    allCashBoxesBtn.set('checked', false);
-//                                }
-//                            }
-//                        });
                     }
                     cashBoxesList[0].set('checked', true);
-                    //  cashBoxesList.push(allCashBoxesBtn);
                     export_prods_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
                 };
 
@@ -159,13 +103,6 @@
                     btnExportProds.set('disabled','true');
                     btnExportProds.list= document.createElement('ul');
                     document.getElementById("export_prods_display_content").appendChild(btnExportProds.list);
-//                    var bdate; var edate;
-//                    var bdateValue=bDateTextBox.get("value");
-//                    bdate= moment(bdateValue).format('YYYYMMDD')+"0000";
-//                    var edateValue=eDateTextBox.get("value");
-//                    edate= moment(edateValue).format('YYYYMMDD')+"2359";
-
-                    //  var cashBoxesList=leftContentexportProds.getChildren();
 
                     var cashbox_params;
                     for (var i in cashBoxesList) {
@@ -175,17 +112,17 @@
                         }
                     }                                                                                           console.log("btnExportProds.onClick start request");
                     Request.getJSONData({url: "/sysadmin/export_prods/export_prods",
-                                condition: /*"bdate=" + bdate+ "&edate=" + edate + "&" + */cashbox_params,
+                                condition: cashbox_params,
                                 // timeout:"5000",
                                 consoleLog: true},
-                            function (success,result) {        console.log("btnExportProds.onClick Request.getJSONData result=",result);
+                            function (result,error) {        console.log("btnExportProds.onClick Request.getJSONData result=",result);
                                 btnExportProds.set('disabled',false);
-                                if (!success) {
+                                if(error||!result) {
                                     Dialogs.doRequestErrorDialog();
                                     document.getElementById('export_prods_display_content').innerText=" ";
                                     return;
                                 }
-                                if (result.error) {
+                                if(result.error) {
                                     Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+JSON.stringify(result.error)});
                                     document.getElementById('export_prods_display_content').innerText=" ";
                                     return;
@@ -218,8 +155,6 @@
                     while (displayResult.firstChild) {
                         displayResult.removeChild(displayResult.firstChild);
                     }
-                    //   displayResult.removeChild(displayResult.childNodes[0]);
                 };
             });
 </script>
-</html>

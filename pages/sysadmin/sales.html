@@ -1,0 +1,51 @@
+<BorderContainer id="sysadmin_Sales_PageContainer" style="width:100%;height:100%;">
+    <ContentPane id="sysadmin_Sales_ContentPaneLeft" region="left" splitter="true" style="width:255px;height:100%; margin:0;padding:0;">
+        <div id="sysadmin_Sales_getCashboxesErr"></div>
+        <table>
+            <tr><th>Кассовые аппараты<br/>(тип ЭККА MINI-T)</th></tr>
+            <tr><td id="sysadmin_Sales_CrsButtons"></td></tr>
+        </table>
+    </ContentPane>
+    <StackContainer id="sysadmin_Sales_ContentPaneDetailContainer" region="center" style="width:100%;height:100%; margin:0;padding:0;"></StackContainer>
+</BorderContainer>
+<script type="text/javascript">
+    var createReportButtons=function(){
+        $$.request.getJSONData({url: "/sysadmin/getCashboxes",consoleLog: true},
+                function(result,error){                                                                     log("createReportButtons getJSONData getCashboxes result=",result);
+                    if(error){
+                        $$.sysadmin_Sales_getCashboxesErr.innerHTML =
+                                "<span><b style='color:red'>Failed get cashboxes list from server! Reason: "+error.message+"</b></sp>";
+                        return;
+                    }
+                    for(var i in result.items){
+                        var item=result.items[i];
+                        addButtonTo($$.sysadmin_Sales_CrsButtons, "Sales"+item.CRID,item.CRName+" "+item.FacID);
+                    }
+                });
+    };
+    var addButtonTo = function(parent, id, name){
+        $$.$.addWigetTo(parent,"Button",{id:id, label:name, style:"margin-left:2px;;margin-right:1px;",fStyle:"width:239px"});
+        var button=$$[id];
+        button.onClick= function(){
+            if (!button.document){
+                var id="sysadmin_Sales_TableSales"+this.id;
+                $$.sysadmin_Sales_ContentPaneDetailContainer.$.addAppComponent("TDocSimpleTable",
+                        {id:id, titleText:this.label, dataURL:'/sysadmin/Sales/getSalesByCRID/'+this.id, buttonPrint:false},
+                        function(doc){
+                            doc.addHeaderDateBox("с",{contentTableCondition:"BDATE", initValueDate:$$.yesterday()})
+                                    .addHeaderDateBox("по",{contentTableCondition:"EDATE", initValueDate:$$.yesterday()})
+                                    .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:50px;"})
+                                    .addTotalSumNumberTextBox("ИТОГО кол-во:",750, "Qty", {style:"font-weight:bold;",inputStyle:"width:55px;"})
+                                    .addTotalSumNumberTextBox("ИТОГО сумма:",190, "Sum_wt", {style:"font-weight:bold;",inputStyle:"width:85px;",pattern:"###,###,##0.00##"})
+                                    .startupDoc();
+                        });
+                button.document = $$[id];
+            }
+            $$.sysadmin_Sales_ContentPaneDetailContainer.selectChild(button.document);
+        };
+        return button;
+    };
+    createReportButtons();
+    var btnAllCRs= addButtonTo($$.sysadmin_Sales_CrsButtons, "Sales-1", "Все кассы");
+    btnAllCRs.onClick();
+</script>

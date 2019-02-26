@@ -18,9 +18,7 @@
     <!--<link rel="icon" type="image/gif" href="/icons/icon1.ico"/>-->
     <link rel="stylesheet" href="/jslib/dijit/themes/claro/claro.css" media="screen">
     <script type="text/javascript" src="/jslib/dojo/dojo.js" data-dojo-config="async:true,parseOnLoad:false"></script>
-    <link rel="stylesheet" href="/jslib/htable.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="/css/sysadmin.css" media="screen">
-
+    <link rel="stylesheet" href="/css/htable.css" media="screen">
     <title>CASHSERVISE-US</title>
 </head>
 <body class="claro">
@@ -47,8 +45,8 @@
 </body>
 <script type="text/javascript">
     require(["app", "dijit/layout/BorderContainer", "dijit/layout/StackContainer", "dijit/layout/ContentPane",
-                "dijit/form/ToggleButton", "dojox/layout/ContentPane", "dijit/form/Button",  "request", "dojo/domReady!"],
-            function (APP, BorderContainer, StackContainer, ContentPane, ToggleButton, XContentPane, Button, Request) {                    console.log("STARTING SYSADMIN PAGE...");//!!!IT'S FOR TESTING!!!
+                "dijit/form/ToggleButton", "dojox/layout/ContentPane", "dijit/form/Button",  "app/request", "dojo/domReady!"],
+            function (APP, BorderContainer, StackContainer, ContentPane, ToggleButton, XContentPane, Button, Request) {     console.log("STARTING SYSADMIN PAGE...");//!!!IT'S FOR TESTING!!!
                moment.locale("uk");
 
                 var sysadmin_MainContainer = APP.instanceForID("sysadmin_MainContainer", BorderContainer, {design: "headline"});
@@ -94,22 +92,22 @@
 
                 sysadmin_MainContainer.getAppState = function () {   //getting main json data from server and run action parameter function
                     Request.getJSONData({url: "/sysadmin/app_state", consoleLog: true},
-                            function (success, result) {
-                                if (success) {
+                            function (result,error) {
+                                if(result) {
                                     if (result === undefined || result == null) result = [];
                                     sysadmin_MainContainer.mainContentData = result;
                                     var eAppMode = document.getElementById("sysadmin_app_mode");
                                     eAppMode.innerHTML = "<b>MODE:</b>";
-                                    if (result.mode) {
+                                    if(result.mode) {
                                         if (result.mode.toString().toLocaleLowerCase().indexOf("test") >= 0)
                                             eAppMode.innerHTML = eAppMode.innerHTML + "<b style='color:red'>" + result.mode + "</b>";
                                         else
                                             eAppMode.innerHTML = eAppMode.innerHTML + "<b style='color:dimgrey'>" + result.mode + "</b>";
-                                    } else
+                                    }else
                                         eAppMode.innerHTML = eAppMode.innerHTML + "<b>UNKNOWN!!!</b>";
                                     if (result.configuration) {
                                         document.getElementById("sysadmin_dbName").innerHTML =
-                                                "<b>DB NAME:<span style='color:dimgrey'>" + result.configuration.database + "</span></b>"
+                                                "<b>DB NAME:<span style='color:dimgrey'>" + result.configuration.dbName + "</span></b>"
                                     }
                                     if (result.dbConnection) {
                                         document.getElementById("sysadmin_connectToDBState").innerHTML =
@@ -121,9 +119,9 @@
                                             dbConnection_color.setAttribute("style", "color:red");
                                         }else dbConnection_color.setAttribute("style", "color:dimgrey");
                                     }
-                                } else {
+                                }else{
                                     sysadmin_MainContainer.mainContentData = [];
-                                    sysadmin_MainContainer.mainContentData["error"] = result;
+                                    sysadmin_MainContainer.mainContentData["error"] = error;
                                 }
                             }
                     )

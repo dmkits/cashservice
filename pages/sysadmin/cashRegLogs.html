@@ -1,0 +1,49 @@
+<BorderContainer id="sysadmin_CashRegLogs_PageContainer" style="width:100%;height:100%;">
+    <ContentPane id="sysadmin_CashRegLogs_ContentPaneLeft" region="left" splitter="true" style="width:255px;height:100%; margin:0;padding:0;">
+        <div id="sysadmin_CashRegLogs_getCashboxesErr"></div>
+        <table>
+            <tr><th>Кассовые аппараты<br/>(тип ЭККА MINI-T)</th></tr>
+            <tr><td id="sysadmin_CashRegLogs_CrsButtons"></td></tr>
+        </table>
+    </ContentPane>
+    <StackContainer id="sysadmin_CashRegLogs_ContentPaneDetailContainer" region="center" style="width:100%;height:100%; margin:0;padding:0;"></StackContainer>
+</BorderContainer>
+<script type="text/javascript">
+    var createReportButtons=function(){
+        $$.request.getJSONData({url:"/sysadmin/getCashboxes",consoleLog: true},
+                function (result,error){                                                                    log("createReportButtons getJSONData getCashboxes result=",result);
+                    if(error){
+                        $$.sysadmin_CashRegLogs_getCashboxesErr.innerHTML =
+                                "<span><b style='color:red'>Failed get cashboxes list from server! Reason: "+error.message+"</b></sp>";
+                        return;
+                    }
+                    for(var i in result.items){
+                        var item=result.items[i];
+                        addButtonTo($$.sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+item.CRID, item.CRName+" "+item.FacID);
+                    }
+                });
+    };
+    var addButtonTo = function(parent, id, name){
+        $$.$.addWigetTo(parent,"Button",{id:id, label:name,style:"margin-left:2px;;margin-right:1px;",fStyle:"width:239px"});
+        var button=$$[id];
+        button.onClick= function(){
+            if(!button.document){
+                var id="sysadmin_CashRegLogs_TableSales"+this.id;
+                $$.sysadmin_CashRegLogs_ContentPaneDetailContainer.$.addAppComponent("TDocSimpleTable",
+                        {id:id, titleText:this.label, dataURL:'/sysadmin/cashRegLogs/getLogsByCRID/'+this.id, buttonPrint:false},
+                        function(doc){
+                            doc.addHeaderDateBox("с",{contentTableCondition:"BDATE"})
+                                    .addHeaderDateBox("по",{contentTableCondition:"EDATE"})
+                                    .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:50px;"})
+                                    .startupDoc();
+                        });
+                button.document = $$[id];
+            }
+            $$.sysadmin_CashRegLogs_ContentPaneDetailContainer.selectChild(button.document);
+        };
+        return button;
+    };
+    createReportButtons();
+    var btnAllCRs= addButtonTo($$.sysadmin_CashRegLogs_CrsButtons, "CashRegLogs"+'-1', "Все кассы");
+    btnAllCRs.onClick();
+</script>

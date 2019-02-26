@@ -1,0 +1,160 @@
+<div id="export_prods_PageContent" style="width:100%;height:100%;">
+    <div id="export_prods_TopContent" style="width:100%; margin:0;padding:0; display: inline-block ">
+        <div style="/*color:dimgrey;*/text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Выгрузка номенклатур с ценами в ЭККА</div>
+        <table width="100%" style="margin-top:5px; margin-bottom: 5px" >
+            <tr>
+                <td width="250px"></td>
+                <td width="500px"></td>
+                <td width="90px"><button id="export_prods_btn">Export prods</button></td>
+                <td width="90px"><button id="export_prods_cleanBtn">Clean up</button></td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+    <div id="export_prods_LeftContent" style="width:252px;height:100%; margin:0;padding:0; ">
+        <div id="export_prods_header" style="height:28px; /*color: dimgray;*/ font-weight: bold; text-align: center; font-size:11px; /*padding-bottom: 5px; *//*padding-top: 5px;*/ border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Кассовые аппараты<br/>(тип ЭККА MINI-T)</div>
+        <table align="center" width="100%" style="margin-top: 0px">
+            <tr><td id="export_prods_cash_boxes_buttons"></td></tr>
+        </table>
+    </div>
+    <div id="export_prods_DetailContent" style="width:100%;height:100%; margin:0;padding:0; overflow: hidden">
+        <div id="export_prods_display_content_header" style="height:23px; color: dimgray;font-weight: bold; text-align: center; /*padding-bottom: 5px;*/ padding-top: 5px; border-bottom: solid 1px #b7bec9; background-color: #e7e7e7">Результат обработки</div>
+        <div id="export_prods_display_content" style="border:none;/*width:100%*/;height: calc(100% - 45px); overflow-y: scroll"></div>
+    </div>
+    <div id="export_prods_RightContent" style="width:500px;height:100%; margin:0;padding:0;">
+        <div id="export_prods_display_result">
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    require(["app", "dijit/layout/BorderContainer", "dijit/layout/ContentPane",
+                "dijit/form/DateTextBox", "dijit/form/Button", "dijit/form/ToggleButton",
+                "app/dialogs","app/request"],
+            function (APP, BorderContainer, ContentPane, DateTextBox, Button,ToggleButton, Dialogs,Request){
+                moment.locale("uk");
+                var borderContainer = APP.instanceForID("export_prods_PageContent", BorderContainer, {});
+                var topContentSQL = APP.instanceForID("export_prods_TopContent", ContentPane, {region: "top"});
+                var leftContentexportProds = APP.instanceForID("export_prods_LeftContent", ContentPane, {region: "left", style:"text-align:center"});
+                var detailContentexportProds = APP.instanceForID("export_prods_DetailContent", ContentPane, {region: "center"});
+                var rightContentexportProds = APP.instanceForID("export_prods_RightContent", ContentPane, {region: "right",splitter: true});
+                var export_prods_display_content= APP.instanceForID("export_prods_display_content", ContentPane, {region: "right",splitter: true});
+                var export_prods_display_content_header=APP.instanceForID("export_prods_display_content", ContentPane, {region: "right",splitter: true});
+                export_prods_display_content.startup();
+                export_prods_display_content_header.startup();
+                var export_prods_cash_boxes_buttons=document.getElementById('export_prods_cash_boxes_buttons');
+                var btnExportProds = APP.instanceForID("export_prods_btn", Button, {});
+                var btnSendexportProds = APP.instanceForID("export_prods_sendBtn", Button, {});
+                var btnCleanUp=APP.instanceForID("export_prods_cleanBtn", Button, {});
+                var displayXMLResult = document.getElementById("export_prods_display_result");
+
+                detailContentexportProds.getAllCashBoxes=function() {
+                    Request.getJSONData({url: "/sysadmin/get_all_cashboxes", consoleLog: true},
+                            function (result,error){
+                                if (error||!result) {
+                                    Dialogs.doRequestErrorDialog();
+                                    return;
+                                }
+                                if(result.error) {
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Cannot get configuration parameters! Reason:"+result.error.message});
+                                    return;
+                                }
+                                detailContentexportProds.setToggleCashBoxID(result.items);
+                            });
+                };
+                detailContentexportProds.getAllCashBoxes();
+
+                var cashBoxesList=[];
+                var allCashBoxesBtn=new Button({label:"Все кассы", crid:"export_prods-1"});
+                allCashBoxesBtn.domNode.firstChild.setAttribute("style", "width:235px; margin-top:10px;");
+
+                allCashBoxesBtn.onClick=function() {
+                    var count = 0;
+                    for(var j in cashBoxesList) {
+                        if (cashBoxesList[j].get('checked') == true) {
+                            count++;
+                        }
+                    }
+                    if(count<cashBoxesList.length){
+                        for (var i in cashBoxesList) {
+                            cashBoxesList[i].set('checked', true);
+                        }
+                        return;
+                    }
+                    for (var i in cashBoxesList) {
+                        cashBoxesList[i].set('checked', false);
+                    }
+                };
+
+                detailContentexportProds.setToggleCashBoxID=function(data){
+                    for(var i in data){
+                        var toggleBtn=new ToggleButton({iconClass:'dijitCheckBoxIcon',checked:false,label:data[i].CRName+" "+data[i].FacID, crid:data[i].CRID});//
+                        cashBoxesList.push(toggleBtn);
+                        toggleBtn.domNode.firstChild.setAttribute("style", "width:235px;");
+                        toggleBtn.startup();
+                        export_prods_cash_boxes_buttons.appendChild(toggleBtn.domNode);
+                        leftContentexportProds.startup();
+                    }
+                    cashBoxesList[0].set('checked', true);
+                    export_prods_cash_boxes_buttons.appendChild(allCashBoxesBtn.domNode);
+                };
+
+                btnExportProds.onClick=function(){
+                    document.getElementById('export_prods_display_content').innerText=" XML формируется.... ";
+                    btnExportProds.set('disabled','true');
+                    btnExportProds.list= document.createElement('ul');
+                    document.getElementById("export_prods_display_content").appendChild(btnExportProds.list);
+
+                    var cashbox_params;
+                    for (var i in cashBoxesList) {
+                        if(cashBoxesList[i].checked==true){
+                            var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
+                            cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;
+                        }
+                    }                                                                                           console.log("btnExportProds.onClick start request");
+                    Request.getJSONData({url: "/sysadmin/export_prods/export_prods",
+                                condition: cashbox_params,
+                                // timeout:"5000",
+                                consoleLog: true},
+                            function (result,error) {        console.log("btnExportProds.onClick Request.getJSONData result=",result);
+                                btnExportProds.set('disabled',false);
+                                if(error||!result) {
+                                    Dialogs.doRequestErrorDialog();
+                                    document.getElementById('export_prods_display_content').innerText=" ";
+                                    return;
+                                }
+                                if(result.error) {
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Reason: "+JSON.stringify(result.error)});
+                                    document.getElementById('export_prods_display_content').innerText=" ";
+                                    return;
+                                }
+                                if(result.nullLineCounter){
+                                    Dialogs.doDialogMsg({title:'Failed!',content:"Невозможно выполнить операцию<br>"+
+                                    "Найдены товары без наименования.<br> Всего: "+result.nullLineCounter +" товара"});
+                                    document.getElementById('export_prods_display_content').innerText=" ";
+                                    return;
+                                }
+                                var XMLFileContent='';
+                                if(result.items) {
+                                    var XMLData = result.items;
+                                    for (var i in XMLData) {
+                                        var XMLLine = XMLData[i].XMLText;
+                                        XMLFileContent = XMLFileContent + XMLLine + '\n';
+                                    }
+                                }
+                                if(result.serverError){
+                                    XMLFileContent=XMLFileContent+'\n'+ result.serverError;
+                                }
+                                if(result.serverResp){
+                                    XMLFileContent=XMLFileContent+'\n ОТВЕТ КАССОВОГО ШЛЮЗА:\n'+result.serverResp;
+                                }
+                                document.getElementById('export_prods_display_content').innerText=XMLFileContent;
+                            });
+                };
+                btnCleanUp.onClick = function () {
+                    var displayResult = document.getElementById("export_prods_display_content");
+                    while (displayResult.firstChild) {
+                        displayResult.removeChild(displayResult.firstChild);
+                    }
+                };
+            });
+</script>
