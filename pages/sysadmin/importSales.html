@@ -1,12 +1,13 @@
 <BorderContainer id="importSales_PageContent" style="width:100%;height:100%;">
-    <ContentPane id="importSales_TopContent" region="top" style="width:100%; margin:0;padding:0; display: inline-block ">
-        <div style="text-align:center; font-weight:bold; padding: 5px; background-color: #e7e7e7; border-bottom: solid 1px #b7bec9; ">Загрузка продаж с ЭККА</div>
-        <table width="100%" style="margin-top:5px;margin-bottom:5px" >
+    <ContentPane id="importSales_TopContent" region="top" style="width:100%; margin:0;padding:0;display:inline-block">
+        <table width="100%" style="margin:0;background-color:#e7e7e7;font-weight:bold;">
             <tr>
-                <td width="250px"></td>
-                <td width="250px" style="text-align:right"><DateTextBox type="date" id="importSales_BDate" label="Начальна дата:" style="width:85px"></DateTextBox></td>
+                <td></td>
+                <td width="260px" style="text-align:center;font-size:12px;">Загрузка продаж из Unisystem Cashserver</td>
+                <td width="200px" style="text-align:right"><DateTextBox type="date" id="importSales_BDate" label="Начальна дата:" style="width:85px"></DateTextBox></td>
                 <td width="10px"></td>
-                <td width="250px"><DateTextBox type="date" id="importSales_EDate" label="Конечная дата:"style="width:85px"></DateTextBox></td>
+                <td width="200px"><DateTextBox type="date" id="importSales_EDate" label="Конечная дата:"style="width:85px"></DateTextBox></td>
+                <td width="10px"></td>
                 <td width="90px"><button id="importSales_btnStartImport">Import sales</button></td>
                 <td width="90px"><button id="importSales_btnClean">Clean up</button></td>
                 <td width="20px"></td>
@@ -15,22 +16,22 @@
             </tr>
         </table>
     </ContentPane>
-    <ContentPane id="importSales_LeftContent" region="left" style="width:252px;height:100%; margin:0;padding:0; ">
-        <div style="height:28px;font-weight:bold;text-align: center;font-size:11px;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">Кассовые аппараты<br/>(тип ЭККА MINI-T)</div>
+    <ContentPane id="importSales_LeftContent" region="left" style="width:252px;height:100%; margin:0;padding:0;">
+        <div style="height:26px;font-weight:bold;text-align:center;font-size:11px;padding-top:3px;padding-bottom:0;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">Кассовые аппараты<br/>(тип ЭККА MINI-T)</div>
         <table align="center" width="100%" style="margin: 0px">
             <tr><td id="importSales_cashBoxesButtons"></td></tr>
         </table>
     </ContentPane>
     <ContentPane id="importSales_DetailContent" region="center" style="width:100%;height:100%; margin:0;padding:0;overflow:hidden">
-        <ContentPane style="height:23px;color:dimgray;font-weight:bold;text-align:center;padding-top:5px;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">Результат обработки</ContentPane>
-        <ContentPane id="importSales_displayContent" style="border:none;/*width:100%*/;height:calc(100% - 45px);overflow-y:scroll"></ContentPane>
+        <ContentPane region="top" style="color:dimgray;font-weight:bold;text-align:center;padding-top:8px;padding-bottom:7px;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">Результат обработки</ContentPane>
+        <ContentPane id="importSales_Results" style="border:none;/*width:100%*/;height:calc(100% - 45px);overflow-y:scroll"></ContentPane>
     </ContentPane>
-    <ContentPane id="importSales_RightContent" region="right" splitter="true" style="width:500px;height:100%; margin:0;padding:0;">
-        <div id="importSales_displayResult">
-        </div>
-    </ContentPane>
+    <LayoutContainer id="importSales_RightContent" region="right" splitter="true" style="width:600px;height:100%; margin:0;padding:0;">
+        <ContentPane region="top" style="color:dimgray;font-weight:bold;text-align:center;padding-top:8px;padding-bottom:7px;border-bottom:solid 1px #b7bec9;background-color:#e7e7e7">XML</ContentPane>
+        <ContentPane region="center" id="importSales_XML" style="border:none;width:100%;height:calc(100% - 55px);font-size:10px;overflow-y:scroll"></ContentPane>
+    </LayoutContainer>
 </BorderContainer>
-<script type="text/javascript">                                            log("import_sales",$$);
+<script type="text/javascript">                                                                             log("importSales",$$);
     moment.locale("uk");
     var socket = io.connect(/*'http://localhost:8080'*/);
     socket.on('new_event', function(data){
@@ -104,7 +105,7 @@
                 });
     };
     $$.importSales_btnClean.onClick = function(){
-        var displayResult = document.getElementById("importSales_displayContent");
+        var displayResult = document.getElementById("importSales_Results");
         while (displayResult.firstChild) {
             displayResult.removeChild(displayResult.firstChild);
         }
