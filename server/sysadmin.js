@@ -5,7 +5,7 @@ var Buffer = require('buffer').Buffer,
     xml2js = require('xml2js'), parseString = xml2js.parseString, builder = new xml2js.Builder(),
     socketio = require('socket.io');
 var server= require('./server'), log= server.log, startupParams= server.startupParams,
-    database= require('./database');
+    database= require('./database'), procUniCashserver= require('./procUniCashserver');
 
 module.exports= function(app,httpServer){
     var io = socketio(httpServer);
@@ -99,30 +99,6 @@ module.exports= function(app,httpServer){
             ,timeout:5000
         }, function (error, response, body) {
             callback(error, response, body);
-        });
-    }
-    function postProductsToUniCashServer(xmlData, callback){
-        var cashserver_url = server.getSysConfig()['cashserverUrl'],
-            cashserver_port = server.getSysConfig()['cashserverPort'],
-            xmlText = "", nullLineCounter=0;
-        for(var i in xmlData){
-            var xmlLine = xmlData[i].XMLText, noProdName = xmlData[i].noProdName;
-            if(xmlLine==null || noProdName==true) nullLineCounter=nullLineCounter+1;
-            xmlText = xmlText + xmlLine + "\n";
-        }
-        if(nullLineCounter>0){
-            callback({nullLineCounter:nullLineCounter},xmlText);
-            return;
-        }
-        var byteLength =Buffer.byteLength(xmlText, 'windows-1251');
-        request.post({
-            headers: {'Content-Type': 'text/xml;charset=windows-1251', 'Content-Length': byteLength},
-            uri: 'http://' + cashserver_url + ':' + cashserver_port + '/lsoft',
-            body: xmlText,
-            encoding: 'binary'
-            ,timeout:5000
-        },function(error, response, body){
-            callback({message:error.message}, xmlText, response, body);
         });
     }
     function getChequesData(body, callback) {
@@ -771,7 +747,7 @@ module.exports= function(app,httpServer){
                     res.send({error:"Не удалось получить данные из базы данных для XML! Причина: "+error.message});
                     return;
                 }
-                postProductsToUniCashServer(dataItems, function(err,xml,response,body){
+                procUniCashserver.postProductsToUniCashServer(server.getSysConfig(), dataItems, function(err,xml,response,body){
                     if(err&&err.nullLineCounter){
                         res.send({nullLineCounter:err.nullLineCounter,xmlText:xml,error:"XML содержит некорректные позиции!"});
                         return;

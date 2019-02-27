@@ -82,6 +82,7 @@ module.exports.getSysConfigErr= function(){ return sysConfigErr; };
 
 var database = require('./database');                                                                       log.info('./dataBase...', new Date().getTime() - startTime);//test
 if(!sysConfigErr) database.dbConnect();                                                                     log.info('database.dbConnect...', new Date().getTime() - startTime);//test
+require('./procUniCashserver');                                                                             log.info('./procUniCashserver...', new Date().getTime() - startTime);//test
 
 require('./sysadmin')(app,httpServer);
 
