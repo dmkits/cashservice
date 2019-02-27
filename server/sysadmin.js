@@ -101,22 +101,17 @@ module.exports= function(app,httpServer){
             callback(error, response, body);
         });
     }
-    function postProductsToUniCashServer(xmlData, callback) {
-        var cashserver_url = server.getSysConfig()['cashserverUrl'];
-        var cashserver_port = server.getSysConfig()['cashserverPort'];
-        var xmlText = "";
-        var nullLineCounter=0;
-        for (var i in xmlData) {
-            var xmlLine = xmlData[i].XMLText;
-            var noProdName = xmlData[i].noProdName;
-            if(xmlLine==null || noProdName==true) {
-                nullLineCounter=nullLineCounter+1;
-            }
-            xmlText = xmlText + xmlLine;
+    function postProductsToUniCashServer(xmlData, callback){
+        var cashserver_url = server.getSysConfig()['cashserverUrl'],
+            cashserver_port = server.getSysConfig()['cashserverPort'],
+            xmlText = "", nullLineCounter=0;
+        for(var i in xmlData){
+            var xmlLine = xmlData[i].XMLText, noProdName = xmlData[i].noProdName;
+            if(xmlLine==null || noProdName==true) nullLineCounter=nullLineCounter+1;
+            xmlText = xmlText + xmlLine + "\n";
         }
-
         if(nullLineCounter>0){
-            callback({nullLineCounter:nullLineCounter});
+            callback({nullLineCounter:nullLineCounter},xmlText);
             return;
         }
         var byteLength =Buffer.byteLength(xmlText, 'windows-1251');
@@ -126,8 +121,8 @@ module.exports= function(app,httpServer){
             body: xmlText,
             encoding: 'binary'
             ,timeout:5000
-        }, function (error, response, body) {
-            callback(error, response, body);
+        },function(error, response, body){
+            callback({message:error.message}, xmlText, response, body);
         });
     }
     function getChequesData(body, callback) {
@@ -535,99 +530,91 @@ module.exports= function(app,httpServer){
 
         emitAndLogEvent('Поиск кассовых аппаратов',null,null, function(){
 
-            getCRIDList(clientReq, function (err, CRID) {
-                if (err) {
-                    log.error(err);
-                    emitAndLogEvent(err,null,null,function(){
-                        clientRes.send({error: err});
-                    });
-                    return;
-                }
-                //getCashBoxesList(clientReq); //test
-                //return;
-                emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
-                    database.getXMLForUniCashServerRequest(bdate, edate, CRID, function (error, xml) {
-                        if (error){
-                            emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null,null, function() {
-                                clientRes.send({error: error});
-                            });
-                            return;
-                        }
-                        // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
-                        emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
-                            getDataFromUniCashServer(xml, function (error, response, body) {
-                                if(error){
-                                    log.error(error);
-                                    var errMsg;
-                                    try{
-                                        errMsg= JSON.parse(error)
-                                    }catch(e){
-                                        errMsg=error;
-                                    }
-                                    emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,null,function(){
-                                        clientRes.send({error:error});
-                                    });
-                                    return;
+            var sCRIDsList= getCRIDList(clientReq.query);
+            //getCashBoxesList(clientReq); //test
+            //return;
+            emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
+                database.getXMLForUniCashServerRequest(bdate, edate, sCRIDsList, function (error, xml) {
+                    if (error){
+                        emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null,null, function() {
+                            clientRes.send({error: error});
+                        });
+                        return;
+                    }
+                    // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
+                    emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
+                        getDataFromUniCashServer(xml, function (error, response, body) {
+                            if(error){
+                                log.error(error);
+                                var errMsg;
+                                try{
+                                    errMsg= JSON.parse(error)
+                                }catch(e){
+                                    errMsg=error;
                                 }
-                                if(!response){
-                                    log.error("Кассовый сервер не отвечает!");
-                                    emitAndLogEvent("Кассовый сервер не отвечает!",null,null, function(){
-                                        clientRes.send({error: "Кассовый сервер не отвечает!"});
-                                    });
-                                    return;
-                                }
-                                if(!body){
-                                    log.error("Кассовый сервер не прислал данные!");
-                                    emitAndLogEvent("Кассовый сервер не прислал данные!",null,null,function(){
-                                        clientRes.send({error: "Кассовый сервер не прислал данные!"});
-                                    });
-                                    return;
-                                }
-                                emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
-                                    // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
-                                    //  body="kjhbkljh"; //test
-                                    getChequesData(body, function (err, result) {
-                                        if (err) {
-                                            emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null,null, function(){
-                                                clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
-                                            });
-                                            return;
-                                        }
-
-                                        fs.writeFile("./chequesData.json", JSON.stringify(result), function (err, success) {
-                                            //callback(err,success);
+                                emitAndLogEvent("Ошибка подключения к кассовому серверу!\n"+errMsg,null,null,function(){
+                                    clientRes.send({error:error});
+                                });
+                                return;
+                            }
+                            if(!response){
+                                log.error("Кассовый сервер не отвечает!");
+                                emitAndLogEvent("Кассовый сервер не отвечает!",null,null, function(){
+                                    clientRes.send({error: "Кассовый сервер не отвечает!"});
+                                });
+                                return;
+                            }
+                            if(!body){
+                                log.error("Кассовый сервер не прислал данные!");
+                                emitAndLogEvent("Кассовый сервер не прислал данные!",null,null,function(){
+                                    clientRes.send({error: "Кассовый сервер не прислал данные!"});
+                                });
+                                return;
+                            }
+                            emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
+                                // body='<?xml version="1.0" encoding="windows-1251" ?>'; //test
+                                //  body="kjhbkljh"; //test
+                                getChequesData(body, function (err, result) {
+                                    if (err) {
+                                        emitAndLogEvent('Не удалось обработать данные кассового сервера!\n'+err,null,null, function(){
+                                            clientRes.send({error: 'Не удалось обработать данные кассового сервера!\n'+err});
                                         });
+                                        return;
+                                    }
 
-                                        emitAndLogEvent('Данные кассового сервера обработаны успешно', null,null, function(){
-                                            var chequesData = result.sales;
-                                            fillCheques(chequesData, 0, /*finishedcallback*/function(err){
-                                                if(err){
-                                                    clientRes.send({error:err});
-                                                    return;
-                                                }
-                                                var msg = 'Все чеки успешно обработаны';
-                                                if(chequesData.length<1)msg = "";
-                                                emitAndLogEvent( msg,null, chequesData.cashBoxFabricNum, function(){
-                                                    var innersDocData = result.inners;
-                                                    insertInnerDoc(innersDocData,0,function(err,res){
-                                                        if(err){
-                                                            clientRes.send({"error": err});
-                                                            return;
-                                                        }
-                                                        var msg='Все вносы/выносы успешно обработаны';
-                                                        if(innersDocData.length<1) msg = "";
-                                                        emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum,function(){
-                                                            addToZrep(result.reports, 0,function(err,res) {
-                                                                if (err) {
-                                                                    clientRes.send({"error": err});
-                                                                    return;
-                                                                }
-                                                                var msg='Все Z-Отчеты успешно обработаны';
-                                                                if(result.reports.length<1) msg = "";
-                                                                emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum, function () {
-                                                                    emitAndLogEvent('Все полученные данные успешно обработаны', null,chequesData.cashBoxFabricNum, function () {
-                                                                        clientRes.send({"done": "ok"});
-                                                                    });
+                                    fs.writeFile("./chequesData.json", JSON.stringify(result), function (err, success) {
+                                        //callback(err,success);
+                                    });
+
+                                    emitAndLogEvent('Данные кассового сервера обработаны успешно', null,null, function(){
+                                        var chequesData = result.sales;
+                                        fillCheques(chequesData, 0, /*finishedcallback*/function(err){
+                                            if(err){
+                                                clientRes.send({error:err});
+                                                return;
+                                            }
+                                            var msg = 'Все чеки успешно обработаны';
+                                            if(chequesData.length<1)msg = "";
+                                            emitAndLogEvent( msg,null, chequesData.cashBoxFabricNum, function(){
+                                                var innersDocData = result.inners;
+                                                insertInnerDoc(innersDocData,0,function(err,res){
+                                                    if(err){
+                                                        clientRes.send({"error": err});
+                                                        return;
+                                                    }
+                                                    var msg='Все вносы/выносы успешно обработаны';
+                                                    if(innersDocData.length<1) msg = "";
+                                                    emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum,function(){
+                                                        addToZrep(result.reports, 0,function(err,res) {
+                                                            if (err) {
+                                                                clientRes.send({"error": err});
+                                                                return;
+                                                            }
+                                                            var msg='Все Z-Отчеты успешно обработаны';
+                                                            if(result.reports.length<1) msg = "";
+                                                            emitAndLogEvent(msg,null, chequesData.cashBoxFabricNum, function () {
+                                                                emitAndLogEvent('Все полученные данные успешно обработаны', null,chequesData.cashBoxFabricNum, function () {
+                                                                    clientRes.send({"done": "ok"});
                                                                 });
                                                             });
                                                         });
@@ -836,86 +823,53 @@ module.exports= function(app,httpServer){
         res.sendFile(appPagesPath+'sysadmin/exportProds.html');
     });
 
-    app.get("/sysadmin/export_prods/export_prods", function (req, res) {       log.info("/sysadmin/export_prods/export_prods  params=", req.query);
-        var outData = {};
-        getCRIDList(req, function (err, CRID) {
-            if (err) {
-                outData.error = err;
-                res.send(outData);
-                return;
-            }
-            database.exportProds(CRID,
-                function (error, recordset) {
-                    if (error) {
-                        outData.error = error;
-                        res.send(outData);
+    app.get("/sysadmin/exportProds/createXMLandSendToUniCashserver", function(req,res){                     log.info("createXMLandSendToUniCashserver  params=", req.query);
+        var sCRIDsList= getCRIDList(req.query);                                                             log.info("createXMLandSendToUniCashserver getCRIDList",sCRIDsList);
+        if(sCRIDsList.trim().length==""){
+            res.send({error:"Не указаны кассы для формирования XML!"});
+            return;
+        }
+        database.exportProds(sCRIDsList,
+            function(error, dataItems){
+                if(error){
+                    res.send({error:"Не удалось получить данные из базы данных для XML! Причина: "+error.message});
+                    return;
+                }
+                postProductsToUniCashServer(dataItems, function(err,xml,response,body){
+                    if(err&&err.nullLineCounter){
+                        res.send({nullLineCounter:err.nullLineCounter,xmlText:xml,error:"XML содержит некорректные позиции!"});
+                        return;
+                    }else if(err){
+                        log.error("postProductsToUniCashServer error:",err.message);
+                        res.send({xmlText:xml,error:"Не удалось выполнить запрос к кассовому серверу! Причина: "+err.message});
                         return;
                     }
-                    outData.items = recordset;
-                    postProductsToUniCashServer(outData.items, function (err, response, body) {
-                        if(err && err.nullLineCounter){
-                            res.send({nullLineCounter:err.nullLineCounter});
-                            return;
-                        }
-                        if (err) {
-                            log.error(err);
-                            var errMsg;
-                            try {
-                                errMsg = JSON.parse(error)
-                            } catch (e) {
-                                errMsg = error;
-                            }
-                            log.error(errMsg);
-                            res.send(outData.error = errMsg);
-                            return;
-                        }
-                        if (!response) {
-                            log.error("Кассовый сервер не отвечает!");
-                            res.send(outData.serverError = "Кассовый сервер не отвечает!");
-                            return;
-                        }
-                        if (!body) {
-                            log.error("Кассовый сервер не прислал данные!");
-                            res.send(outData.serverError = "Кассовый сервер не прислал данные!");
-                            return;
-                        }
-                        var buf = new Buffer(body, 'binary');
-                        var str = iconv_lite.decode(buf, 'win1251');
-                        outData.serverResp = str;
-                        res.send(outData);
-                    });
+                    if(!response){
+                        log.error("postProductsToUniCashServer error: Кассовый сервер не отвечает!");
+                        res.send({xmlText:xml,error:"Кассовый сервер не отвечает!"});
+                        return;
+                    }
+                    if(!body){
+                        log.error("postProductsToUniCashServer error: Кассовый сервер не прислал данные!");
+                        res.send({xmlText:xml,error:"Кассовый сервер не прислал данные!"});
+                        return;
+                    }
+                    var buf = new Buffer(body, 'binary'), str = iconv_lite.decode(buf, 'win1251');
+                    res.send({xmlText:xml,serverResp:str});
                 });
-        });
+            });
     });
 
     app.get("/sysadmin/prodsPrices", function (req, res) {
         res.sendFile(appPagesPath+'sysadmin/prodsPrices.html');
     });
 
-    function getCRIDList(req,callback){
-        var CRID="";
-        for(var itemName in req.query){
-            if(itemName.indexOf("cashbox_")>=0) CRID=CRID+req.query[itemName]+",";
-        }
-        CRID=CRID.substring(0,CRID.length-1);
-        if(CRID.indexOf("-1")>=0){
-            database.getAllCashBoxes(function (err, result) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-                CRID='';
-                if(result.length<1){
-                    callback("Не удалось получить список кассовых аппаратов");
-                    return;
-                }
-                for(var i in result) CRID = CRID + result[i].CRID + ",";
-                CRID=CRID.substring(0,CRID.length-1);
-                callback(null,CRID );
-            });
-        }else{
-            callback(null,CRID );
-        }
+    function getCRIDList(selectedCRs){
+        var sCRIDsList="";
+        for(var itemName in selectedCRs)
+            if(itemName.indexOf("cashbox_")>=0) sCRIDsList=sCRIDsList+selectedCRs[itemName]+",";
+        sCRIDsList=sCRIDsList.substring(0,sCRIDsList.length-1);
+        return sCRIDsList;
     }
 
     app.get("/sysadmin/ProdsPrices/getProdsPricesByCRID/*", function (req, res) {

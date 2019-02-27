@@ -747,7 +747,7 @@ module.exports.exportProds = function(crId, callback) {
     reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
     reqSql.input("CurrentDateTime", sql.NVarChar,CurrentDateTime);
     reqSql.query(reqStr, function (error,recordset) {
-        if (error){
+        if(error){
             callback(error);
             return;
         }

@@ -87,79 +87,72 @@ define(["dojo/request", "app/base","app/dialogs"],
             },
             /** processJSONDataResult
              * params = { showErrorDialog, resultItemName }
-             * resParams={ dlgTitleReqErr, msgReqErrState0, msgReqErr, dlgMsgReqErrNoData, dlgTitleRespErr }
-             * resultCallback = function(result,error), error = { reqError/srvError, message, errorMsg, userErrorMsg, srvResult }
-             * call resultCallback(result) if request success and no result.error
-             * call resultCallback(undefined,error) if request not success or exists result.error
+             * resParams={ dlgErrMsgReqErr, dlgErrReasonReqErrState0, dlgErrReasonReqErr, dlgErrMsgRespErr, dlgErrReasonRespErrNoData }
+             * resultCallback = function(<response result>, <error>),
+             *      <error> = { message, errorMessage, userMessage, _reqError }
+             * call resultCallback(<response result>) if request success and no result.error
+             * call resultCallback(undefined, <error>) if request not success or
+             * call resultCallback(<response result>, <error>) if request success and exists <response result>.error
              */
             processJSONDataResult: function(params, respJSON,error, resParams, resultCallback){
-                var requestFailDialog=null, self=this, hasResult=respJSON!==undefined&&respJSON!==null;
+                var requestFailDialog=null, self=this,
+                    result=(params&&params.resultItemName)?respJSON[params.resultItemName]:respJSON,
+                    hasResult=result!==undefined&&result!==null;
                 if(params&&params.showErrorDialog!==false)
                     requestFailDialog= function(msg, reason){
                         if(!reason) reason="";
                         self.doRequestFailDialog({title:"Внимание",content:msg+" <br>Причина: "+reason});
                     };
-                if(!error&&hasResult&&!respJSON.error&&!params.resultItemName){
+                if(!error&&hasResult&&!respJSON.error){
                     resultCallback(respJSON);
                     return;
-                }else if(!error&&hasResult&&!respJSON.error&&params.resultItemName){
-                    var reqRes=respJSON[params.resultItemName];
-                    if(reqRes===undefined||reqRes===null){//no response result by params.resultItemName
-                        if(requestFailDialog) requestFailDialog(resParams.dlgTitleReqErr,resParams.msgReqErrNoData);
-                        resultCallback(reqRes,{srvError:"No response data", message:resParams.msgReqErrNoData});
-                        return;
-                    }
-                    resultCallback(reqRes);
-                    return;
-                }else if(!error&&hasResult&&respJSON.error){// response contain error
-                    var reqRes=(!params.resultItemName)?respJSON:respJSON[params.resultItemName],
-                        respErr=respJSON.error||{},
-                        errMsg=(typeof(respErr)=="object")?respErr.message:respErr,
-                        postErr={srvError:respJSON.error, message:errMsg, srvResult:reqRes};
-                    if(respErr.errorMsg) {
-                        errMsg=respErr.errorMsg + "<br>" + errMsg;
-                        postErr.message=respErr.errorMsg;postErr.errorMsg=respErr.errorMsg;
-                    }
-                    if(respErr.errorUserMsg){
-                        errMsg=respErr.errorUserMsg;
-                        postErr.message=respErr.errorUserMsg;postErr.errorUserMsg=respErr.errorUserMsg;
+                }else if(!error&&respJSON&&respJSON.error){// response contain error
+                    var respErr=respJSON.error, respErrObj=(typeof(respErr)=="object")?respErr:null,
+                        errMsg=(respErrObj)?(respErrObj.message||"UNKNOWN"):respErr,
+                        resErr={message:errMsg, errorMessage:errMsg};
+                    if(respErrObj&&respErrObj.userMessage) {
+                        errMsg=respErrObj.userMessage;
+                        resErr.message=respErr.userMessage; resErr.userMessage=respErr.userMessage;
                     }
                     console.error("Response return error! Error:",respErr,"Result:",respJSON,"Request params:",params);
-                    if(requestFailDialog) requestFailDialog(resParams.dlgTitleRespErr,errMsg);
-                    resultCallback(undefined,postErr);
+                    if(requestFailDialog) requestFailDialog(resParams.dlgErrMsgRespErr,errMsg);
+                    resultCallback(result,resErr);
                     return;
                 }else if(!error&&!hasResult){//no response result
-                    if (requestFailDialog) requestFailDialog(resParams.dlgTitleReqErr,resParams.msgReqErrNoData);
-                    console.error("Response return no result! Result:",respJSON,"Request params:",params);
-                    resultCallback(null,{srvError:"No response data", message:resParams.msgReqErrNoData, srvResult:respJSON});
+                    if(requestFailDialog) requestFailDialog(resParams.dlgErrMsgRespErr,resParams.dlgErrReasonRespErrNoData);
+                    var errMsgNoRes="Response return no result!";
+                    console.error(errMsgNoRes+" Result:",respJSON,"Request params:",params);
+                    resultCallback(result,{message:resParams.dlgErrReasonRespErrNoData, errorMessage:errMsgNoRes});
                     return;
                 }
                 //if error
-                var msg = (error.response&&error.response.status==0)?resParams.msgReqErrState0:resParams.msgReqErr,
+                var msg = (error.response&&error.response.status==0)?resParams.dlgErrReasonReqErrState0:resParams.dlgErrReasonReqErr,
                     reqErr=(error.message)?error.message:error;
-                if(requestFailDialog) requestFailDialog(resParams.dlgTitleReqErr,msg);
-                resultCallback(undefined,{reqError:reqErr,message:msg});
+                if(requestFailDialog) requestFailDialog(resParams.dlgErrMsgReqErr,msg);
+                resultCallback(undefined,{message:msg,_reqError:reqErr});
             },
             getJSONResParams: {
-                dlgTitleReqErr:"Невозможно получить данные!",
-                msgReqErrState0:"Нет связи с сервером!",
-                msgReqErr:"Некорректный ответ сервера!",
-                msgReqErrNoData:"Нет данных с сервера!",
-                dlgTitleRespErr:"Невозможно получить данные!"
+                dlgErrMsgReqErr:"Невозможно получить данные!",
+                dlgErrReasonReqErrState0:"Нет связи с сервером!",
+                dlgErrReasonReqErr:"Некорректный ответ сервера!",
+                dlgErrMsgRespErr:"Невозможно получить данные!",
+                dlgErrReasonRespErrNoData:"Нет данных с сервера!"
             },
             postJSONResParams: {
-                dlgTitleReqErr:"Невозможно получить результат операции!",
-                msgReqErrState0:"Нет связи с сервером!",
-                msgReqErr:"Некорректный ответ сервера!",
-                msgReqErrNoData:"Нет результата операции с сервера!",
-                dlgTitleRespErr:"Невозможно выпонить операцию!"
+                dlgErrMsgReqErr:"Невозможно получить результат операции!",
+                dlgErrReasonReqErrState0:"Нет связи с сервером!",
+                dlgErrReasonReqErr:"Некорректный ответ сервера!",
+                dlgErrMsgRespErr:"Невозможно выпонить операцию!",
+                dlgErrReasonRespErrNoData:"Нет результата операции с сервера!"
             },
             /** jsonData
              * params = { url, method:"get"/"post", conditions, timeout, showErrorDialog, consoleLog, resultItemName }
              * default: method="get", params.showErrorDialog = true, params.consoleLog = true
-             * resultCallback = function(result, error)
-             *  result = undefined, error present if request failed or no result (result empty)
-             *  error = { reqError/srvError, message, errorMsg, userErrorMsg, srvResult }
+             * resultCallback = function(<response result>, <error>),
+             *      <error> = { message, errorMessage, userMessage, _reqError }
+             * call resultCallback(<response result>) if request success and no result.error
+             * call resultCallback(undefined, <error>) if request not success or
+             * call resultCallback(<response result>, <error>) if request success and exists <response result>.error
              */
             jsonData: function(params,resultCallback){
                 var self=this;
@@ -175,10 +168,11 @@ define(["dojo/request", "app/base","app/dialogs"],
             },
             /** getJSONData
              * params = { url, conditions, timeout, showErrorDialog, consoleLog, resultItemName }
-             * default: params.showErrorDialog = true, params.consoleLog = true
-             * resultCallback = function(result, error)
-             *  result = undefined, error present if request failed or no result (result empty)
-             *  error = { reqError/srvError, message, errorMsg, userErrorMsg, srvResult }
+             * resultCallback = function(<response result>, <error>),
+             *      <error> = { message, errorMessage, userMessage, _reqError }
+             * call resultCallback(<response result>) if request success and no result.error
+             * call resultCallback(undefined, <error>) if request not success or
+             * call resultCallback(<response result>, <error>) if request success and exists <response result>.error
              */
             getJSONData: function(params,resultCallback){
                 var self=this;
@@ -189,9 +183,11 @@ define(["dojo/request", "app/base","app/dialogs"],
             /** postJSONData
              * params = <url>" OR { url, conditions, timeout, showErrorDialog, data, resultItemName }
              * default: params.showErrorDialog = true
-             * resultCallback = function(result, error)
-             *  result = undefined, error present if request failed or no result (result empty)
-             *  error = { reqError/srvError, message, errorMsg, userErrorMsg, srvResult }
+             * resultCallback = function(<response result>, <error>),
+             *      <error> = { message, errorMessage, userMessage, _reqError }
+             * call resultCallback(<response result>) if request success and no result.error
+             * call resultCallback(undefined, <error>) if request not success or
+             * call resultCallback(<response result>, <error>) if request success and exists <response result>.error
              */
             postJSONData: function(params,resultCallback){
                 var self=this;
