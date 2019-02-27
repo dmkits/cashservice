@@ -165,7 +165,7 @@ define(["dojo/_base/declare", "dijit/layout/ContentPane","dojox/widget/Standby",
                     },
                     cells: function (row, col, prop){ return {readOnly:true, renderer:this.cellValueRenderer}; },
                     afterRender: function(isForced){//fix header width for scroll
-                        var scrollElemWidth=15;
+                        var scrollElemWidth=0;
                         var cloneTop=this.rootElement.getElementsByClassName("ht_clone_top handsontable")[0];
                         cloneTop.style["max-width"]=(cloneTop.style.width.replace("px","")-scrollElemWidth)+"px";
                         var clone_wtHolder=cloneTop.getElementsByClassName("wtHolder")[0];
