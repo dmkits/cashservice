@@ -755,10 +755,59 @@ module.exports= function(app,httpServer){
             });
     });
 
+    app.get("/sysadmin/exportProds", function (req, res) {
+        res.sendFile(appPagesPath+'sysadmin/exportProds.html');
+    });
+
+    app.get("/sysadmin/exportProds/createXMLandSendToUniCashserver", function(req,res){                     log.info("createXMLandSendToUniCashserver  params=", req.query);
+        var sCRIDsList= getCRIDList(req.query);                                                             log.info("createXMLandSendToUniCashserver getCRIDList",sCRIDsList);
+        if(sCRIDsList.trim().length==""){
+            res.send({error:"Не указаны кассы для формирования XML!"});
+            return;
+        }
+        database.getProdsPricesXML(sCRIDsList,
+            function(error, dataItems){
+                if(error){
+                    res.send({error:"Не удалось получить данные из базы данных для XML! Причина: "+error.message});
+                    return;
+                }
+                postProductsToUniCashServer(dataItems, function(err,xml,response,body){
+                    if(err&&err.nullLineCounter){
+                        res.send({nullLineCounter:err.nullLineCounter,xmlText:xml,error:"XML содержит некорректные позиции!"});
+                        return;
+                    }else if(err){
+                        log.error("postProductsToUniCashServer error:",err.message);
+                        res.send({xmlText:xml,error:"Не удалось выполнить запрос к кассовому серверу! Причина: "+err.message});
+                        return;
+                    }
+                    if(!response){
+                        log.error("postProductsToUniCashServer error: Кассовый сервер не отвечает!");
+                        res.send({xmlText:xml,error:"Кассовый сервер не отвечает!"});
+                        return;
+                    }
+                    if(!body){
+                        log.error("postProductsToUniCashServer error: Кассовый сервер не прислал данные!");
+                        res.send({xmlText:xml,error:"Кассовый сервер не прислал данные!"});
+                        return;
+                    }
+                    var buf = new Buffer(body, 'binary'), str = iconv_lite.decode(buf, 'win1251');
+                    res.send({xmlText:xml,serverResp:str});
+                });
+            });
+    });
+
+
+    function getCRIDList(selectedCRs){
+        var sCRIDsList="";
+        for(var itemName in selectedCRs)
+            if(itemName.indexOf("cashbox_")>=0) sCRIDsList=sCRIDsList+selectedCRs[itemName]+",";
+        sCRIDsList=sCRIDsList.substring(0,sCRIDsList.length-1);
+        return sCRIDsList;
+    }
+
     app.get("/sysadmin/sales", function (req, res) {
         res.sendFile(appPagesPath+'sysadmin/sales.html');
     });
-
     app.get("/sysadmin/Sales/getSalesByCRID/*", function (req, res) {
         log.info("/sysadmin/Sales/getSalesByCRID/* params=",req.params," ", JSON.stringify(req.query));
         var initialCRID= req.params[0].replace("Sales","");
@@ -818,60 +867,9 @@ module.exports= function(app,httpServer){
                 });
         }
     });
-
-    app.get("/sysadmin/exportProds", function (req, res) {
-        res.sendFile(appPagesPath+'sysadmin/exportProds.html');
-    });
-
-    app.get("/sysadmin/exportProds/createXMLandSendToUniCashserver", function(req,res){                     log.info("createXMLandSendToUniCashserver  params=", req.query);
-        var sCRIDsList= getCRIDList(req.query);                                                             log.info("createXMLandSendToUniCashserver getCRIDList",sCRIDsList);
-        if(sCRIDsList.trim().length==""){
-            res.send({error:"Не указаны кассы для формирования XML!"});
-            return;
-        }
-        database.exportProds(sCRIDsList,
-            function(error, dataItems){
-                if(error){
-                    res.send({error:"Не удалось получить данные из базы данных для XML! Причина: "+error.message});
-                    return;
-                }
-                postProductsToUniCashServer(dataItems, function(err,xml,response,body){
-                    if(err&&err.nullLineCounter){
-                        res.send({nullLineCounter:err.nullLineCounter,xmlText:xml,error:"XML содержит некорректные позиции!"});
-                        return;
-                    }else if(err){
-                        log.error("postProductsToUniCashServer error:",err.message);
-                        res.send({xmlText:xml,error:"Не удалось выполнить запрос к кассовому серверу! Причина: "+err.message});
-                        return;
-                    }
-                    if(!response){
-                        log.error("postProductsToUniCashServer error: Кассовый сервер не отвечает!");
-                        res.send({xmlText:xml,error:"Кассовый сервер не отвечает!"});
-                        return;
-                    }
-                    if(!body){
-                        log.error("postProductsToUniCashServer error: Кассовый сервер не прислал данные!");
-                        res.send({xmlText:xml,error:"Кассовый сервер не прислал данные!"});
-                        return;
-                    }
-                    var buf = new Buffer(body, 'binary'), str = iconv_lite.decode(buf, 'win1251');
-                    res.send({xmlText:xml,serverResp:str});
-                });
-            });
-    });
-
     app.get("/sysadmin/prodsPrices", function (req, res) {
         res.sendFile(appPagesPath+'sysadmin/prodsPrices.html');
     });
-
-    function getCRIDList(selectedCRs){
-        var sCRIDsList="";
-        for(var itemName in selectedCRs)
-            if(itemName.indexOf("cashbox_")>=0) sCRIDsList=sCRIDsList+selectedCRs[itemName]+",";
-        sCRIDsList=sCRIDsList.substring(0,sCRIDsList.length-1);
-        return sCRIDsList;
-    }
-
     app.get("/sysadmin/ProdsPrices/getProdsPricesByCRID/*", function (req, res) {
         log.info("/sysadmin/ProdsPrices/getProdsPricesByCRID/*  params=",req.params," ", JSON.stringify(req.query));
         var outData={};
@@ -898,8 +896,8 @@ module.exports= function(app,httpServer){
                 }
                 CRID='';
                 for(var i in result) CRID = CRID + result[i].CRID + ",";
-                CRID=CRID.substring(0,CRID.length-1)/*+")"*/;
-                database.getPrices(CRID,
+                CRID=CRID.substring(0,CRID.length-1);
+                database.getProdsPricesByCRID(CRID,
                     function (error,recordset) {
                         if (error){
                             outData.error=error;
@@ -912,7 +910,7 @@ module.exports= function(app,httpServer){
             });
         }else{
             CRID = initialCRID;
-            database.getPrices(CRID,
+            database.getProdsPricesByCRID(CRID,
                 function (error, recordset) {
                     if (error) {
                         outData.error = error;

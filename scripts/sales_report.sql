@@ -29,8 +29,8 @@
 	close Rows1
 	deallocate Rows1
 	
-		insert into @UT(XMLText)
-			select +@Tab1+'</select>'
-			union all select '</srv_req>'
+	insert into @UT(XMLText)
+		select +@Tab1+'</select>'
+		union all select '</srv_req>'
 
 SELECT XMLText FROM @UT order by RowID

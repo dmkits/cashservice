@@ -724,7 +724,7 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
 };
 
 module.exports.getSales = function(bdate,edate, crId, callback) {
-    var reqStr=fs.readFileSync('./scripts/get_sales.sql', 'utf8');
+    var reqStr=fs.readFileSync('./scripts/getSalesByCRIDsList.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
@@ -738,9 +738,8 @@ module.exports.getSales = function(bdate,edate, crId, callback) {
     });
 };
 
-
-module.exports.exportProds = function(crId, callback) {
-    var reqStr=fs.readFileSync('./scripts/export_products.sql', 'utf8');
+module.exports.getProdsPricesXML = function(crId, callback) {
+    var reqStr=fs.readFileSync('./scripts/getProdsPricesXML.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     var CRIDLIST=','+crId+',';
     var CurrentDateTime=moment(new Date()).format("YYYYMMDDHHmmss");
@@ -755,9 +754,8 @@ module.exports.exportProds = function(crId, callback) {
     });
 };
 
-
-module.exports.getPrices = function(crId, callback) {
-    var reqStr=fs.readFileSync('./scripts/get_prices.sql', 'utf8');
+module.exports.getProdsPricesByCRID = function(crId, callback) {
+    var reqStr=fs.readFileSync('./scripts/getProdsPricesByCRIDsList.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     var CRIDLIST=','+crId+',';
     // reqSql.input("CRID", sql.NVarChar,crId);
