@@ -57,7 +57,7 @@
         cashBoxesList[0].set('checked', true);
     };
     $$.exportProds_btnExportProds.onClick=function(){
-        $$.exportProds_Results.domNode.innerHTML+="<br>Начат процесс выгрузки номенклатур с ценами в кассовый шлюз...";
+        $$.exportProds_Results.domNode.innerHTML+="<br><b>Начат процесс выгрузки номенклатур с ценами в кассовый шлюз...</b>";
         $$.exportProds_btnExportProds.set('disabled','true');
         var queryParams="";
         for(var i in cashBoxesList){
@@ -78,20 +78,13 @@
                     }
                     if(result.nullLineCounter)
                         $$.exportProds_Results.domNode.innerHTML+='<br>Найдены товары без наименования. Всего: '+result.nullLineCounter+' товара';
-//                    if(result.items) {
-//                        var XMLData = result.items;
-//                        for (var i in XMLData) {
-//                            var XMLLine = XMLData[i].XMLText;
-//                            XMLFileContent = XMLFileContent + XMLLine + '\n';
-//                        }
-//                    }
                     if(error){
-                        $$.exportProds_Results.domNode.innerHTML+='<br>Невозможно выполнить операцию! '+error.message+'<br>';
+                        $$.exportProds_Results.domNode.innerHTML+='<br><b><span style="color:red">Невозможно выполнить операцию! '+error.message+'</span></b><br>';
                         return;
                     }
-                    $$.exportProds_Results.domNode.innerHTML+='<br>ВЫГРУЗКА ЗАВЕРШЕНА.';
+                    $$.exportProds_Results.domNode.innerHTML+='<br><b>ВЫГРУЗКА ЗАВЕРШЕНА.</b>';
                     if(result.serverResp)
-                        $$.exportProds_Results.domNode.innerHTML+='<br>ОТВЕТ КАССОВОГО ШЛЮЗА: '+result.serverResp;
+                        $$.exportProds_Results.domNode.innerHTML+='<br><b>ОТВЕТ КАССОВОГО ШЛЮЗА: '+result.serverResp+'</b>';
                     $$.exportProds_Results.domNode.innerHTML+='<br>';
                 });
     };
