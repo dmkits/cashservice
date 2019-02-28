@@ -150,7 +150,11 @@ define(["dojo/_base/declare", "app/hTableSimple"], function(declare, HTableSimpl
                                     var posDelimiter = filterEditValues.indexOf(","); if(posDelimiter<0) posDelimiter=filterEditValues.length;
                                     var filterEditValueItem = filterEditValues.substring(0,posDelimiter);
                                     var posInterval= filterEditValueItem.indexOf("-");
-                                    if(posInterval<0){
+                                    if(filterEditValueItem.indexOf("<")==0){
+                                        filterValues["value_"+filterValueNum] = {};
+                                        var filterEditValueItemToVal= parseFloat(filterEditValueItem.substring(1,filterEditValueItem.length));
+                                        if(!isNaN(filterEditValueItemToVal)) filterValues["value_"+filterValueNum]["less"] = filterEditValueItemToVal;
+                                    } else if(posInterval<0){
                                         var filterValueItem= parseFloat(filterEditValueItem);
                                         if(!isNaN(filterValueItem)) filterValues["value_"+filterValueNum] = filterValueItem;
                                     } else {
@@ -270,6 +274,8 @@ define(["dojo/_base/declare", "app/hTableSimple"], function(declare, HTableSimpl
                             if(filterEditValue.length>0) filterEditValue=filterEditValue+",";
                             if(filterValue instanceof Array){
                                 filterEditValue= filterEditValue+filterValue["from"]+"-"+filterValue["to"];
+                            } else if(filterValue&&typeof(filterValue)=="object"&&filterValue["less"]!==undefined&&filterValue["less"]!==null){
+                                filterEditValue= filterEditValue+"<"+filterValue["less"];
                             } else filterEditValue= filterEditValue+filterValue;
                         }
                     }
@@ -352,6 +358,10 @@ define(["dojo/_base/declare", "app/hTableSimple"], function(declare, HTableSimpl
                                     } else if(numericFilterValue["from"]&&!numericFilterValue["to"]&&dataItemVal>=numericFilterValue["from"]){
                                         itemVisible= true; break;
                                     } else if(!numericFilterValue["from"]&&numericFilterValue["to"]&&dataItemVal<=numericFilterValue["to"]){
+                                        itemVisible= true; break;
+                                    }
+                                } else if(numericFilterValue&&typeof(numericFilterValue)=="object"){
+                                    if(numericFilterValue["less"]&&dataItemVal<numericFilterValue["less"]){
                                         itemVisible= true; break;
                                     }
                                 } else if(numericFilterValue==dataItemVal){
