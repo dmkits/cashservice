@@ -28,17 +28,12 @@ table.dijitInline {
 }
 .dijitHidden {
 	
-	position: absolute; 
-	visibility: hidden; 
-}
-.dijitHidden * {
-	visibility: hidden !important; 
+	display: none !important;
 }
 .dijitVisible {
 	
 	display: block !important;	
 	position: relative;			
-	visibility: visible;
 }
 .dj_ie6 .dijitComboBox .dijitInputContainer,
 .dijitInputContainer {
@@ -317,7 +312,6 @@ div.dijitArrowButton {
 	left: 0;
 	#filter: ""; 
 	white-space: nowrap;
-	pointer-events: none;   
 }
 .dijitTimeTextBox {
 	width: 8em;
@@ -959,22 +953,12 @@ body .dijitAlignClient { position: absolute; }
 	
 	overflow: hidden;
 }
-.dijitCalendarContainer table {
+.dijitCalendarContainer {
 	width: auto;	
-	clear: both;    
 }
 .dijitCalendarContainer th, .dijitCalendarContainer td {
 	padding: 0;
 	vertical-align: middle;
-}
-.dijitCalendarMonthContainer {
-	text-align: center;
-}
-.dijitCalendarDecrementArrow {
-	float: left;
-}
-.dijitCalendarIncrementArrow {
-	float: right;
 }
 .dijitCalendarYearLabel {
     white-space: nowrap;    
@@ -1722,17 +1706,6 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitNumberTextBox .dijitInputInner {
 	text-align: inherit; 
 }
-.dijitNumberTextBox input.dijitInputInner,
-.dijitCurrencyTextBox input.dijitInputInner,
-.dijitSpinner input.dijitInputInner {
-	text-align: right;
-}
-.dj_ie8 .dijitNumberTextBox input.dijitInputInner, .dj_ie9 .dijitNumberTextBox input.dijitInputInner,
-.dj_ie8 .dijitCurrencyTextBox input.dijitInputInner, .dj_ie9 .dijitCurrencyTextBox input.dijitInputInner,
-.dj_ie8 .dijitSpinner input.dijitInputInner, .dj_ie9 .dijitSpinner input.dijitInputInner {
-	
-	padding-right: 1px !important;
-}
 .dijitToolbar .dijitSelect {
 	margin: 0;
 }
@@ -1965,7 +1938,7 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 .dijitIconFolderClosed, .dijitFolderClosed { background-position: -464px; }
 .dijitIconFolderOpen, .dijitFolderOpened { background-position: -480px; }
 .dijitIconLoading {
-	background: url("../../icons/images/loadingAnimation.gif") no-repeat;
+	background:url("../../icons/images/loadingAnimation_rtl.gif") no-repeat;
 	height: 20px;
 	width: 20px;
 }
@@ -2989,9 +2962,10 @@ div.dijitTabDisabled, .dj_ie div.dijitTabDisabled {
 	font-size: 100%;
 	border-spacing: 0;
 	border-collapse: separate;
+	border: 1px solid #b1badf;
 	margin: 0;
 }
-.soria .dijitCalendarMonthContainer {
+.soria .dijitCalendarMonthContainer th {
 	
 	background:#bed7f0 url("images/titleBar.png") repeat-x top;
 	padding-top:.3em;
