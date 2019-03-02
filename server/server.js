@@ -1,5 +1,4 @@
-var startTime = new Date().getTime();                                                                       console.log("SERVER STARTING...");
-
+var startDateTime=new Date(), startTime=startDateTime.getTime();                                            console.log('STARTING at ',startDateTime );//test
 function getStartupParams() {
     var startupParams = {};
     if (process.argv.length == 0) {
@@ -17,7 +16,7 @@ function getStartupParams() {
             startupParams.mode = process.argv[i];
         } else if (process.argv[i].indexOf('-log:') == 0) {
             var logParam = process.argv[i].replace("-log:", "");
-            if (logParam.toLowerCase() == "console") {
+            if(logParam.toLowerCase() == "console"){
                 startupParams.logToConsole = true;
             }
         }
@@ -26,18 +25,43 @@ function getStartupParams() {
     if (!startupParams.mode)startupParams.mode = 'production';
     return startupParams;
 }
-var startupParams = getStartupParams();
+try{
+    var ENV=process.env.NODE_ENV;                                                                           if(ENV=="development") console.log("START IN DEVELOPMENT MODE");
+    var startupParams = getStartupParams();                                                                 console.log('Started with startup params:',startupParams);//test
+    var path = require('path'), fs = require('fs'), dateformat =require('dateformat'),
+        log = require('winston');
+} catch(e){                                                                                                 console.log("FAILED START! Reason: ", e.message);
+    return;
+}
 module.exports.startupParams = startupParams;
 module.exports.startupMode = startupParams.mode;
 
-var log = require('winston');                                                                               log.info('winston...', new Date().getTime() - startTime);//test
+var logDebug = (ENV=='development' || ENV=='debug');                                                        if(logDebug) console.log("DEBUG LOG ON");
+module.exports.logDebug = logDebug;
+if(startupParams.logToConsole){
+    log.configure({
+        transports:[
+            new (log.transports.Console)({colorize: true,level:(logDebug)?'silly':'info',timestamp:function(){
+                return dateformat(Date.now(), "yyyy-mm-dd HH:MM:ss.l");
+            } })
+        ]
+    });
+} else {
+    var logDir= path.join(__dirname, '/../logs/');
+    try {
+        if(!fs.existsSync(logDir)) fs.mkdirSync(logDir);
+    }catch (e){                                                                                             console.log("FAILED START! Reason: Failed create log directory! Reason:"+ e.message);
+        return;
+    }
+    var transports  = [];
+    transports.push(new (require('winston-daily-rotate-file'))({
+        name: 'file', datePattern: 'YYYY-MM-DD', filename: path.join(logDir,"log_%DATE%.log")
+    }));
+    log = new log.Logger({transports: transports,level:(logDebug)?'silly':'info', timestamp:function(){
+        return dateformat(Date.now(),"yyyy-mm-dd HH:MM:ss.l");
+    }});
+}                                                                                                           log.info('STARTING at', startDateTime );//test
 module.exports.log=log;
-if (!startupParams.logToConsole) {
-    log.add(log.transports.File, {filename: 'history.log', level: 'debug', timestamp: true});
-    log.remove(log.transports.Console);
-}
-
-var fs = require('fs');
 
 var express = require('express');                                                                           log.info('express...', new Date().getTime() - startTime);//test
 var bodyParser = require('body-parser');                                                                    log.info('body-parser...', new Date().getTime() - startTime);//test
