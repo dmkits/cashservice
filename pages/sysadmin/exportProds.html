@@ -3,7 +3,7 @@
         <table width="100%" style="margin:0;background-color:#e7e7e7;font-weight:bold;">
             <tr>
                 <td></td>
-                <td width="300px" style="text-align:center;font-size:12px;">Выгрузка номенклатур с ценами в ЭККА</td>
+                <td width="350px" style="text-align:center;font-size:12px;">Выгрузка номенклатур с ценами в Unisystem Cashserver</td>
                 <td width="90px"><button id="exportProds_btnExportProds">Export prods</button></td>
                 <td width="90px"><button id="exportProds_rtnCleanResult">Clean result</button></td>
                 <td></td>
@@ -76,7 +76,7 @@
                         $$.exportProds_Results.domNode.innerHTML+='<br>Сгенерирован документ XML';
                         $$.exportProds_XML.domNode.innerText=result.xmlText;
                     }
-                    if(result.nullLineCounter)
+                    if(result&&result.nullLineCounter)
                         $$.exportProds_Results.domNode.innerHTML+='<br>Найдены товары без наименования. Всего: '+result.nullLineCounter+' товара';
                     if(error){
                         $$.exportProds_Results.domNode.innerHTML+='<br><b><span style="color:red">Невозможно выполнить операцию! '+error.message+'</span></b><br>';

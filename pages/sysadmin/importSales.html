@@ -8,10 +8,11 @@
                 <td width="10px"></td>
                 <td width="200px"><DateTextBox type="date" id="importSales_EDate" label="Конечная дата:"style="width:85px"></DateTextBox></td>
                 <td width="10px"></td>
-                <td width="90px"><button id="importSales_btnStartImport">Import sales</button></td>
+                <td width="90px"><button id="importSales_btnStartImport">Import sales from UNI cashserver</button></td>
                 <td width="90px"><button id="importSales_btnClean">Clean up</button></td>
                 <td width="20px"></td>
-                <td width="90px"><button id="importSales_btnGetImportXML">get import XML</button></td>
+                <td width="70px"><button id="importSales_btnLoadXML">Load XML</button></td>
+                <td width="90px"><button id="importSales_btnImportFromXMLToDB">Import XML to DB</button></td>
                 <td></td>
             </tr>
         </table>
@@ -33,31 +34,14 @@
 </BorderContainer>
 <script type="text/javascript">                                                                             log("importSales",$$);
     moment.locale("uk");
-    var socket = io.connect(/*'http://localhost:8080'*/);
-    socket.on('new_event', function(data){
-        // if(data.length>0) {
-        var listItem = document.createElement('ul');
-        $$.importSales_btnStartImport.list.appendChild(listItem);
-        listItem.innerText = data;
-        //  }
-    });
-    //                socket.on('new_event', function(data){
-    //                    document.getElementById("import_sales_display_content").innerText=
-    //                            document.getElementById("import_sales_display_content").innerText+" * "+data+"\n";
-    //                });
-    var yesterday = moment().subtract(1,'day').toDate();
     $$.importSales_BDate.set("value",$$.yesterday());
     $$.importSales_EDate.set("value",$$.yesterday());
-    //import_sales_cleanBtn
-    var displayXMLResult = document.getElementById("import_sales_display_result");
-
     var getAllCashBoxes=function(){
         $$.request.getJSONData({url: "/sysadmin/getCashboxes", consoleLog: true},
                 function (result,error){
                     if(result)setToggleCashBoxID(result.items);
                 });
     };
-    getAllCashBoxes();
     var cashBoxesList=[];
     var setToggleCashBoxID=function(data){
         for(var i in data){
@@ -81,36 +65,78 @@
                     }
                 });
     };
+    disableBtns= function(disable){
+        if(disable===undefined)disable=true;
+        $$.importSales_btnStartImport.set('disabled',disable);
+        $$.importSales_btnClean.set('disabled',disable);
+        $$.importSales_btnLoadXML.set('disabled',disable);
+        $$.importSales_btnImportFromXMLToDB.set('disabled',disable);
+    };
     $$.importSales_btnStartImport.onClick=function(){
-        $$.importSales_btnStartImport.set('disabled','true');
-        $$.importSales_btnStartImport.list= document.createElement('ul');
-        document.getElementById("import_sales_display_content").appendChild($$.import_sales_btn.list);
-        var bdateValue=bDateTextBox.get("value"),
-                bdate= moment(bdateValue).format('YYYYMMDD')+"0000",
-                edateValue=eDateTextBox.get("value"),
-                edate= moment(edateValue).format('YYYYMMDD')+"2359";
-        //  var cashBoxesList=leftContentImportSales.getChildren();
-        var cashbox_params;
+        disableBtns();
+        var resultNode=$$.importSales_Results.domNode;
+        resultNode.innerHTML+='<br><b>Начат импорт кассовых операций из UNI Cashserver...</b>';
+        $$.importSales_XML.domNode.innerText="";
+        var bdateValue=$$.importSales_BDate.get("value"), bdate= moment(bdateValue).format('YYYYMMDD')+"0000",
+                edateValue=$$.importSales_EDate.get("value"), edate= moment(edateValue).format('YYYYMMDD')+"2359",
+                queryParams="";
         for(var i in cashBoxesList){
-            if(cashBoxesList[i].checked==true){
-                var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
-                cashbox_params = (cashbox_params == null) ? cashbox_condition : cashbox_params + "&" + cashbox_condition;   console.log("cashbox_params=",cashbox_params);
-            }
+            if(cashBoxesList[i].checked!==true) continue;
+            var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
+            if(queryParams.length>0) queryParams+="&";
+            queryParams+= cashbox_condition;                                                            console.log("queryParams=",queryParams);
         }                                                                                                   log("importSales_btnStartImport.onClick start request");
-        $$.request.getJSONData({url:"/sysadmin/import_sales/get_sales",
-                    conditions:"bdate="+bdate+"&edate="+edate+"&"+cashbox_params,
-                    timeout:"5000", consoleLog: true},
-                function (result,error) {                                                                   log("importSales_btnStartImport.onClick Request.getJSONData result=",result);
-                    $$.importSales_btnStartImport.set('disabled',false);
+        $$.request.getJSONData({url:"/sysadmin/importSales/getSalesXMLFromUniCashserverAndStoreToDB",
+                    conditions:"bdate="+bdate+"&edate="+edate+"&"+queryParams,
+                    timeout:"5000",consoleLog: true},
+                function (result,error){                                                                   log("importSales_btnStartImport.onClick Request.getJSONData result=",result);
+                    disableBtns(false);
+                    if(error){
+                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось импортировать продажи из UNI Cashserver! '+error.message+'</b><br>';
+                        return;
+                    }
+                    if(result) $$.importSales_XML.domNode.innerText=result.uniXML;
+                    resultNode.innerHTML+='<br><b>Продажи из UNI Cashserver успешно импортированы.</b><br>';
                 });
     };
-    $$.importSales_btnClean.onClick = function(){
-        var displayResult = document.getElementById("importSales_Results");
-        while (displayResult.firstChild) {
-            displayResult.removeChild(displayResult.firstChild);
-        }
-    };
-    $$.importSales_btnGetImportXML.onClick = function () {
+    var socket = io.connect(/*'http://localhost:8080'*/);
+    socket.on('new_event', function(data){
+        $$.importSales_Results.domNode.innerHTML+='<br>'+data;
+    });
 
-    }
+    $$.importSales_btnClean.onClick = function(){
+        var resultNode=$$.importSales_Results.domNode;
+        while (resultNode.firstChild) resultNode.removeChild(resultNode.firstChild);
+        $$.importSales_XML.domNode.innerText="";
+    };
+    $$.importSales_btnLoadXML.onClick = function(){
+        disableBtns();
+        $$.request.getJSONData({url:"/sysadmin/importSales/loadXML", timeout:"5000",consoleLog:true},
+                function(result,error){                                                                     log("importSales_btnStartImport.onClick Request.getJSONData result=",result,error);
+                    disableBtns(false);
+                    var resultNode=$$.importSales_Results.domNode;
+                    if(error){
+                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось загрузить файл XML! '+error.message+'</b><br>';
+                        return;
+                    }
+                    if(result) $$.importSales_XML.domNode.innerText=result.uniXML;
+                    resultNode.innerHTML+='<br><b>Файл XML загружен.</b><br>';
+                })
+    };
+    $$.importSales_btnImportFromXMLToDB.onClick = function(){
+        disableBtns();
+        var uniXML=$$.importSales_XML.domNode.innerText;
+        var resultNode=$$.importSales_Results.domNode;
+        resultNode.innerHTML+='<br><b>Начат импорт кассовых операций из XML...</b>';
+        $$.request.postJSONData({url:"/sysadmin/importSales/importXMLToDB",data:{uniXML:uniXML}, timeout:"5000",consoleLog: true},
+                function (result,error){                                                                    log("importSales_btnStartImport.onClick Request.getJSONData result=",result);
+                    disableBtns(false);
+                    if(error){
+                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось импортировать продажи из XML! '+error.message+'</b><br>';
+                        return;
+                    }
+                    resultNode.innerHTML+='<br><b>Продажи из XML успешно импортированы.</b><br>';
+                });
+    };
+    getAllCashBoxes();
 </script>

@@ -28,49 +28,45 @@ module.exports.getDBConnectErr= function(){ return dbConnectError; };
 module.exports.getAllCashBoxes= function(callback) {
     var reqSql = new sql.Request(conn);
     var sQuery='SELECT * FROM r_Crs WHERE CashType=30 ';
-    reqSql.query(sQuery,
-        function (err, recordset) {
-            if(err){ callback(err); return; }
-            if(recordset.length<1){
-                callback("Не удалось найти кассовый аппарт в БД");
-                return;
-            }
-            callback(null,recordset);
+    reqSql.query(sQuery, function(err,recordset){
+        if(err){ callback(err); return; }
+        if(recordset.length<1){
+            callback("Не удалось найти кассовый аппарт в БД");
+            return;
         }
-    );
+        callback(null,recordset);
+    });
 };
-module.exports.getXMLForUniCashServerRequest = function (bdate, edate, cashBoxesID, callback) {
+module.exports.getCRListXMLForUniCashServerRequest = function(bdate, edate, cashBoxesID, callback){
     var reqSql = new sql.Request(conn);
-    var query_str = fs.readFileSync('./scripts/sales_report.sql', 'utf8');
+    var query_str = fs.readFileSync('./scripts/getCRListXMLforUNICashserver.sql', 'utf8');
     reqSql.input('BDATE', sql.NVarChar, bdate);
     reqSql.input('EDATE', sql.NVarChar, edate);
     reqSql.input('CRIDLIST', sql.NVarChar, ","+cashBoxesID+",");
-    reqSql.query(query_str,
-        function (err, recordset) {
-            if (err) {
-                callback(err);
-            } else {
-                callback(null,recordset);
-            }
-        })
+    reqSql.query(query_str, function(err,recordset){
+        if(err){
+            callback(err);
+        }else{
+            callback(null,recordset);
+        }
+    })
 };
 function isPaymentExist(CHID, callback){
     var reqSql = new sql.Request(conn);
     reqSql.input('CHID', sql.NVarChar, CHID);
-    reqSql.query("select ChID from t_SalePays WHERE ChID=@CHID",
-        function (err, recordset) {
-            var outData={};
-            if (err) {
-                callback(err);
-                return;
-            }
-            if(recordset[0]) {
-                outData.exist=true;
-                callback(null, outData);
-                return;
-            }
-            callback(null, "not exist");
-        })
+    reqSql.query("select ChID from t_SalePays WHERE ChID=@CHID", function(err,recordset){
+        var outData={};
+        if(err){
+            callback(err);
+            return;
+        }
+        if(recordset[0]){
+            outData.exist=true;
+            callback(null, outData);
+            return;
+        }
+        callback(null, "not exist");
+    })
 }
 
 function addToSalePays (CHID,cheque,callback){
@@ -86,8 +82,8 @@ function addToSalePays (CHID,cheque,callback){
         callback(e);
         return;
     }
-    reqSql.query(query_str, function (err, recordset) {
-        if (err) {
+    reqSql.query(query_str, function(err,recordset){
+        if(err){
             callback(err);
             return;
         }
@@ -98,8 +94,8 @@ function addToSalePays (CHID,cheque,callback){
             reqSql.input('CHID', sql.NVarChar, CHID);
             reqSql.input('PayFormCode', sql.NVarChar, PayFormCode);
             reqSql.input('SumCC_wt', sql.NVarChar, '-'+changeFormatted);
-            reqSql.query(query_str, function (err, recordset) {
-                if (err) {
+            reqSql.query(query_str, function(err,recordset){
+                if(err){
                     callback(err);
                     return;
                 }
@@ -114,32 +110,31 @@ function addToSalePays (CHID,cheque,callback){
 function deletePayment(ChID, callback){
     var reqSql = new sql.Request(conn);
     reqSql.input('CHID', sql.NVarChar, ChID);
-    reqSql.query("DELETE from t_SalePays WHERE ChID=@CHID",
-        function (err, recordset) {
-            if (err) {
-                callback(err);
-                return;
-            }
-            callback(null, "deleted");
-        })
-}
-
-module.exports.fillToSalePays = function (CHID, cheque, callback) {
-    isPaymentExist(CHID, function (err, res) {
-        var outData={};
-        if (err) {
+    reqSql.query("DELETE from t_SalePays WHERE ChID=@CHID", function(err,recordset){
+        if(err){
             callback(err);
             return;
         }
-        if (res.exist) {
+        callback(null, "deleted");
+    })
+}
+
+module.exports.fillToSalePays = function (CHID, cheque, callback){
+    isPaymentExist(CHID, function (err, res) {
+        var outData={};
+        if(err){
+            callback(err);
+            return;
+        }
+        if(res.exist){
             outData.exist=true;
-            deletePayment(CHID, function (err, res) {
-                if (err) {
+            deletePayment(CHID, function(err,res){
+                if(err){
                     callback(err);
                     return;
                 }
-                addToSalePays(CHID, cheque, function (err, res) {
-                    if (err) {
+                addToSalePays(CHID, cheque, function (err,res){
+                    if(err){
                         callback(err);
                         return;
                     }
@@ -148,8 +143,8 @@ module.exports.fillToSalePays = function (CHID, cheque, callback) {
             });
             return;
         }
-        addToSalePays(CHID, cheque, function (err, res) {
-            if (err) {
+        addToSalePays(CHID, cheque, function(err,res){
+            if(err){
                 callback(err);
                 return;
             }
@@ -162,8 +157,8 @@ module.exports.updateSaleStatus= function(CHID, callback){
     var reqSql = new sql.Request(conn);
     var query_str = fs.readFileSync('./scripts/update_sale_status.sql', 'utf8');
     reqSql.input('CHID', sql.NVarChar, CHID);
-    reqSql.query(query_str, function (err, recordset) {
-        if (err) {
+    reqSql.query(query_str, function(err,recordset){
+        if(err){
             callback(err);
             return;
         }
@@ -187,8 +182,8 @@ function isSaleExists(chequeData,callback){
     reqSql.input('DocID', sql.Int, DocID);
     reqSql.input('DocDate', sql.NVarChar, DocDate);
     var queryString = fs.readFileSync('./scripts/is_sale_exists.sql', 'utf8');
-    reqSql.query(queryString, function (err, recordset) {
-        if (err) {
+    reqSql.query(queryString, function(err,recordset){
+        if(err){
             callback(err);
             return;
         }
@@ -200,7 +195,7 @@ function isSaleExists(chequeData,callback){
     })
 }
 
-function addToSale(data, callback) {
+function addToSale(data, callback){
     try {
         var FacID = data.cashBoxFabricNum;
         var FacIDNum = FacID.replace("ПБ", "");
@@ -243,44 +238,43 @@ function addToSale(data, callback) {
     reqSql.input('TRealSum', sql.NVarChar, 0);
     reqSql.input('TLevySum', sql.NVarChar, 0);
 
-    if (data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-' + data.change / 100);
+    if(data.change) reqSql.input('ChangeSumCC', sql.NVarChar, '-' + data.change / 100);
     else reqSql.input('ChangeSumCC', sql.NVarChar, 0);
 
     var isOperatorExistsStr = fs.readFileSync('./scripts/isOperIDExists.sql', 'utf8');
-    reqSql.query(isOperatorExistsStr,
-        function (err, recordset) {
-            if (err) {
-                callback(err);
-                return;
-            }
-            if(recordset.length<1){
-                callback("Не удалось найти оператора для кода '" + data.operatorID+"' полученного от кассового аппарата");
-                return;
-            }
-            reqSql.input('OperID', sql.NVarChar, recordset[0].OperID);
-            var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
-            reqSql.query(queryString, function (err, recordset) {
-                if (err) {
-                    callback(err, null);
-                    return;
-                }
-                callback(null, {ChID:recordset[0].ChID,created:true});
-            });
-        });
-}
-
-module.exports.fillChequeTitle = function(chequeData, callback) {
-    isSaleExists(chequeData, function (err, res) {
-        if (err) {
+    reqSql.query(isOperatorExistsStr, function(err,recordset){
+        if(err){
             callback(err);
             return;
         }
-        if (res.exist) {
+        if(recordset.length<1){
+            callback("Не удалось найти оператора для кода '" + data.operatorID+"' полученного от кассового аппарата");
+            return;
+        }
+        reqSql.input('OperID', sql.NVarChar, recordset[0].OperID);
+        var queryString = fs.readFileSync('./scripts/add_to_sale.sql', 'utf8');
+        reqSql.query(queryString, function(err,recordset){
+            if(err){
+                callback(err, null);
+                return;
+            }
+            callback(null, {ChID:recordset[0].ChID,created:true});
+        });
+    });
+}
+
+module.exports.fillChequeTitle = function(chequeData, callback){
+    isSaleExists(chequeData, function(err,res){
+        if(err){
+            callback(err);
+            return;
+        }
+        if(res.exist){
             callback(null, res);
             return;
         }
-        addToSale(chequeData, function (err, res) {
-            if (err) {
+        addToSale(chequeData, function(err,res){
+            if(err){
                 callback(err);
                 return;
             }
@@ -294,25 +288,22 @@ function isPosExists(tablename,ChID, posNum, callback){
     reqSql.input('ChID', sql.NVarChar, ChID);
     reqSql.input('SrcPosID', sql.NVarChar, posNum);
     var queryString = fs.readFileSync('./scripts/is_position_exists_in_'+tablename+'.sql', 'utf8');
-    reqSql.query(queryString,
-        function (err, recordset) {
-            var outData={};
-            if (err) {
-                callback(err);
-                return;
-            }
-            if(!recordset||recordset.length==0){
-                callback(null,"notExist");
-                return;
-            }
-            outData.ChID=recordset[0].ChID;
-            outData.SrcPosID=recordset[0].SrcPosID;
-            outData.exist=true;
-            callback(null, outData);
-        })
+    reqSql.query(queryString, function(err,recordset){
+        if(err){
+            callback(err);
+            return;
+        }
+        if(!recordset||recordset.length==0){
+            callback(null,"notExist");
+            return;
+        }
+        var firsFindedRow=recordset[0],
+            outData={ChID:firsFindedRow.ChID, SrcPosID:firsFindedRow.SrcPosID, exist:true};
+        callback(null, outData);
+    })
 }
 
-function addToSaleD(ChID, chequeData, chequeProdData, callback) {
+function addToSaleD(ChID, chequeData, chequeProdData, callback){
     try {
         var date = formatDate(chequeData.checkDate),
             Qty = chequeProdData.qty/1000,
@@ -356,7 +347,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                  'from r_Prods p '+
                  'inner join r_ProdMQ mq on mq.ProdID=p.ProdID '+
                  'where mq.BarCode=BarCode',
-        function (err, recordset) {
+        function(err,recordset){
             if (err) {
                 callback(err, null);
                 return;
@@ -366,8 +357,8 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                 return;
             }
             var queryString = fs.readFileSync('./scripts/add_to_saleD_byBarcode.sql', 'utf8');
-            reqSql.query(queryString, function (err) {
-                if (err) {
+            reqSql.query(queryString, function(err){
+                if(err){
                     callback(err, null);
                     return;
                 }
@@ -377,7 +368,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
                     reqSql.input('LevyID', sql.NVarChar, 1);
                     reqSql.query('INSERT INTO t_SaleDLV (ChID, SrcPosID, LevyID, LevySum) ' +
                         'VALUES (@ChID,	@SrcPosID, @LevyID, @LevySum)', function(err){
-                        if (err) {
+                        if(err){
                             callback(err, null);
                             return;
                         }
@@ -390,7 +381,7 @@ function addToSaleD(ChID, chequeData, chequeProdData, callback) {
         });
 }
 
-function addToSaleC(ChID, chequeData, chequeProdData, callback) {
+function addToSaleC(ChID, chequeData, chequeProdData, callback){
     try {
         var date = formatDate(chequeData.checkDate);
         var Qty = chequeProdData.qty/1000;
@@ -426,19 +417,18 @@ function addToSaleC(ChID, chequeData, chequeProdData, callback) {
         callback(e);
         return;
     }
-
-    reqSql.query('select ProdID from r_Prods where Article2=@Article2', function (err, recordset) {
-        if (err) {
+    reqSql.query('select ProdID from r_Prods where Article2=@Article2', function(err,recordset){
+        if(err){
             callback(err, null);
             return;
         }
-        if(!recordset||recordset.length==0) {
+        if(!recordset||recordset.length==0){
             callback("Не удалось внести позицию! Наименование " + chequeProdData.name + " не найдено в базе");
             return;
         }
         var queryString = fs.readFileSync('./scripts/add_to_saleС.sql', 'utf8');
-        reqSql.query(queryString, function (err) {
-            if (err) {
+        reqSql.query(queryString, function(err){
+            if(err){
                 callback(err, null);
                 return;
             }
@@ -447,21 +437,21 @@ function addToSaleC(ChID, chequeData, chequeProdData, callback) {
     });
 }
 
-module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, callback) {
+module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, callback){
     var posNum = chequeProdData.posNumber;
-    if (chequeProdData.canceled) {
-        isPosExists('SaleC', saleChID, posNum, function (err, res) {
-            if (err) {
+    if(chequeProdData.canceled){
+        isPosExists('SaleC', saleChID, posNum, function(err,res){
+            if(err){
                 callback(err);
                 return;
             }
-            if (res.exist) {
+            if(res.exist){
                 res.exist="SaleC";
                 callback(null, res);
                 return;
             }
-            addToSaleC(saleChID, chequeData, chequeProdData, function (err, res) {
-                if (err) {
+            addToSaleC(saleChID, chequeData, chequeProdData, function(err,res){
+                if(err){
                     callback(err);
                     return;
                 }
@@ -470,18 +460,18 @@ module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, c
         });
         return;
     }
-    isPosExists('SaleD', saleChID, posNum, function (err, res) {
-        if (err) {
+    isPosExists('SaleD', saleChID, posNum, function(err,res){
+        if(err){
             callback(err);
             return;
         }
-        if (res.exist) {
+        if(res.exist){
             res.exist="SaleD";
             callback(null,res);
             return;
         }
-        addToSaleD(saleChID,chequeData, chequeProdData, function (err, res) {
-            if (err) {
+        addToSaleD(saleChID,chequeData, chequeProdData, function(err,res){
+            if(err){
                 callback(err);
                 return;
             }
@@ -490,7 +480,7 @@ module.exports.fillChequeProds = function(saleChID,chequeData, chequeProdData, c
     });
 };
 
-module.exports.logToDB = function(Note,Msg,FacID, callback) {
+module.exports.logToDB = function(Note,Msg,FacID, callback){
     var reqSql = new sql.Request(conn);
     var CRID;
     if(!Msg)Msg="";
@@ -502,9 +492,9 @@ module.exports.logToDB = function(Note,Msg,FacID, callback) {
         reqSql.input('CRID', sql.NVarChar, CRID);
         reqSql.input('Msg', sql.NVarChar, Msg);
         var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
-        reqSql.query(queryString, function (err, recordset) {
-            if (err) {
-                callback(err);
+        reqSql.query(queryString, function(err,recordset){
+            if(err){
+                callback(err.message);
                 return;
             }
             callback(null,"ок");
@@ -514,31 +504,31 @@ module.exports.logToDB = function(Note,Msg,FacID, callback) {
     var FacIDFormatted=FacID.replace("ПБ","");
     reqSql.input('Notes', sql.NVarChar, Note);
     reqSql.input('FacID', sql.NVarChar, FacIDFormatted);
-    reqSql.query('select  CRID from r_Crs WHERE FacID=@FacID;',
-        function (err, recordset) {
-            if (err) {
-                callback(err);
+    reqSql.query('select  CRID from r_Crs WHERE FacID=@FacID;', function(err,recordset){
+        if(err){
+            callback(err.message);
+            return;
+        }
+        if(!(recordset&&recordset[0])){
+            callback("Не удалось определить ID кассового аппарата");
+            return;
+        }
+        CRID=recordset[0].CRID;
+        reqSql.input('Notes', sql.NVarChar, Note);
+        reqSql.input('CRID', sql.NVarChar, CRID);
+        reqSql.input('Msg', sql.NVarChar, Msg);
+        var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
+        reqSql.query(queryString, function(err,recordset){
+            if(err){
+                callback(err.message);
                 return;
             }
-            if(!(recordset && recordset[0])){
-                callback("Не удалось определить ID кассового аппарата");
-            }
-            CRID=recordset[0].CRID;
-            reqSql.input('Notes', sql.NVarChar, Note);
-            reqSql.input('CRID', sql.NVarChar, CRID);
-            reqSql.input('Msg', sql.NVarChar, Msg);
-            var queryString = fs.readFileSync('./scripts/add_log_to_DB.sql', 'utf8');
-            reqSql.query(queryString, function (err, recordset) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-                callback(null,"ок");
-            })
+            callback(null,"ок");
         })
+    })
 };
 
-module.exports.addToMonIntRec = function(innerDoc, callback) {
+module.exports.addToMonIntRec = function(innerDoc, callback){
     var FacID=innerDoc.cashBoxFabricNum.replace("ПБ","");
     var DocTime = formatDate(innerDoc.docDate);
     var DocDate = DocTime.substring(0,10)+" 00:00:00";
@@ -553,27 +543,26 @@ module.exports.addToMonIntRec = function(innerDoc, callback) {
     reqSql.input('CROperID', sql.NVarChar, CROperID);
 
     var isRecExistsStr = fs.readFileSync('./scripts/is_monIntRec_exists.sql', 'utf8');
-    reqSql.query(isRecExistsStr,
-        function (err, recordset) {
-            var outData={};
-            if (err) {
+    reqSql.query(isRecExistsStr, function(err,recordset){
+        if(err){
+            callback(err);
+            return;
+        }
+        var outData={};
+        if(recordset[0]){
+            outData.exists=true;
+            callback(null,outData);
+            return
+        }
+        var query_str = fs.readFileSync('./scripts/add_to_monIntRec.sql', 'utf8');
+        reqSql.query(query_str, function(err,recordset){
+            if(err){
                 callback(err);
                 return;
             }
-            if(recordset[0]){
-                outData.exists=true;
-                callback(null,outData);
-                return
-            }
-            var query_str = fs.readFileSync('./scripts/add_to_monIntRec.sql', 'utf8');
-            reqSql.query(query_str, function (err, recordset) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-                callback(null, "done");
-            })
+            callback(null, "done");
         })
+    })
 };
 
 module.exports.addToMonIntExp = function(innerDoc, callback) {
@@ -591,27 +580,26 @@ module.exports.addToMonIntExp = function(innerDoc, callback) {
     reqSql.input('CROperID', sql.NVarChar, CROperID);
 
     var isExpExistsStr = fs.readFileSync('./scripts/is_monIntExp_exists.sql', 'utf8');
-    reqSql.query(isExpExistsStr,
-        function (err, recordset) {
-            var outData={};
-            if (err) {
+    reqSql.query(isExpExistsStr, function(err,recordset){
+        if(err){
+            callback(err);
+            return;
+        }
+        var outData={};
+        if(recordset[0]){
+            outData.exists=true;
+            callback(null,outData);
+            return
+        }
+        var query_str = fs.readFileSync('./scripts/add_to_monIntExp.sql', 'utf8');
+        reqSql.query(query_str, function(err,recordset){
+            if(err){
                 callback(err);
                 return;
             }
-            if(recordset[0]){
-                outData.exists=true;
-                callback(null,outData);
-                return
-            }
-            var query_str = fs.readFileSync('./scripts/add_to_monIntExp.sql', 'utf8');
-            reqSql.query(query_str, function (err, recordset) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-                callback(null, "done");
-            })
+            callback(null, "done");
         })
+    })
 };
 
 module.exports.addToZrep = function(rep, callback) {
@@ -650,40 +638,38 @@ module.exports.addToZrep = function(rep, callback) {
     reqSql.input('Tax_F', sql.NVarChar, rep.Tax_FSum ? rep.Tax_FSum:0);
 
     var isRepExistStr=fs.readFileSync('./scripts/is_rep_exists.sql', 'utf8');
-    reqSql.query(isRepExistStr,
-        function (err, recordset) {
-            var outData={};
-            if (err) {
+    reqSql.query(isRepExistStr, function(err,recordset){
+        if(err){
+            callback(err);
+            return;
+        }
+        var outData={};
+        if(recordset[0]){
+            outData.exists=true;
+            callback(null,outData);
+            return
+        }
+        var getOperIdStr=fs.readFileSync('./scripts/get_operid.sql', 'utf8');
+        reqSql.query(getOperIdStr, function(err,recordset){
+            if(err){
                 callback(err);
                 return;
             }
-            if(recordset[0]){
-                outData.exists=true;
-                callback(null,outData);
-                return
+            if(recordset.length<1){
+                callback("Не удалось определить оператора (администратора ЭККА) для Z-Отчета № "+rep.reportNum+"! Отчет не сохранен!");
+                return;
             }
-
-            var getOperIdStr=fs.readFileSync('./scripts/get_operid.sql', 'utf8');
-            reqSql.query(getOperIdStr , function (err, recordset) {
-                if (err) {
+            var OperID = recordset[0].OperID;
+            reqSql.input('OperID', sql.NVarChar, OperID);
+            reqSql.query(query_str, function(err,recordset){
+                if(err){
                     callback(err);
                     return;
                 }
-                if(recordset.length<1){
-                    callback("Не удалось определить оператора (администратора ЭККА) для Z-Отчета № "+rep.reportNum+"! Отчет не сохранен!");
-                    return;
-                }
-                var OperID = recordset[0].OperID;
-                reqSql.input('OperID', sql.NVarChar, OperID);
-                reqSql.query(query_str, function (err, recordset) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-                    callback(null, "done");
-                });
+                callback(null, "done");
             });
-        })
+        });
+    })
 };
 
 function formatDate(date){
@@ -714,7 +700,7 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
     }
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
-    reqSql.query(reqStr, function (error,recordset) {
+    reqSql.query(reqStr, function(error,recordset){
         if (error){
             callback(error);
             return;
@@ -723,29 +709,13 @@ module.exports.getLogs = function(bdate,edate, crId, callback) {
     });
 };
 
-module.exports.getSales = function(bdate,edate, crId, callback) {
+module.exports.getSales = function(bdate,edate, crId, callback){
     var reqStr=fs.readFileSync('./scripts/getSalesByCRIDsList.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     reqSql.input("BDATE", sql.NVarChar,bdate);
     reqSql.input("EDATE", sql.NVarChar,edate);
     reqSql.input("CRID", sql.NVarChar,crId);
-    reqSql.query(reqStr, function (error,recordset) {
-        if (error){
-            callback(error);
-            return;
-        }
-        callback(null,recordset);
-    });
-};
-
-module.exports.getProdsPricesXML = function(crId, callback) {
-    var reqStr=fs.readFileSync('./scripts/getProdsPricesXML.sql', 'utf8');
-    var reqSql = new sql.Request(conn);
-    var CRIDLIST=','+crId+',';
-    var CurrentDateTime=moment(new Date()).format("YYYYMMDDHHmmss");
-    reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
-    reqSql.input("CurrentDateTime", sql.NVarChar,CurrentDateTime);
-    reqSql.query(reqStr, function (error,recordset) {
+    reqSql.query(reqStr, function (error,recordset){
         if(error){
             callback(error);
             return;
@@ -754,14 +724,30 @@ module.exports.getProdsPricesXML = function(crId, callback) {
     });
 };
 
-module.exports.getProdsPricesByCRID = function(crId, callback) {
+module.exports.getProdsPricesXML = function(crId, callback){
+    var reqStr=fs.readFileSync('./scripts/getProdsPricesXML.sql', 'utf8');
+    var reqSql = new sql.Request(conn);
+    var CRIDLIST=','+crId+',';
+    var CurrentDateTime=moment(new Date()).format("YYYYMMDDHHmmss");
+    reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
+    reqSql.input("CurrentDateTime", sql.NVarChar,CurrentDateTime);
+    reqSql.query(reqStr, function(error,recordset){
+        if(error){
+            callback(error);
+            return;
+        }
+        callback(null,recordset);
+    });
+};
+
+module.exports.getProdsPricesByCRID = function(crId, callback){
     var reqStr=fs.readFileSync('./scripts/getProdsPricesByCRIDsList.sql', 'utf8');
     var reqSql = new sql.Request(conn);
     var CRIDLIST=','+crId+',';
     // reqSql.input("CRID", sql.NVarChar,crId);
     reqSql.input("CRIDLIST", sql.NVarChar,CRIDLIST);
-    reqSql.query(reqStr,function (error,recordset) {
-        if (error){
+    reqSql.query(reqStr,function (error,recordset){
+        if(error){
             callback(error);
             return;
         }
