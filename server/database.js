@@ -45,7 +45,7 @@ module.exports.getCRListXMLForUniCashServerRequest = function(bdate, edate, cash
     reqSql.input('CRIDLIST', sql.NVarChar, ","+cashBoxesID+",");
     reqSql.query(query_str, function(err,recordset){
         if(err){
-            callback(err);
+            callback(err.message);
         }else{
             callback(null,recordset);
         }

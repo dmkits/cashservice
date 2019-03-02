@@ -32,7 +32,7 @@ module.exports.getDataFromUniCashServer= function(params, xml, callback){
         }
         var buf = new Buffer(body, 'binary'),
             str = iconv_lite.decode(buf, 'win1251'), resultXML = iconv_lite.encode(str, 'utf8');
-        callback(null,resultXML);
+        callback(null,(resultXML)?resultXML.toString():resultXML);
     });
 };
 
@@ -48,12 +48,12 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
             return;
         }
         if(result && result.ERROR){// Проверка на валидность ответа
-            var stringResult=JSON.stringify(result.ERROR)?JSON.stringify(result.ERROR):result.ERROR;
+            var stringResult=(result.ERROR)?JSON.stringify(result.ERROR):result.ERROR;
             callback("Oтвет кассового сервера: "+stringResult);
             return;
         }
         if(!result.gw_srv_rsp || !result.gw_srv_rsp.select){// Проверка на валидность ответа
-            var stringResult=JSON.stringify(result)?JSON.stringify(result):result;
+            var stringResult=(result)?JSON.stringify(result):result;
             callback("Oтвет кассового сервера: " +stringResult);
             return;
         }

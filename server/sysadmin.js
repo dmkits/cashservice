@@ -81,6 +81,53 @@ module.exports= function(app,httpServer){
         });
     }
 
+    var getXMLFromUniCashserver= function(bdate,edate,sCRIDsList,callback){
+        emitAndLogEvent('Поиск кассовых аппаратов',null,null, function(){
+            var sCRIDsList= getCRIDList(sCRIDsList);                                                        log.info("getXMLFromUniCashserver sCRIDsList",sCRIDsList);
+            emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
+                database.getCRListXMLForUniCashServerRequest(bdate, edate, sCRIDsList, function(error,xml){
+                    if(error){
+                        emitAndLogEvent('Не удалось сформировать запрос к кассвому серверу. Причина: '+error, null,null, function(){
+                            callback(error);
+                        });
+                        return;
+                    }
+                    // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
+                    emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
+                        procUniCashserver.getDataFromUniCashServer(server.getSysConfig(),xml, function(error,uniXML){
+                            if(error){
+                                emitAndLogEvent(error,null,null,function(){
+                                    log.error("getDataFromUniCashServer error:",error);
+                                    callback(error);
+                                });
+                                return
+                            }
+                            emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
+                                fs.writeFile("./uniXML.xml",uniXML,function(err,success){
+                                    if(err){
+                                        log.error("Store uniXML error:",err.message);
+                                        emitAndLogEvent("Не удалось сохранить файл XML! Причина: "+err.message);
+                                    }
+                                });
+                                callback(null,uniXML);
+                            })
+                        });
+                    });
+                });
+            });
+        });
+    };
+    app.get("/sysadmin/importSales/getXMLFromUniCashserver", function(clientReq,clientRes){
+        var bdate = clientReq.query.bdate, edate = clientReq.query.edate;
+        getXMLFromUniCashserver(bdate,edate,clientReq.query, function(err,uniXML){
+            if(err){
+                clientRes.send({error:err});
+                return;
+            }
+            clientRes.send({uniXML:uniXML});
+        });
+    });
+
     function fillCheques(chequesData, ind, finishedcallback) {
         var chequeData = chequesData[ind];
         if(!chequeData){
@@ -181,7 +228,7 @@ module.exports= function(app,httpServer){
      * callback = function(error,result)
      */
     var storeUniXMLtoDB= function(uniXML,emitAndLogEvent,callback){
-        emitAndLogEvent('Начат процесс обработки полученного XML', null,null, function(){
+        emitAndLogEvent('Начат процесс обработки полученного XML...', null,null, function(){
             procUniCashserver.getCashboxDataFromXML(uniXML, function(err,result){
                 var sErr="";
                 if(err){
@@ -195,7 +242,7 @@ module.exports= function(app,httpServer){
                 fs.writeFile("./chequesData.json", JSON.stringify(result), function(err,success){
                     //callback(err,success);
                 });
-                emitAndLogEvent('Данные кассового сервера обработаны успешно', null,null, function(){
+                emitAndLogEvent('Данные XML успешно обработаны.', null,null, function(){
                     var chequesData = result.sales;
                     fillCheques(chequesData, 0, /*finishedcallback*/function(err){
                         if(err){
@@ -235,44 +282,18 @@ module.exports= function(app,httpServer){
             });
         });
     };
-
     app.get("/sysadmin/importSales/getSalesXMLFromUniCashserverAndStoreToDB", function(clientReq,clientRes){
         var bdate = clientReq.query.bdate, edate = clientReq.query.edate;
-        emitAndLogEvent('Поиск кассовых аппаратов',null,null, function(){
-            var sCRIDsList= getCRIDList(clientReq.query);                                                   log.info("getSalesXMLFromUniCashserverAndStoreToDB sCRIDsList",sCRIDsList);
-            emitAndLogEvent('Подготовка данных для запроса на кассовый сервер',null,null, function(){
-                database.getCRListXMLForUniCashServerRequest(bdate, edate, sCRIDsList, function (error, xml) {
-                    if(error){
-                        emitAndLogEvent('Не удалось сформировать запрос. Reason: '+error, null,null, function() {
-                            clientRes.send({error: error});
-                        });
-                        return;
-                    }
-                    // var xml='<?xml version="1.0" encoding="windows-1251" ?> '; //test
-                    emitAndLogEvent('Отправка запроса кассовому серверу',null,null, function(){
-                        procUniCashserver.getDataFromUniCashServer(server.getSysConfig(),xml, function(error,uniXML){
-                            if(error){
-                                emitAndLogEvent(error,null,null,function(){
-                                    log.error("getDataFromUniCashServer error:",error);
-                                    clientRes.send({error:error});
-                                });
-                                return
-                            }
-                            fs.writeFile("./uniXML.xml",uniXML,function(err,success){
-                                if(err)log.error("Store uniXML error:",err.message);
-                            });
-                            emitAndLogEvent('Получен ответ от кассового сервера', null,null, function(){
-                                storeUniXMLtoDB(uniXML,emitAndLogEvent,function(error,storeResult){
-                                    if(!storeResult) storeResult={};
-                                    if(error) storeResult.error=error;
-                                    clientRes.send(storeResult);
-                                })
-                            })
-
-                        });
-                    });
-                });
-            });
+        getXMLFromUniCashserver(bdate,edate,clientReq.query, function(err,uniXML){
+            if(err){
+                clientRes.send({error:err});
+                return;
+            }
+            storeUniXMLtoDB(uniXML,emitAndLogEvent,function(error,storeResult){
+                if(!storeResult) storeResult={};
+                if(error) storeResult.error=error;
+                clientRes.send(storeResult);
+            })
         });
     });
     app.get("/sysadmin/importSales/loadXML", function(req,res){
@@ -286,7 +307,7 @@ module.exports= function(app,httpServer){
     });
     app.post("/sysadmin/importSales/importXMLToDB", function(req,res){
         var uniXML=req.body.uniXML;
-        emitAndLogEvent('Получен файл XML...', null,null, function(){
+        emitAndLogEvent('Получен файл XML.', null,null, function(){
             storeUniXMLtoDB(uniXML,emitAndLogEvent,function(error,storeResult){
                 if(!storeResult) storeResult={};
                 if(error) storeResult.error=error;
