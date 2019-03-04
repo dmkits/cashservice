@@ -10,20 +10,6 @@
     <StackContainer id="sysadmin_ProdsPrices_ContentPaneDetailContainer" region="center" style="width:100%;height:100%; margin:0;padding:0;"></StackContainer>
 </BorderContainer>
 <script type="text/javascript">
-//    require(["app", "dojo/dom-style", "dijit/layout/BorderContainer", "dijit/layout/StackContainer", "dijit/layout/ContentPane",
-//                "dijit/form/Button", "app/templateDocumentSimpleTable","app/request"],
-//            function (APP, domStyle, BorderContainer, StackContainer, ContentPane, Button, TDocumentSimpleTable, Request) {
-//                var sysadmin_ProdsPrices_PageContainer=
-//                        APP.instanceForID("sysadmin_ProdsPrices_PageContainer", BorderContainer, {});
-//                APP.instanceForID("sysadmin_ProdsPrices_ContentPaneLeft", ContentPane, {region:'left', splitter:true});
-//                var contentPaneDetailContainer=
-//                        APP.instanceForID("sysadmin_ProdsPrices_ContentPaneDetailContainer", StackContainer, {region:'center'});
-//                var crsButtons=document.getElementById("sysadmin_ProdsPrices_CrsButtons");
-//                var btnAllCRs;
-//
-//
-//
-//            });
     var createReportButtons=function(){
         $$.request.getJSONData({url: "/sysadmin/getCashboxes",consoleLog: true},
                 function(result,error){                                                                     log("createReportButtons getJSONData getCashboxes result=",result);
@@ -39,17 +25,10 @@
                 });
     };
     addButtonTo = function(parent, id, name){
-//        var button = new Button({id:id, label:name});
         $$.$.addWigetTo(parent,"Button",{id:id, label:name, style:"margin-left:2px;;margin-right:1px;",fStyle:"width:239px"});
         var button=$$[id];
         button.onClick= function(){
-            var instance=this;
             if (!button.document){
-//                button.document =
-//                        APP.childFor(contentPaneDetailContainer, "sysadmin_ProdsPrices_TableGetPrices"+instance.id,
-//                                TDocumentSimpleTable, {titleText:instance.label, dataURL:'/sysadmin/GetPrices/get_prices_for_crid/'+instance.id, buttonPrint:false})
-//                                .addTotalCountNumberBox("ИТОГО строк:", 140, {style:"font-weight:bold;",inputStyle:"width:50px;"})
-//                                .startUp();
                 var id="sysadmin_ProdsPrices_TableGetPrices"+this.id;
                 $$.sysadmin_ProdsPrices_ContentPaneDetailContainer.$.addAppComponent("TDocSimpleTable",
                         {id:id, titleText:this.label, dataURL:'/sysadmin/ProdsPrices/getProdsPricesByCRID/'+this.id, buttonPrint:false},
@@ -61,15 +40,9 @@
             }
             $$.sysadmin_ProdsPrices_ContentPaneDetailContainer.selectChild(button.document);
         };
-//        button.domNode.firstChild.setAttribute("style", "width:150px;");
-//        button.startup();
-//        crsButtons.appendChild(button.domNode);
         return button;
     };
     createReportButtons();
-//    sysadmin_ProdsPrices_PageContainer.layout();
-
     var btnAllCRs= addButtonTo($$.sysadmin_ProdsPrices_CrsButtons, "GetPrices-1", "Все кассы");
-//    btnAllCRs.domNode.firstChild.setAttribute("style", "margin-top:10px;width:150px;");
     btnAllCRs.onClick();
 </script>
