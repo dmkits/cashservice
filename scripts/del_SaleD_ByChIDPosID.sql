@@ -1,0 +1,2 @@
+
+DELETE FROM t_SaleD WHERE ChID=@ChID AND SrcPosID=@SrcPosID

@@ -4,13 +4,10 @@ exec dbo.z_NewChID 't_zRep', @NewChID OUTPUT
 
 declare  @CRID INT, @OurID INT
 select  @CRID=c.CRID, @OurID = r.OurID
-from r_Crs c
-INNER JOIN r_CRSrvs r ON r.SrvID =c.SrvID
-WHERE c.FacID=@FacID
+from r_Crs c, r_CRSrvs r WHERE r.SrvID =c.SrvID AND c.FacID=@FacID
 
 declare @DocID INT
 exec dbo.z_NewDocID 11951,'t_zRep', @OurID, @DocID OUTPUT
-
 
 INSERT INTO t_zRep  (ChID, DocDate,	DocTime,	CRID,	OperID,
                     OurID,	DocID,	FacID,	FinID,	ZRepNum,

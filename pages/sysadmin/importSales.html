@@ -82,7 +82,7 @@
             if(cashBoxesList[i].checked!==true) continue;
             var cashbox_condition = "cashbox_" + i + "crid=" + cashBoxesList[i].crid;
             if(queryParams.length>0) queryParams+="&";
-            queryParams+= cashbox_condition;                                                                log("getQueryConditionsForXML=",getQueryConditionsForXML);
+            queryParams+= cashbox_condition;
         }
         return "bdate="+bdate+"&edate="+edate+"&"+queryParams;
     };
@@ -96,11 +96,11 @@
                 function (result,error){                                                                    log("importSales_btnStartImport.onClick Request.getJSONData result=",result);
                     disableBtns(false);
                     if(error){
-                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось импортировать продажи из UNI Cashserver! '+error.message+'</b><br>';
+                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось импортировать кассовые операции из UNI Cashserver! '+error.message+'</b><br>';
                         return;
                     }
                     if(result) $$.importSales_XML.domNode.innerText=result.uniXML;
-                    resultNode.innerHTML+='<br><b>Продажи из UNI Cashserver успешно импортированы.</b><br>';
+                    resultNode.innerHTML+='<br><b>Кассовые операции из UNI Cashserver успешно импортированы.</b><br>';
                 });
     };
     var socket = io.connect(/*'http://localhost:8080'*/);
@@ -153,10 +153,10 @@
                 function (result,error){                                                                    log("importSales_btnStartImport.onClick Request.getJSONData result=",result);
                     disableBtns(false);
                     if(error){
-                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось импортировать продажи из XML! '+error.message+'</b><br>';
+                        resultNode.innerHTML+='<br><b><span style="color:red">Не удалось импортировать кассовые операции из XML! '+error.message+'</b><br>';
                         return;
                     }
-                    resultNode.innerHTML+='<br><b>Продажи из XML успешно импортированы.</b><br>';
+                    resultNode.innerHTML+='<br><b>Кассовые операции из XML успешно импортированы.</b><br>';
                 });
     };
     getAllCashBoxes();

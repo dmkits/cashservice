@@ -60,30 +60,24 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
         try {
             var cashBoxList = result.gw_srv_rsp.select[0].FISC[0].EJ;
             for(var fn in cashBoxList){
-                var cashBox = cashBoxList[fn];
-                var cashBoxID = cashBox.$.ID;
-                var docList = cashBoxList[fn].DAT;
+                var cashBox = cashBoxList[fn],
+                    cashBoxID = cashBox.$.ID,
+                    docList = cashBoxList[fn].DAT;
                 for(var i in docList){
                     var listItem = docList[i];
-                    if(listItem.Z){
-                        listItem.isZReport = true;
-                    }
-                    else if(listItem.C[0].$.T == '0')listItem.isSale = true;
-                    else if(listItem.C[0].$.T == '1'){
+                    if(listItem.Z) listItem.isZReport = true;
+                    else if(listItem.C[0].$.T == '0') listItem.isSale = true;
+                    else if(listItem.C[0].$.T == '1') {
                         listItem.isReturn = true;
                         callback("Операция возврврата не поддерживается!");
                         return;
-                    }
-                    else if(listItem.C[0].$.T == '2'){
-                        listItem.isInner = true;
-                    }
-                    else {
+                    }else if(listItem.C[0].$.T == '2') listItem.isInner = true;
+                    else{
                         callback("Неизвестная операция");
                         return;
                     }
                     if(listItem.isSale) {
-                        var cheque = {};
-                        var xmlHeading={};
+                        var cheque = {}, xmlHeading={};
                         xmlHeading.DAT={};
                         xmlHeading.DAT.$=listItem.$;
                         xmlHeading.DAT.C=[];
@@ -104,16 +98,15 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
                         cheque.dataVersion = listItem.$.V;                     // Версия формата пакета данных не исп
                         cheque.cashBoxFabricNum = listItem.$.ZN;
                         cheque.dataFormDate = listItem.TS[0];                        //не исп.
-
-                        var goodsList = listItem.C[0].P;
+                        var prodsList = listItem.C[0].P,//список позиций по чеку
+                            canceledProdsList = listItem.C[0].VD;//список отмен по чеку
                         cheque.productsInCheck = [];
                         cheque.checkNumber = /*"1111" +*/ listItem.C[0].E[0].$.NO;
                         cheque.totalCheckSum = listItem.C[0].E[0].$.SM;         //не исп
                         cheque.operatorID = listItem.C[0].E[0].$.CS;
                         cheque.fixalNumPPO = listItem.C[0].E[0].$.FN;         //не исп
                         cheque.checkDate = listItem.C[0].E[0].$.TS;
-
-                        if(listItem.C[0].E[0].TX){                                       //если налогов несколько может не использоваться
+                        if(listItem.C[0].E[0].TX){//если налогов несколько может не использоваться
                             var taxInfo = listItem.C[0].E[0].TX[0].$;
                             if (taxInfo.DTNM) cheque.AddTaxName = taxInfo.DTNM; //не исп
                             if (taxInfo.DTPR) cheque.AddTaxRate = taxInfo.DTPR; //не исп
@@ -132,46 +125,42 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
                             var payment = listItem.C[0].M[0].$;
                             cheque.buyerPaymentSum = payment.SM;
                             if (payment.NM)cheque.paymentName = payment.NM;
-                            cheque.paymentType = payment.T;                                  //"0" - нал. не "0" - безнал
-                            if (payment.RM) cheque.change = payment.RM;
+                            cheque.paymentType = payment.T;//"0" - нал. не "0" - безнал
+                            if(payment.RM) cheque.change = payment.RM;
                         }
-                        for(var pos in goodsList){
+                        for(var pos in prodsList){
                             var product = {};
                             var xmlProduct={};
-                            xmlProduct.P=goodsList[pos];
+                            xmlProduct.P=prodsList[pos];
                             product.xmlProduct = builder.buildObject(xmlProduct).replace('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>', "").trim();
-
-                            product.posNumber = goodsList[pos].$.N;
-                            product.name = goodsList[pos].$.NM;
-                            product.qty = goodsList[pos].$.Q;
-                            product.price = goodsList[pos].$.PRC;
-                            product.code = goodsList[pos].$.C;
-                            product.barcode = goodsList[pos].$.CD;
-                            product.taxMark = goodsList[pos].$.TX;
-                            product.posSum = goodsList[pos].$.SM;
+                            product.posNumber = prodsList[pos].$.N;
+                            product.name = prodsList[pos].$.NM;
+                            product.qty = prodsList[pos].$.Q;
+                            product.price = prodsList[pos].$.PRC;
+                            product.code = prodsList[pos].$.C;
+                            product.barcode = prodsList[pos].$.CD;
+                            product.taxMark = prodsList[pos].$.TX;
+                            product.posSum = prodsList[pos].$.SM;
                             cheque.productsInCheck.push(product);
                         }
-                        if(listItem.C[0].VD){
-                            var cancelPositionNum;
-                            var canceledProdList=listItem.C[0].VD;
-                            if(listItem.C[0].VD[0].$)  {  				             // отменена  позиций в чеке  (номер операции продажи)
-                                for(var j in canceledProdList){
-                                    cancelPositionNum=canceledProdList[j].$.NI;
+                        if(canceledProdsList&&canceledProdsList.length>0){// отменены  позиций в чеке  (номер операции продажи)
+                            var cancelPosition=null,cancelPositionNum;
+                            for(var j in canceledProdsList){
+                                cancelPosition=canceledProdsList[j];
+                                if(cancelPosition.$&&cancelPosition.$.NI){          //в отменах VD есть атирбут отмены NI
+                                    cancelPositionNum=cancelPosition.$.NI;
                                     for(var posNum in cheque.productsInCheck){
                                         var product=cheque.productsInCheck[posNum];
-                                        if(product.posNumber==cancelPositionNum){
-                                            product.canceled=true;
-                                        }
+                                        if(product.posNumber==cancelPositionNum) product.canceled=true;
                                     }
                                 }
-                            }else if (listItem.C[0].VD[0].NI){                   // отменена позиций в чеке  (массив номеров операций продаж)
-                                for(var j in listItem.C[0].VD[0].NI){
-                                    cancelPositionNum=listItem.C[0].VD[0].NI[j].$.NI;
+                                if(!cancelPosition.NI||!cancelPosition.NI.length>0) continue;
+                                var cancelPositionCancelList=cancelPosition.NI;             // отменены позиций в чеке  (массив номеров операций продаж)
+                                for(var j1 in cancelPositionCancelList){
+                                    cancelPositionNum=cancelPositionCancelList[j1].$.NI;
                                     for(var posNum in cheque.productsInCheck){
                                         var product=cheque.productsInCheck[posNum];
-                                        if(product.posNumber==cancelPositionNum){
-                                            product.canceled=true;
-                                        }
+                                        if(product.posNumber==cancelPositionNum) product.canceled=true;
                                     }
                                 }
                             }
@@ -225,16 +214,12 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
                         report.dataVersion = listItem.$.V;
                         report.cashBoxFabricNum = listItem.$.ZN;
                         report.dataFormDate = listItem.TS[0];
-
                         report.reportNum=listItem.Z[0].$.NO;
-
-                        for(var j in listItem.Z[0].M){
+                        for(var j in listItem.Z[0].M){//M[...]  итоговая информация по оборотам по типам оплаты
                             if(listItem.Z[0].M[j].$.T=="0"){
-                                //M[...]  итоговая информация по оборотам по типам оплаты
                                 report.totalCashPaymentIncomeName = listItem.Z[0].M[j].$.NM?listItem.Z[0].M[j].$.NM:'';  //Название формы оплаты (может не указыватся)
                                 report.totalCashPaymentIncomeSum = listItem.Z[0].M[j].$.SMI?listItem.Z[0].M[j].$.SMI/100:0; //Сумма полученных денег в копейках  //может отсутствовать
                                 report.totalCashPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO/100:0;
-
                                 //  report.totalCashIncome = listItem.Z[0].M[0].$.T;  //Тип оплаты: 0 – наличными
                                 // SMO -Сума выданных денег в копейках  //может отсутствовать
                             }else{
@@ -243,8 +228,7 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
                                 report.totalCardPaymentOutSum = listItem.Z[0].M[j].$.SMO?listItem.Z[0].M[j].$.SMO:0;
                             }
                         }
-                        //IO[...]   итоговая информация по внесению денег
-                        if(listItem.Z[0].IO){
+                        if(listItem.Z[0].IO){//IO[...]   итоговая информация по внесению денег
                             if (listItem.Z[0].IO[0] && listItem.Z[0].IO[0].$ && listItem.Z[0].IO[0].$) {
                                 report.cashPaymentTypeName = listItem.Z[0].IO[0].$.NM?listItem.Z[0].IO[0].$.NM :"";    //Название формы оплаты (может не указыватся)
                                 report.totalMoneyRec = listItem.Z[0].IO[0].$.SMI ? listItem.Z[0].IO[0].$.SMI : 0;    //Сумма полученных денег в копейках
@@ -255,14 +239,12 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
                         //NC[]  итоговая информация по количеству чеков
                         report.totalSaleCheques =  listItem.Z[0].NC[0].$.NI?listItem.Z[0].NC[0].$.NI:0;
                         report.totalReturnCheques  =listItem.Z[0].NC[0].$.NO?listItem.Z[0].NC[0].$.NO:0;
-
                         report.SumCC_wt=0;
                         report.Tax_FSum=0;
                         for(var j in listItem.Z[0].TXS){
                             var taxItemReport=listItem.Z[0].TXS[j];
                             report.SumCC_wt=report.SumCC_wt+(taxItemReport.$.SMI ? taxItemReport.$.SMI/100 : 0);
                             report.Tax_FSum=report.Tax_FSum+(taxItemReport.$.DTI?taxItemReport.$.DTI/100:0);
-
                             if(taxItemReport.$.TX=="0"){
                                 report.TaxATotalIncomeSum = taxItemReport.$.SMI?taxItemReport.$.SMI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
                                 report.TaxATotalTaxSum = taxItemReport.$.TXI?taxItemReport.$.TXI/100:0; //Дополнительный сбор по полученным деньгам в копейках //может отсутствовать
@@ -300,7 +282,6 @@ module.exports.getCashboxDataFromXML= function(sUniXML, callback){
                         // listItem.Z[0].TXS[0].$[0].TXI; //Налог по полученным деньгам в копейках  //может отсутствовать
                         // listItem.Z[0].TXS[0].$[0].TXPR; //Процент налога
                         //  listItem.Z[0].TXS[0].$[0].TXTY; //Признак налога, не включенного в стоимость:---
-
                         // TXO - Налог по выданным деньгам в копейках
                         // DTO - Дополнительный сбор по выданным деньгам  d копейках
                         // SMO -Итог операций по выданным деньгам в копейках
