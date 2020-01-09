@@ -68,8 +68,8 @@ $app.startup= function(pageTagID,pageScript){
                         window.$$.request= request;
                         ready(function(){
                             var pageID=(pageTagID)?pageTagID.toString().replace("#",""):pageTagID;          //log("$app.startup dojo/ready pageID=",pageID);//!!!IT'S FOR TESTING!!!
-                            var page=new window.Page({id:pageID},pageID);                                   log("$app.startup dojo/ready pageID=",pageID,page);//!!!IT'S FOR TESTING!!!
                             if(body) body.style.display="";
+                            var page=new window.Page({id:pageID},pageID);                                   log("$app.startup dojo/ready pageID=",pageID,page);//!!!IT'S FOR TESTING!!!
                             page.startup();
                             if(!pageScript)return;
                             $$=page.$page;
