@@ -71,9 +71,9 @@ var port = startupParams.port;
 var app = express(),
     httpServer = require('http').Server(app);                                                               log.info('http...', new Date().getTime() - startTime);//test
 app.use(cookieParser());
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(bodyParser.json());
-app.use(bodyParser.text());
+app.use(bodyParser.urlencoded({extended: true,limit: '50mb'}));
+app.use(bodyParser.json({limit: '50mb'}));
+app.use(bodyParser.text({limit: '50mb'}));
 app.use('/', express.static('public'));
 app.use(function (req, res, next) {                                                                         log.info("req:",req.method,req.path,"params=",req.query,{});//log.info("req.headers=",req.headers,"req.cookies=",req.cookies,{});
     next();

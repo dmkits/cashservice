@@ -6,13 +6,13 @@
     "start": "./server/server.js"
   },
   "dependencies": {
-    "body-parser": "~1.16.1",
+    "body-parser": "^1.19.0",
     "buffer": "^5.0.6",
-    "cookie-parser": "~1.4.3",
+    "cookie-parser": "^1.4.4",
     "dateformat": "^3.0.3",
     "download": "^5.0.3",
     "exceljs": "^0.4.6",
-    "express": "~4.14.0",
+    "express": "^4.17.1",
     "fs": "~0.0.1",
     "http": "0.0.0",
     "iconv-lite": "^0.4.17",
